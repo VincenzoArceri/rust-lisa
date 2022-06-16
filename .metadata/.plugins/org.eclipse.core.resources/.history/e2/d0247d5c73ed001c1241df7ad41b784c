@@ -1,0 +1,13 @@
+
+public class RustLiSAFrontend {
+
+	public static void parseContract(String filePath) throws IOException {
+		InputStream is = new FileInputStream(filePath);
+		EVMBLexer lexer = new EVMBLexer(CharStreams.fromStream(is, StandardCharsets.UTF_8));
+		EVMBParser parser = new EVMBParser(new CommonTokenStream(lexer));
+
+		parser.program();
+
+		is.close();
+	}
+}
