@@ -23,7 +23,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  */
-public class RustLiSAFrontend extends RustBaseVisitor<Object> {
+public class RustFrontend extends RustBaseVisitor<Object> {
 
 	/**
 	 * File path of the Rust program to be analyzed
@@ -41,7 +41,7 @@ public class RustLiSAFrontend extends RustBaseVisitor<Object> {
 	 */
 	private CompilationUnit currentUnit;
 
-	private RustLiSAFrontend(String filePath) {
+	private RustFrontend(String filePath) {
 		this.filePath = filePath;
 		this.program = new Program();
 	}
@@ -58,7 +58,7 @@ public class RustLiSAFrontend extends RustBaseVisitor<Object> {
 	 * @throws IOException if anything goes wrong during reading the file
 	 */
 	public static Program processFile(String filePath) throws IOException {
-		return new RustLiSAFrontend(filePath).toLiSAProgram();
+		return new RustFrontend(filePath).toLiSAProgram();
 	}
 
 	/**
