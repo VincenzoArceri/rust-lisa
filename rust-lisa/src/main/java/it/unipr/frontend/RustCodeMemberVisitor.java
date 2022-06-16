@@ -1,48 +1,140 @@
 package it.unipr.frontend;
-import org.antlr.v4.runtime.tree.ErrorNode;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.RuleNode;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
+import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
-import it.unipr.rust.antlr.RustVisitor;
+import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Program;
+import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CFGDescriptor;
+import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.edge.SequentialEdge;
+import it.unive.lisa.program.cfg.statement.Assignment;
+import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Statement;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.lang3.tuple.Pair;
 
-public class RustCodeMemberVisitor implements RustVisitor<Object> {
+/**
+ * Code member visitor for Rust.
+ * 
+ * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ */
+public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
-	@Override
-	public Object visit(ParseTree tree) {
-		// TODO Auto-generated method stub
-		return null;
+	/**
+	 * File path of the Rust program to be analyzed
+	 */
+	private final String filePath;
+
+	/**
+	 * Reference to the LiSA program that it is currently analyzed
+	 */
+	private final Program program;
+
+	/**
+	 * Current compilation unit to which code members should be added
+	 */
+	private final CompilationUnit unit;
+
+	/**
+	 * Current control-flow graph to which code members should be added
+	 */
+	private CFG currentCfg;
+
+	/**
+	 * Builds a code member visitor for Rust.
+	 * 
+	 * @param filePath file path of the Rust program to be analyzed
+	 * @param program  reference to the LiSA program that it is currently
+	 *                     analyzed
+	 * @param unit     current compilation unit to whic code members should be
+	 *                     added
+	 */
+	public RustCodeMemberVisitor(String filePath, Program program, CompilationUnit unit) {
+		this.filePath = filePath;
+		this.program = program;
+		this.unit = unit;
+	}
+
+	/**
+	 * Yields the line position of a parse rule
+	 * 
+	 * @param ctx the parse rule
+	 * 
+	 * @return yields the line position of a parse rule
+	 */
+	static protected int getLine(ParserRuleContext ctx) {
+		return ctx.getStart().getLine();
+	}
+
+	/**
+	 * Yields the line position of a terminal node
+	 * 
+	 * @param ctx the terminal node
+	 * 
+	 * @return yields the line position of a terminal node
+	 */
+	static protected int getLine(TerminalNode ctx) {
+		return ctx.getSymbol().getLine();
+	}
+
+	/**
+	 * Yields the column position of a parse rule
+	 * 
+	 * @param ctx the parse rule
+	 * 
+	 * @return yields the column position of a parse rule
+	 */
+	static protected int getCol(ParserRuleContext ctx) {
+		return ctx.getStop().getCharPositionInLine();
+	}
+
+	/**
+	 * Yields the column position of a terminal node
+	 * 
+	 * @param ctx the terminal node
+	 * 
+	 * @return yields the column position of a terminal node
+	 */
+	static protected int getCol(TerminalNode ctx) {
+		return ctx.getSymbol().getCharPositionInLine();
+	}
+
+	/**
+	 * Yields the source code location of a parse rule
+	 * 
+	 * @param ctx the parse rule
+	 * 
+	 * @return yields the source code location of a parse rule
+	 */
+	protected SourceCodeLocation locationOf(ParserRuleContext ctx) {
+		return new SourceCodeLocation(filePath, getLine(ctx), getCol(ctx));
+	}
+
+	/**
+	 * Yields the source code location of a terminal node
+	 * 
+	 * @param ctx the terminal node
+	 * 
+	 * @return yields the source code location of a terminal node
+	 */
+	protected SourceCodeLocation locationOf(TerminalNode ctx) {
+		return new SourceCodeLocation(filePath, getLine(ctx), getCol(ctx));
 	}
 
 	@Override
-	public Object visitChildren(RuleNode node) {
-		// TODO Auto-generated method stub
-		return null;
+	public CFG visitFn_decl(Fn_declContext ctx) {
+		String fnName = getFnName(ctx.fn_head());
+		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, fnName, new Parameter[0]);
+		currentCfg = new CFG(cfgDesc);
+		visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+		return currentCfg;
 	}
 
-	@Override
-	public Object visitTerminal(TerminalNode node) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitErrorNode(ErrorNode node) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitCrate(CrateContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitMod_body(Mod_bodyContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	private String getFnName(Fn_headContext fnHead) {
+		return fnHead.ident().getText();
 	}
 
 	@Override
@@ -53,18 +145,6 @@ public class RustCodeMemberVisitor implements RustVisitor<Object> {
 
 	@Override
 	public Object visitVisibility_restriction(Visibility_restrictionContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitItem(ItemContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitPub_item(Pub_itemContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -179,12 +259,6 @@ public class RustCodeMemberVisitor implements RustVisitor<Object> {
 
 	@Override
 	public Object visitConst_decl(Const_declContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitFn_decl(Fn_declContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -760,9 +834,8 @@ public class RustCodeMemberVisitor implements RustVisitor<Object> {
 	}
 
 	@Override
-	public Object visitExpr(ExprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Statement visitExpr(ExprContext ctx) {
+		return visitAssign_expr(ctx.assign_expr());
 	}
 
 	@Override
@@ -784,21 +857,37 @@ public class RustCodeMemberVisitor implements RustVisitor<Object> {
 	}
 
 	@Override
-	public Object visitBlock_with_inner_attrs(Block_with_inner_attrsContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Pair<Statement, Statement> visitBlock_with_inner_attrs(Block_with_inner_attrsContext ctx) {
+		// TODO: skipping inner attributes for the moment
+		Statement lastStmt = null;
+		Statement entryNode = null;
+
+		for (StmtContext stmt : ctx.stmt()) {
+			Pair<Statement, Statement> currentStmt = visitStmt(stmt);
+
+			if (lastStmt != null)
+				currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
+			else
+				entryNode = currentStmt.getLeft();
+			lastStmt = currentStmt.getRight();
+		}
+		return Pair.of(entryNode, lastStmt);
 	}
 
 	@Override
-	public Object visitStmt(StmtContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Pair<Statement, Statement> visitStmt(StmtContext ctx) {
+		if (ctx.item() != null)
+			// TODO: not considered for the moment
+			return null;
+		else
+			return visitStmt_tail(ctx.stmt_tail());
 	}
 
 	@Override
-	public Object visitStmt_tail(Stmt_tailContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Pair<Statement, Statement> visitStmt_tail(Stmt_tailContext ctx) {
+		// TODO: for the moment we just parse expr, skipping the rest
+		Statement expr = visitExpr(ctx.expr());
+		return Pair.of(expr, expr);
 	}
 
 	@Override
@@ -1006,15 +1095,20 @@ public class RustCodeMemberVisitor implements RustVisitor<Object> {
 	}
 
 	@Override
-	public Object visitRange_expr(Range_exprContext ctx) {
+	public Expression visitRange_expr(Range_exprContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Object visitAssign_expr(Assign_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Statement visitAssign_expr(Assign_exprContext ctx) {
+		if (ctx.assign_expr() == null)
+			return visitRange_expr(ctx.range_expr());
+
+		Expression lhs = visitRange_expr(ctx.range_expr());
+		Expression rhs = (Expression) visitAssign_expr(ctx.assign_expr());
+		Assignment asg = new Assignment(currentCfg, locationOf(ctx), lhs, rhs);
+		return asg;
 	}
 
 	@Override
