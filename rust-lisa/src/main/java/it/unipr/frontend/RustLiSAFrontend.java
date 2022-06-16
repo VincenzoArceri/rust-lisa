@@ -1,3 +1,4 @@
+package it.unipr.frontend;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +18,6 @@ public class RustLiSAFrontend {
 		RustParser parser = new RustParser(new CommonTokenStream(lexer));
 
 		parser.crate();
-
 		is.close();
 	}
 }
