@@ -6,6 +6,9 @@ import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
 import it.unipr.cfg.expression.bitwise.RustOrBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustRightShiftExpression;
 import it.unipr.cfg.expression.comparison.RustComparisonExpression;
+import it.unipr.cfg.expression.literal.RustBoolean;
+import it.unipr.cfg.expression.literal.RustInteger;
+import it.unipr.cfg.expression.literal.RustString;
 import it.unipr.cfg.expression.numeric.RustAddExpression;
 import it.unipr.cfg.expression.numeric.RustDivExpression;
 import it.unipr.cfg.expression.numeric.RustMinusExpression;
@@ -24,7 +27,9 @@ import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Statement;
+import it.unive.lisa.program.cfg.statement.VariableRef;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -142,7 +147,16 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		String fnName = getFnName(ctx.fn_head());
 		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, fnName, new Parameter[0]);
 		currentCfg = new CFG(cfgDesc);
-		visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+		currentCfg.getEntrypoints().add(block.getLeft());
+
+		if (currentCfg.getAllExitpoints().isEmpty()) {
+			Ret ret = new Ret(currentCfg, locationOf(ctx));
+			currentCfg.addNode(ret);
+			currentCfg.addEdge(new SequentialEdge(block.getRight(), ret));
+		}
+
+		currentCfg.simplify();
 		return currentCfg;
 	}
 
@@ -565,8 +579,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPath(PathContext ctx) {
-		// TODO Auto-generated method stub
+	public Expression visitPath(PathContext ctx) {
+		if (ctx.path_segment_no_super() != null)
+			return visitPath_segment_no_super(ctx.path_segment_no_super());
+		// TODO: skipping the production path_parent? '::' path_segment_no_super
 		return null;
 	}
 
@@ -589,15 +605,15 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPath_segment_no_super(Path_segment_no_superContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPath_segment_no_super(Path_segment_no_superContext ctx) {
+		// TODO: skipping ('::' ty_args)?
+		return visitSimple_path_segment(ctx.simple_path_segment());
 	}
 
 	@Override
-	public Object visitSimple_path_segment(Simple_path_segmentContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitSimple_path_segment(Simple_path_segmentContext ctx) {
+		// TODO: skipping Self
+		return new VariableRef(currentCfg, locationOf(ctx), ctx.getText());
 	}
 
 	@Override
@@ -900,6 +916,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public Pair<Statement, Statement> visitStmt_tail(Stmt_tailContext ctx) {
 		// TODO: for the moment we just parse expr, skipping the rest
 		Statement expr = visitExpr(ctx.expr());
+		currentCfg.addNode(expr);
 		return Pair.of(expr, expr);
 	}
 
@@ -965,13 +982,33 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitPrim_expr_no_struct(Prim_expr_no_structContext ctx) {
-		// TODO: skipping every production but lit
-		return visitLit(ctx.lit());
+		// TODO: skipping every production but lit and path
+		if (ctx.lit() != null)
+			return visitLit(ctx.lit());
+		else
+			// TODO: skipping macro_tail
+			return visitPath(ctx.path());
 	}
 
 	@Override
 	public Expression visitLit(LitContext ctx) {
-		// TODO Auto-generated method stub
+		if (ctx.getText().equals("true"))
+			return new RustBoolean(currentCfg, locationOf(ctx), true);
+		else if (ctx.getText().equals("false"))
+			return new RustBoolean(currentCfg, locationOf(ctx), false);
+		else if (ctx.BareIntLit() != null)
+			return new RustInteger(currentCfg, locationOf(ctx), Integer.parseInt(ctx.getText()));
+		else if (ctx.StringLit() != null) {
+			String strValue = ctx.StringLit().getText();
+			return new RustString(currentCfg, locationOf(ctx), strValue.substring(1, strValue.length()));
+		}
+		// else if (ctx.CharLit() != null){
+		// String charValue = ctx.CharLit().getText();
+		// return new RustChar(currentCfg, locationOf(ctx),
+		// charValue.substring(1, charValue.length()));
+		// }
+
+		// TODO skipping FullIntLit, ByteLit, ByteStringLit, FloatLit
 		return null;
 	}
 
@@ -1177,7 +1214,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Statement visitAssign_expr(Assign_exprContext ctx) {
+	public Expression visitAssign_expr(Assign_exprContext ctx) {
 		if (ctx.assign_expr() == null)
 			return visitRange_expr(ctx.range_expr());
 

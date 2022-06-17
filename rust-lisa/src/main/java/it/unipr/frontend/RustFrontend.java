@@ -10,6 +10,7 @@ import it.unipr.rust.antlr.RustParser.Pub_itemContext;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
+import it.unive.lisa.program.cfg.CFG;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,26 +94,27 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	public Object visitMod_body(Mod_bodyContext ctx) {
 		// TODO: skipping for the moment inner_attr
 		for (ItemContext i : ctx.item())
-			visitItem(i);
+			program.addCFG(visitItem(i));
 
 		return null;
 	}
 
 	@Override
-	public Object visitItem(ItemContext ctx) {
+	public CFG visitItem(ItemContext ctx) {
 		// TODO: skipping for the moment attr and visibility
+		// the casts below are completely wrong, they will be removed
 		if (ctx.pub_item() != null)
 			return visitPub_item(ctx.pub_item());
 		else if (ctx.impl_block() != null)
-			return visitImpl_block(ctx.impl_block());
+			return (CFG) visitImpl_block(ctx.impl_block());
 		else if (ctx.extern_mod() != null)
-			return visitExtern_mod(ctx.extern_mod());
+			return (CFG) visitExtern_mod(ctx.extern_mod());
 		else
-			return visitItem_macro_use(ctx.item_macro_use());
+			return (CFG) visitItem_macro_use(ctx.item_macro_use());
 	}
 
 	@Override
-	public Object visitPub_item(Pub_itemContext ctx) {
+	public CFG visitPub_item(Pub_itemContext ctx) {
 		// TODO: for the moment we are just interested in function declaration
 		return new RustCodeMemberVisitor(filePath, program, currentUnit).visitFn_decl(ctx.fn_decl());
 	}
