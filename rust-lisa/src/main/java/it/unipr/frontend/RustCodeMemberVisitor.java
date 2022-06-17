@@ -1,5 +1,18 @@
 package it.unipr.frontend;
 
+import it.unipr.cfg.expression.RustOrExpression;
+import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
+import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
+import it.unipr.cfg.expression.bitwise.RustOrBitwiseExpression;
+import it.unipr.cfg.expression.bitwise.RustRightShiftExpression;
+import it.unipr.cfg.expression.comparison.RustComparisonExpression;
+import it.unipr.cfg.expression.numeric.RustAddExpression;
+import it.unipr.cfg.expression.numeric.RustDivExpression;
+import it.unipr.cfg.expression.numeric.RustMinusExpression;
+import it.unipr.cfg.expression.numeric.RustModExpression;
+import it.unipr.cfg.expression.numeric.RustMulExpression;
+import it.unipr.cfg.expression.numeric.RustPlusExpression;
+import it.unipr.cfg.expression.numeric.RustSubExpression;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
 import it.unive.lisa.program.CompilationUnit;
@@ -945,19 +958,19 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPrim_expr(Prim_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPrim_expr(Prim_exprContext ctx) {
+		// TODO: skipping the production path '{' expr_inner_attrs? fields? '}'
+		return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
 	}
 
 	@Override
-	public Object visitPrim_expr_no_struct(Prim_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPrim_expr_no_struct(Prim_expr_no_structContext ctx) {
+		// TODO: skipping every production but lit
+		return visitLit(ctx.lit());
 	}
 
 	@Override
-	public Object visitLit(LitContext ctx) {
+	public Expression visitLit(LitContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -1017,9 +1030,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPost_expr(Post_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPost_expr(Post_exprContext ctx) {
+		// TODO: skipping the production post_expr post_expr_tail
+		return visitPrim_expr(ctx.prim_expr());
 	}
 
 	@Override
@@ -1029,74 +1042,137 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPre_expr(Pre_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPre_expr(Pre_exprContext ctx) {
+		// TODO: skipping every production but unary + and -
+		if (ctx.post_expr() != null)
+			return visitPost_expr(ctx.post_expr());
+
+		String symbol = ctx.children.get(0).getText();
+		if (symbol.equals("+"))
+			return new RustPlusExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		else if (symbol.equals("-"))
+			return new RustMinusExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		else
+			return null;
 	}
 
 	@Override
-	public Object visitCast_expr(Cast_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitCast_expr(Cast_exprContext ctx) {
+		// TODO: skipping for the moment the cast expressions
+		// we just focus on pre_expr
+		return visitPre_expr(ctx.pre_expr());
 	}
 
 	@Override
-	public Object visitMul_expr(Mul_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitMul_expr(Mul_exprContext ctx) {
+		if (ctx.mul_expr() == null)
+			return visitCast_expr(ctx.cast_expr());
+
+		Expression left = visitMul_expr(ctx.mul_expr());
+		Expression right = visitCast_expr(ctx.cast_expr());
+		String symbol = ctx.children.get(1).getText();
+		if (symbol.equals("*"))
+			return new RustMulExpression(currentCfg, locationOf(ctx), left, right);
+		else if (symbol.equals("/"))
+			return new RustDivExpression(currentCfg, locationOf(ctx), left, right);
+		else
+			return new RustModExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitAdd_expr(Add_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitAdd_expr(Add_exprContext ctx) {
+		if (ctx.add_expr() == null)
+			return visitMul_expr(ctx.mul_expr());
+
+		Expression left = visitAdd_expr(ctx.add_expr());
+		Expression right = visitMul_expr(ctx.mul_expr());
+		String symbol = ctx.children.get(1).getText();
+		if (symbol.equals("+"))
+			return new RustAddExpression(currentCfg, locationOf(ctx), left, right);
+		else
+			return new RustSubExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitShift_expr(Shift_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitShift_expr(Shift_exprContext ctx) {
+		if (ctx.shift_expr() == null)
+			return visitAdd_expr(ctx.add_expr());
+
+		Expression left = visitShift_expr(ctx.shift_expr());
+		Expression right = visitAdd_expr(ctx.add_expr());
+		String symbol = ctx.children.get(1).getText();
+		if (symbol.equals("<"))
+			return new RustLeftShiftExpression(currentCfg, locationOf(ctx), left, right);
+		else
+			return new RustRightShiftExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitBit_and_expr(Bit_and_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitBit_and_expr(Bit_and_exprContext ctx) {
+		if (ctx.bit_and_expr() == null)
+			return visitShift_expr(ctx.shift_expr());
+
+		Expression left = visitBit_and_expr(ctx.bit_and_expr());
+		Expression right = visitShift_expr(ctx.shift_expr());
+		return new RustAndBitwiseExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitBit_xor_expr(Bit_xor_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitBit_xor_expr(Bit_xor_exprContext ctx) {
+		if (ctx.bit_xor_expr() == null)
+			return visitBit_and_expr(ctx.bit_and_expr());
+
+		Expression left = visitBit_xor_expr(ctx.bit_xor_expr());
+		Expression right = visitBit_and_expr(ctx.bit_and_expr());
+		return new RustOrBitwiseExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitBit_or_expr(Bit_or_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitBit_or_expr(Bit_or_exprContext ctx) {
+		if (ctx.bit_or_expr() == null)
+			return visitBit_xor_expr(ctx.bit_xor_expr());
+
+		Expression left = visitBit_or_expr(ctx.bit_or_expr());
+		Expression right = visitBit_xor_expr(ctx.bit_xor_expr());
+		return new RustOrBitwiseExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitCmp_expr(Cmp_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitCmp_expr(Cmp_exprContext ctx) {
+		if (ctx.bit_or_expr().size() == 1)
+			return visitBit_or_expr(ctx.bit_or_expr(0));
+
+		Expression left = visitBit_or_expr(ctx.bit_or_expr(0));
+		Expression right = visitBit_or_expr(ctx.bit_or_expr(1));
+		return new RustComparisonExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitAnd_expr(And_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitAnd_expr(And_exprContext ctx) {
+		if (ctx.and_expr() == null)
+			return visitCmp_expr(ctx.cmp_expr());
+
+		Expression left = visitAnd_expr(ctx.and_expr());
+		Expression right = visitCmp_expr(ctx.cmp_expr());
+		return new RustOrExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitOr_expr(Or_exprContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitOr_expr(Or_exprContext ctx) {
+		if (ctx.or_expr() == null)
+			return visitAnd_expr(ctx.and_expr());
+
+		Expression left = visitOr_expr(ctx.or_expr());
+		Expression right = visitAnd_expr(ctx.and_expr());
+		return new RustOrExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
 	public Expression visitRange_expr(Range_exprContext ctx) {
-		// TODO Auto-generated method stub
+		// TODO: for the moment, we skip the other productions
+		// and we focus just on or_expr
+		if (ctx.children.size() == 1)
+			return visitOr_expr(ctx.or_expr(0));
 		return null;
 	}
 
