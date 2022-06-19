@@ -7,6 +7,8 @@ import it.unipr.cfg.expression.bitwise.RustOrBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustRightShiftExpression;
 import it.unipr.cfg.expression.comparison.RustComparisonExpression;
 import it.unipr.cfg.expression.literal.RustBoolean;
+import it.unipr.cfg.expression.literal.RustChar;
+import it.unipr.cfg.expression.literal.RustFloat;
 import it.unipr.cfg.expression.literal.RustInteger;
 import it.unipr.cfg.expression.literal.RustString;
 import it.unipr.cfg.expression.numeric.RustAddExpression;
@@ -998,17 +1000,17 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return new RustBoolean(currentCfg, locationOf(ctx), false);
 		else if (ctx.BareIntLit() != null)
 			return new RustInteger(currentCfg, locationOf(ctx), Integer.parseInt(ctx.getText()));
+		else if (ctx.FloatLit() != null)
+			return new RustFloat(currentCfg, locationOf(ctx), Float.parseFloat(ctx.getText()));
 		else if (ctx.StringLit() != null) {
 			String strValue = ctx.StringLit().getText();
 			return new RustString(currentCfg, locationOf(ctx), strValue.substring(1, strValue.length()));
+		} else if (ctx.CharLit() != null) {
+			char charValue = ctx.CharLit().getText().charAt(1);
+			return new RustChar(currentCfg, locationOf(ctx), charValue);
 		}
-		// else if (ctx.CharLit() != null){
-		// String charValue = ctx.CharLit().getText();
-		// return new RustChar(currentCfg, locationOf(ctx),
-		// charValue.substring(1, charValue.length()));
-		// }
 
-		// TODO skipping FullIntLit, ByteLit, ByteStringLit, FloatLit
+		// TODO skipping FullIntLit, ByteLit, ByteStringLit
 		return null;
 	}
 
