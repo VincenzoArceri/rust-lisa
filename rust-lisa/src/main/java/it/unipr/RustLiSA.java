@@ -1,4 +1,4 @@
-package it.unipr.cfg;
+package it.unipr;
 
 import it.unipr.frontend.RustFrontend;
 import it.unive.lisa.AnalysisException;
