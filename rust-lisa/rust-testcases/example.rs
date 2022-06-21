@@ -3,4 +3,6 @@ fn main() {
 
     // Print text to the console
     x = 5;
+    y = 7;
+    z = 3;
 }

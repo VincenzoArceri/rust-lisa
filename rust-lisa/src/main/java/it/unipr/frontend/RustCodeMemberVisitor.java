@@ -615,7 +615,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Expression visitSimple_path_segment(Simple_path_segmentContext ctx) {
 		// TODO: skipping Self
-		return new VariableRef(currentCfg, locationOf(ctx), ctx.getText());
+		return visitIdent(ctx.ident());
 	}
 
 	@Override
@@ -1311,9 +1311,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitIdent(IdentContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitIdent(IdentContext ctx) {
+		// TODO: everything is mapped as a variable refeference, included auto,
+		// default, union
+		return new VariableRef(currentCfg, locationOf(ctx), ctx.getText());
 	}
 
 	@Override
