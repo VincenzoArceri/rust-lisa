@@ -32,6 +32,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.type.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -147,6 +148,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public CFG visitFn_decl(Fn_declContext ctx) {
 		String fnName = getFnName(ctx.fn_head());
+		// TODO: skipping return type
 		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, fnName, new Parameter[0]);
 		currentCfg = new CFG(cfgDesc);
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
@@ -383,7 +385,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitFn_rtype(Fn_rtypeContext ctx) {
+	public Type visitFn_rtype(Fn_rtypeContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -882,7 +884,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitBlock(BlockContext ctx) {
+	public Pair<Statement, Statement> visitBlock(BlockContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -924,12 +926,26 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Object visitBlocky_expr(Blocky_exprContext ctx) {
-		// TODO Auto-generated method stub
+//		if (ctx.children.get(0).getText().equals("if")) {
+//			Expression guard = visitCond_or_pat(ctx.cond_or_pat(0));
+//			Pair<Statement, Statement> trueBlock = visitBlock(ctx.block(0));
+//			Pair<Statement, Statement> falseBlock = visitBlock(ctx.block(1));
+//			
+//			currentCfg.addEdge(new TrueEdge(guard, trueBlock.getLeft()));
+//			currentCfg.addEdge(new FalseEdge(guard, falseBlock.getLeft()));
+//			
+//			NoOp exitNode = new NoOp(currentCfg, locationOf(ctx));
+//			
+//			currentCfg.addNode(exitNode);
+//			currentCfg.addEdge(new SequentialEdge(trueBlock.getRight(), exitNode));
+//			currentCfg.addEdge(new SequentialEdge(falseBlock.getRight(), exitNode));
+//			return Pair.of(guard, exitNode);
+//		}
 		return null;
 	}
 
 	@Override
-	public Object visitCond_or_pat(Cond_or_patContext ctx) {
+	public Expression visitCond_or_pat(Cond_or_patContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -1221,7 +1237,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitRange_expr(ctx.range_expr());
 
 		Expression lhs = visitRange_expr(ctx.range_expr());
-		Expression rhs = (Expression) visitAssign_expr(ctx.assign_expr());
+		Expression rhs = visitAssign_expr(ctx.assign_expr());
 		Assignment asg = new Assignment(currentCfg, locationOf(ctx), lhs, rhs);
 		return asg;
 	}

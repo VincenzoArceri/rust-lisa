@@ -4,7 +4,6 @@ lexer grammar xidstart;
 {
 	package it.unipr.rust.antlr;
 }
-
 fragment XID_Start
    : '\u0041' .. '\u005a'
    | '_'
