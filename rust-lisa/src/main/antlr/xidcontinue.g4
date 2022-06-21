@@ -1,5 +1,10 @@
 lexer grammar xidcontinue;
 
+@ header
+{
+	package it.unipr.rust.antlr;
+}
+
 fragment XID_Continue
    : '\u0030' .. '\u0039'
    | '\u0041' .. '\u005a'
