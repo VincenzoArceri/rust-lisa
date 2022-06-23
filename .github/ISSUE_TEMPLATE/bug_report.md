@@ -1,38 +1,26 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
+title: '[BUG] '
+labels: 'bug'
+assignees: 'simonegazza'
 
 ---
 
-**Describe the bug**
+**Description**
 A clear and concise description of what the bug is.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+**Reproducibility information**
+Report the version (or the commit hash) to identify the point in time where this bug happens. Try to refer to commits already present on the master branch if possible.
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+Describe what is expected to happen (output, logs, exceptions, ...).
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+**Actual behavior**
+Describe what is happening instead (output, logs, exceptions, ...).
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**Attachments**
+If applicable, attach everything that might help us reproduce the bug.
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
-
-**Additional context**
-Add any other context about the problem here.
+**Further content**
+Add anything else that might be important for resolving this bug.
