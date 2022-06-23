@@ -944,6 +944,14 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitStmt(StmtContext ctx) {
+		if (ctx.getText().equals(";")) {
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+
+			currentCfg.addNode(noOp);
+
+			return Pair.of(noOp, noOp);
+		}
+
 		if (ctx.item() != null)
 			// TODO: not considered for the moment
 			return null;

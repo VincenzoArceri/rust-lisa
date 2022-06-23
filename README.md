@@ -1,1 +1,1 @@
-# Rust-LiSA
+# RustLiSA
