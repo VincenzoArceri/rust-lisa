@@ -1,8 +1,9 @@
+package it.unipr.frontend;
+
 import static it.unive.lisa.outputs.compare.JsonReportComparer.compare;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import it.unipr.frontend.RustFrontend;
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
@@ -17,7 +18,6 @@ import java.nio.file.Paths;
 import org.apache.commons.io.FileUtils;
 
 public abstract class RustLiSATestExecutor {
-
 
 	protected static final String EXPECTED_RESULTS_DIR = "rust-testcases";
 	protected static final String ACTUAL_RESULTS_DIR = "rust-outputs";
