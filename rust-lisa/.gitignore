@@ -44,5 +44,5 @@ local.properties
 diagrams/
 
 # tests
-test-outputs/
+rust-outputs/
 /bin/
