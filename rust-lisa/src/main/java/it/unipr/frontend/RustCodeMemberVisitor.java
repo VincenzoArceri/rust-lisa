@@ -29,6 +29,7 @@ import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.NoOp;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
@@ -909,6 +910,14 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitStmt(StmtContext ctx) {
+		if (ctx.getText().equals(";")) {
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+
+			currentCfg.addNode(noOp);
+
+			return Pair.of(noOp, noOp);
+		}
+
 		if (ctx.item() != null)
 			// TODO: not considered for the moment
 			return null;
