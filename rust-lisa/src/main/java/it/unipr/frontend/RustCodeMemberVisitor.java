@@ -51,22 +51,22 @@ import org.apache.commons.lang3.tuple.Pair;
 public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	/**
-	 * File path of the Rust program to be analyzed
+	 * File path of the Rust program to be analyzed.
 	 */
 	private final String filePath;
 
 	/**
-	 * Reference to the LiSA program that it is currently analyzed
+	 * Reference to the LiSA program that it is currently analyzed.
 	 */
 	private final Program program;
 
 	/**
-	 * Current compilation unit to which code members should be added
+	 * Current compilation unit to which code members should be added.
 	 */
 	private final CompilationUnit unit;
 
 	/**
-	 * Current control-flow graph to which code members should be added
+	 * Current control-flow graph to which code members should be added.
 	 */
 	private CFG currentCfg;
 
@@ -86,7 +86,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the line position of a parse rule
+	 * Yields the line position of a parse rule.
 	 * 
 	 * @param ctx the parse rule
 	 * 
@@ -97,7 +97,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the line position of a terminal node
+	 * Yields the line position of a terminal node.
 	 * 
 	 * @param ctx the terminal node
 	 * 
@@ -108,7 +108,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the column position of a parse rule
+	 * Yields the column position of a parse rule.
 	 * 
 	 * @param ctx the parse rule
 	 * 
@@ -119,7 +119,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the column position of a terminal node
+	 * Yields the column position of a terminal node.
 	 * 
 	 * @param ctx the terminal node
 	 * 
@@ -130,7 +130,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the source code location of a parse rule
+	 * Yields the source code location of a parse rule.
 	 * 
 	 * @param ctx the parse rule
 	 * 
@@ -141,7 +141,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the source code location of a terminal node
+	 * Yields the source code location of a terminal node.
 	 * 
 	 * @param ctx the terminal node
 	 * 

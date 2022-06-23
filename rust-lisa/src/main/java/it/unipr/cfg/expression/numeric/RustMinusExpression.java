@@ -15,8 +15,20 @@ import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Untyped;
 
+/**
+ * Rust unary minus expression (e.g., -x).
+ * 
+ * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ */
 public class RustMinusExpression extends UnaryExpression {
 
+	/**
+	 * Builds the unary minus expression.
+	 * 
+	 * @param cfg      the {@link CFG} where this expression lies
+	 * @param location the location where this expression is defined
+	 * @param expr     the inner
+	 */
 	public RustMinusExpression(CFG cfg, CodeLocation location,
 			Expression expr) {
 		// TODO: need to change type of this expression

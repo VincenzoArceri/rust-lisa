@@ -7,8 +7,21 @@ import it.unive.lisa.LiSAConfiguration;
 import it.unive.lisa.program.Program;
 import java.io.IOException;
 
+/**
+ * RustLiSA static analyzer build upon LiSA.
+ * 
+ * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ */
 public class RustLiSA {
 
+	/**
+	 * RustLiSA entry point.
+	 * 
+	 * @param args arguments
+	 * 
+	 * @throws AnalysisException if anything goes wrong during the analysis
+	 * @throws IOException       if anything goes wrong during reading the file
+	 */
 	public static void main(String[] args) throws AnalysisException, IOException {
 		Program program = RustFrontend.processFile(args[0]);
 

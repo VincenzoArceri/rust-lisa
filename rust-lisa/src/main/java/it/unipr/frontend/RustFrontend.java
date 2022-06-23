@@ -20,7 +20,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- * The Rust front-end for Rust.
+ * The Rust front-end for LiSA.
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  */
@@ -49,7 +49,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 
 	/**
 	 * Yields the {@link Program} corresponding to the Rust program located at
-	 * {@code filePath}
+	 * {@code filePath}.
 	 * 
 	 * @param filePath the file path where the Rust program to be analyzed
 	 * 
@@ -64,7 +64,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 
 	/**
 	 * Yields the {@link Program} corresponding to the Rust program located at
-	 * {@code filePath}
+	 * {@code filePath}.
 	 * 
 	 * @return the {@link Program} corresponding to the Rust program located at
 	 *             {@code filePath}
