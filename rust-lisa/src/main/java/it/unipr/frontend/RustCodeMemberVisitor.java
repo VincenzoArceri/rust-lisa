@@ -919,14 +919,18 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitStmt_tail(Stmt_tailContext ctx) {
-		// TODO: for the moment we just parse expr, skipping the rest
-		Statement expr = visitExpr(ctx.expr());
-		currentCfg.addNode(expr);
-		return Pair.of(expr, expr);
+		if (ctx.expr() != null) {
+			Statement expr = visitExpr(ctx.expr());
+			currentCfg.addNode(expr);
+			return Pair.of(expr, expr);
+		}
+
+		// TODO: skipping the attr* part for now
+		return visitBlocky_expr(ctx.blocky_expr());
 	}
 
 	@Override
-	public Object visitBlocky_expr(Blocky_exprContext ctx) {
+	public Pair<Statement, Statement> visitBlocky_expr(Blocky_exprContext ctx) {
 //		if (ctx.children.get(0).getText().equals("if")) {
 //			Expression guard = visitCond_or_pat(ctx.cond_or_pat(0));
 //			Pair<Statement, Statement> trueBlock = visitBlock(ctx.block(0));
