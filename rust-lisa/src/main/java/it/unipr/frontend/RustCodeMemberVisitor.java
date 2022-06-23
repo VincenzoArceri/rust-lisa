@@ -32,6 +32,7 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.type.Type;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -946,8 +947,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitCond_or_pat(Cond_or_patContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+		// TODO return fake literal
+       TrueLiteral fake = new TrueLiteral(currentCfg, locationOf(ctx));
+       currentCfg.addNode(fake);
+
+       return fake;
 	}
 
 	@Override
