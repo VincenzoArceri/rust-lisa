@@ -26,14 +26,21 @@ import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
+import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.NoOp;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.type.Type;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -958,22 +965,67 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitBlocky_expr(Blocky_exprContext ctx) {
-//		if (ctx.children.get(0).getText().equals("if")) {
-//			Expression guard = visitCond_or_pat(ctx.cond_or_pat(0));
-//			Pair<Statement, Statement> trueBlock = visitBlock(ctx.block(0));
-//			Pair<Statement, Statement> falseBlock = visitBlock(ctx.block(1));
-//			
-//			currentCfg.addEdge(new TrueEdge(guard, trueBlock.getLeft()));
-//			currentCfg.addEdge(new FalseEdge(guard, falseBlock.getLeft()));
-//			
-//			NoOp exitNode = new NoOp(currentCfg, locationOf(ctx));
-//			
-//			currentCfg.addNode(exitNode);
-//			currentCfg.addEdge(new SequentialEdge(trueBlock.getRight(), exitNode));
-//			currentCfg.addEdge(new SequentialEdge(falseBlock.getRight(), exitNode));
-//			return Pair.of(guard, exitNode);
-//		}
-		return null;
+		if (ctx.block_with_inner_attrs() != null)
+			return visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+
+		Statement firstStmt = null;
+		Statement lastStmt = null;
+
+		// TODO: ignoring "loop_label?" part
+		switch(ctx.children.get(0).getText()) {
+			case "if":
+				NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+				currentCfg.addNode(noOp);
+
+				List<Expression> elseIfGuardList = new ArrayList<>();
+				for (int i = 0; i < ctx.cond_or_pat().size(); ++i) {
+					Cond_or_patContext copc = ctx.cond_or_pat().get(i);
+					BlockContext thenBlock = ctx.block(i);
+
+					Expression guard = visitCond_or_pat(copc);
+
+					Pair<Statement, Statement> trueBlock = visitBlock(thenBlock);
+
+					currentCfg.addEdge(new TrueEdge(guard, trueBlock.getLeft()));
+					currentCfg.addEdge(new SequentialEdge(trueBlock.getRight(), noOp));
+
+					elseIfGuardList.add(guard);
+				}
+
+				for (int i = 0; i < elseIfGuardList.size() - 1; ++i) {
+					currentCfg.addEdge(
+						new FalseEdge(elseIfGuardList.get(i), elseIfGuardList.get(i + 1))
+					);
+				}
+
+				if (ctx.children.get(ctx.children.size() - 2).getText().equals("else")) {
+					BlockContext elseBlock = ctx.block().get(ctx.block().size() - 1);
+					Pair<Statement, Statement> parsedElseBlock = visitBlock(elseBlock);
+
+					currentCfg.addEdge(new FalseEdge(
+						elseIfGuardList.get(elseIfGuardList.size() - 1),
+						parsedElseBlock.getLeft()
+					));
+
+					currentCfg.addEdge(new SequentialEdge(
+						parsedElseBlock.getRight(),
+						noOp
+					));
+
+				} else {
+					currentCfg.addEdge(new FalseEdge(
+						elseIfGuardList.get(elseIfGuardList.size() - 1),
+						noOp
+					));
+				}
+
+				firstStmt = elseIfGuardList.get(0);
+				lastStmt = noOp;
+			break;
+		}
+
+		return Pair.of(firstStmt, lastStmt);
+
 	}
 
 	@Override
