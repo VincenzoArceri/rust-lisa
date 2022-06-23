@@ -886,8 +886,35 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitBlock(BlockContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+		Statement lastStmt = null;
+		Statement entryNode = null;
+
+		if (ctx.stmt() != null) {
+			for (StmtContext stmt : ctx.stmt()) {
+				Pair<Statement, Statement> currentStmt = visitStmt(stmt);
+
+				if (lastStmt != null)
+					currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
+				else
+					entryNode = currentStmt.getLeft();
+
+				lastStmt = currentStmt.getRight();
+			}
+		} else {
+			lastStmt = new NoOp(currentCfg, locationOf(ctx));
+			entryNode = new NoOp(currentCfg, locationOf(ctx));
+
+			currentCfg.addEdge(new SequentialEdge(entryNode, lastStmt));
+		}
+
+		if (ctx.expr() != null) {
+			Statement exprStmt = visitExpr(ctx.expr());
+			currentCfg.addEdge(new SequentialEdge(lastStmt, exprStmt));
+
+			return Pair.of(entryNode, exprStmt);
+		}
+
+		return Pair.of(entryNode, lastStmt);
 	}
 
 	@Override
