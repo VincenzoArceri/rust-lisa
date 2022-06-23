@@ -911,13 +911,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Pair<Statement, Statement> visitStmt(StmtContext ctx) {
 		if (ctx.getText().equals(";")) {
-			NoOp left = new NoOp(currentCfg, locationOf(ctx));
-			NoOp right = new NoOp(currentCfg, locationOf(ctx));
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
 
-			currentCfg.addNode(left);
-			currentCfg.addNode(right);
+			currentCfg.addNode(noOp);
 
-			return Pair.of(left, right);
+			return Pair.of(noOp, noOp);
 		}
 
 		if (ctx.item() != null)
