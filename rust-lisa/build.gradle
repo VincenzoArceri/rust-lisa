@@ -61,6 +61,7 @@ checkstyleTest.enabled = false
 
 checkstyleMain {
     finalizedBy 'checkstyleErrorMessage'
+    exclude 'it/unipr/rust/antlr/*.java'
     reports {
         xml.enabled false
         html.enabled false

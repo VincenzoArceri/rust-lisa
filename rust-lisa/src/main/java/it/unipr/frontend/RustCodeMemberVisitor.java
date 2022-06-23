@@ -26,14 +26,19 @@ import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
+import it.unive.lisa.program.cfg.edge.TrueEdge;
 import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NoOp;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.type.Type;
+import java.util.ArrayList;
+import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -46,22 +51,22 @@ import org.apache.commons.lang3.tuple.Pair;
 public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	/**
-	 * File path of the Rust program to be analyzed
+	 * File path of the Rust program to be analyzed.
 	 */
 	private final String filePath;
 
 	/**
-	 * Reference to the LiSA program that it is currently analyzed
+	 * Reference to the LiSA program that it is currently analyzed.
 	 */
 	private final Program program;
 
 	/**
-	 * Current compilation unit to which code members should be added
+	 * Current compilation unit to which code members should be added.
 	 */
 	private final CompilationUnit unit;
 
 	/**
-	 * Current control-flow graph to which code members should be added
+	 * Current control-flow graph to which code members should be added.
 	 */
 	private CFG currentCfg;
 
@@ -81,7 +86,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the line position of a parse rule
+	 * Yields the line position of a parse rule.
 	 * 
 	 * @param ctx the parse rule
 	 * 
@@ -92,7 +97,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the line position of a terminal node
+	 * Yields the line position of a terminal node.
 	 * 
 	 * @param ctx the terminal node
 	 * 
@@ -103,7 +108,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the column position of a parse rule
+	 * Yields the column position of a parse rule.
 	 * 
 	 * @param ctx the parse rule
 	 * 
@@ -114,7 +119,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the column position of a terminal node
+	 * Yields the column position of a terminal node.
 	 * 
 	 * @param ctx the terminal node
 	 * 
@@ -125,7 +130,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the source code location of a parse rule
+	 * Yields the source code location of a parse rule.
 	 * 
 	 * @param ctx the parse rule
 	 * 
@@ -136,7 +141,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	/**
-	 * Yields the source code location of a terminal node
+	 * Yields the source code location of a terminal node.
 	 * 
 	 * @param ctx the terminal node
 	 * 
@@ -886,8 +891,35 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitBlock(BlockContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+		Statement lastStmt = null;
+		Statement entryNode = null;
+
+		if (ctx.stmt() != null) {
+			for (StmtContext stmt : ctx.stmt()) {
+				Pair<Statement, Statement> currentStmt = visitStmt(stmt);
+
+				if (lastStmt != null)
+					currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
+				else
+					entryNode = currentStmt.getLeft();
+
+				lastStmt = currentStmt.getRight();
+			}
+		} else {
+			lastStmt = new NoOp(currentCfg, locationOf(ctx));
+			entryNode = new NoOp(currentCfg, locationOf(ctx));
+
+			currentCfg.addEdge(new SequentialEdge(entryNode, lastStmt));
+		}
+
+		if (ctx.expr() != null) {
+			Statement exprStmt = visitExpr(ctx.expr());
+			currentCfg.addEdge(new SequentialEdge(lastStmt, exprStmt));
+
+			return Pair.of(entryNode, exprStmt);
+		}
+
+		return Pair.of(entryNode, lastStmt);
 	}
 
 	@Override
@@ -927,36 +959,84 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitStmt_tail(Stmt_tailContext ctx) {
-		// TODO: for the moment we just parse expr, skipping the rest
-		Statement expr = visitExpr(ctx.expr());
-		currentCfg.addNode(expr);
-		return Pair.of(expr, expr);
+		if (ctx.expr() != null) {
+			Statement expr = visitExpr(ctx.expr());
+			currentCfg.addNode(expr);
+			return Pair.of(expr, expr);
+		}
+
+		// TODO: skipping the attr* part for now
+		return visitBlocky_expr(ctx.blocky_expr());
 	}
 
 	@Override
-	public Object visitBlocky_expr(Blocky_exprContext ctx) {
-//		if (ctx.children.get(0).getText().equals("if")) {
-//			Expression guard = visitCond_or_pat(ctx.cond_or_pat(0));
-//			Pair<Statement, Statement> trueBlock = visitBlock(ctx.block(0));
-//			Pair<Statement, Statement> falseBlock = visitBlock(ctx.block(1));
-//			
-//			currentCfg.addEdge(new TrueEdge(guard, trueBlock.getLeft()));
-//			currentCfg.addEdge(new FalseEdge(guard, falseBlock.getLeft()));
-//			
-//			NoOp exitNode = new NoOp(currentCfg, locationOf(ctx));
-//			
-//			currentCfg.addNode(exitNode);
-//			currentCfg.addEdge(new SequentialEdge(trueBlock.getRight(), exitNode));
-//			currentCfg.addEdge(new SequentialEdge(falseBlock.getRight(), exitNode));
-//			return Pair.of(guard, exitNode);
-//		}
-		return null;
+	public Pair<Statement, Statement> visitBlocky_expr(Blocky_exprContext ctx) {
+		if (ctx.block_with_inner_attrs() != null)
+			return visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+
+		Statement firstStmt = null;
+		Statement lastStmt = null;
+
+		// TODO: ignoring "loop_label?" part
+		switch (ctx.children.get(0).getText()) {
+		case "if":
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+			currentCfg.addNode(noOp);
+
+			List<Expression> elseIfGuardList = new ArrayList<>();
+			for (int i = 0; i < ctx.cond_or_pat().size(); ++i) {
+				Cond_or_patContext copc = ctx.cond_or_pat().get(i);
+				BlockContext thenBlock = ctx.block(i);
+
+				Expression guard = visitCond_or_pat(copc);
+
+				Pair<Statement, Statement> trueBlock = visitBlock(thenBlock);
+
+				currentCfg.addEdge(new TrueEdge(guard, trueBlock.getLeft()));
+				currentCfg.addEdge(new SequentialEdge(trueBlock.getRight(), noOp));
+
+				elseIfGuardList.add(guard);
+			}
+
+			for (int i = 0; i < elseIfGuardList.size() - 1; ++i) {
+				currentCfg.addEdge(
+						new FalseEdge(elseIfGuardList.get(i), elseIfGuardList.get(i + 1)));
+			}
+
+			if (ctx.children.get(ctx.children.size() - 2).getText().equals("else")) {
+				BlockContext elseBlock = ctx.block().get(ctx.block().size() - 1);
+				Pair<Statement, Statement> parsedElseBlock = visitBlock(elseBlock);
+
+				currentCfg.addEdge(new FalseEdge(
+						elseIfGuardList.get(elseIfGuardList.size() - 1),
+						parsedElseBlock.getLeft()));
+
+				currentCfg.addEdge(new SequentialEdge(
+						parsedElseBlock.getRight(),
+						noOp));
+
+			} else {
+				currentCfg.addEdge(new FalseEdge(
+						elseIfGuardList.get(elseIfGuardList.size() - 1),
+						noOp));
+			}
+
+			firstStmt = elseIfGuardList.get(0);
+			lastStmt = noOp;
+			break;
+		}
+
+		return Pair.of(firstStmt, lastStmt);
+
 	}
 
 	@Override
 	public Expression visitCond_or_pat(Cond_or_patContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+		// TODO return fake literal
+		TrueLiteral fake = new TrueLiteral(currentCfg, locationOf(ctx));
+		currentCfg.addNode(fake);
+
+		return fake;
 	}
 
 	@Override
