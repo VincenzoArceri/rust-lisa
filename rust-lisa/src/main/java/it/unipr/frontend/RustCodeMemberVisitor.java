@@ -37,10 +37,8 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.type.Type;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -980,55 +978,51 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Statement lastStmt = null;
 
 		// TODO: ignoring "loop_label?" part
-		switch(ctx.children.get(0).getText()) {
-			case "if":
-				NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
-				currentCfg.addNode(noOp);
+		switch (ctx.children.get(0).getText()) {
+		case "if":
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+			currentCfg.addNode(noOp);
 
-				List<Expression> elseIfGuardList = new ArrayList<>();
-				for (int i = 0; i < ctx.cond_or_pat().size(); ++i) {
-					Cond_or_patContext copc = ctx.cond_or_pat().get(i);
-					BlockContext thenBlock = ctx.block(i);
+			List<Expression> elseIfGuardList = new ArrayList<>();
+			for (int i = 0; i < ctx.cond_or_pat().size(); ++i) {
+				Cond_or_patContext copc = ctx.cond_or_pat().get(i);
+				BlockContext thenBlock = ctx.block(i);
 
-					Expression guard = visitCond_or_pat(copc);
+				Expression guard = visitCond_or_pat(copc);
 
-					Pair<Statement, Statement> trueBlock = visitBlock(thenBlock);
+				Pair<Statement, Statement> trueBlock = visitBlock(thenBlock);
 
-					currentCfg.addEdge(new TrueEdge(guard, trueBlock.getLeft()));
-					currentCfg.addEdge(new SequentialEdge(trueBlock.getRight(), noOp));
+				currentCfg.addEdge(new TrueEdge(guard, trueBlock.getLeft()));
+				currentCfg.addEdge(new SequentialEdge(trueBlock.getRight(), noOp));
 
-					elseIfGuardList.add(guard);
-				}
+				elseIfGuardList.add(guard);
+			}
 
-				for (int i = 0; i < elseIfGuardList.size() - 1; ++i) {
-					currentCfg.addEdge(
-						new FalseEdge(elseIfGuardList.get(i), elseIfGuardList.get(i + 1))
-					);
-				}
+			for (int i = 0; i < elseIfGuardList.size() - 1; ++i) {
+				currentCfg.addEdge(
+						new FalseEdge(elseIfGuardList.get(i), elseIfGuardList.get(i + 1)));
+			}
 
-				if (ctx.children.get(ctx.children.size() - 2).getText().equals("else")) {
-					BlockContext elseBlock = ctx.block().get(ctx.block().size() - 1);
-					Pair<Statement, Statement> parsedElseBlock = visitBlock(elseBlock);
+			if (ctx.children.get(ctx.children.size() - 2).getText().equals("else")) {
+				BlockContext elseBlock = ctx.block().get(ctx.block().size() - 1);
+				Pair<Statement, Statement> parsedElseBlock = visitBlock(elseBlock);
 
-					currentCfg.addEdge(new FalseEdge(
+				currentCfg.addEdge(new FalseEdge(
 						elseIfGuardList.get(elseIfGuardList.size() - 1),
-						parsedElseBlock.getLeft()
-					));
+						parsedElseBlock.getLeft()));
 
-					currentCfg.addEdge(new SequentialEdge(
+				currentCfg.addEdge(new SequentialEdge(
 						parsedElseBlock.getRight(),
-						noOp
-					));
+						noOp));
 
-				} else {
-					currentCfg.addEdge(new FalseEdge(
+			} else {
+				currentCfg.addEdge(new FalseEdge(
 						elseIfGuardList.get(elseIfGuardList.size() - 1),
-						noOp
-					));
-				}
+						noOp));
+			}
 
-				firstStmt = elseIfGuardList.get(0);
-				lastStmt = noOp;
+			firstStmt = elseIfGuardList.get(0);
+			lastStmt = noOp;
 			break;
 		}
 
@@ -1039,10 +1033,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Expression visitCond_or_pat(Cond_or_patContext ctx) {
 		// TODO return fake literal
-       TrueLiteral fake = new TrueLiteral(currentCfg, locationOf(ctx));
-       currentCfg.addNode(fake);
+		TrueLiteral fake = new TrueLiteral(currentCfg, locationOf(ctx));
+		currentCfg.addNode(fake);
 
-       return fake;
+		return fake;
 	}
 
 	@Override

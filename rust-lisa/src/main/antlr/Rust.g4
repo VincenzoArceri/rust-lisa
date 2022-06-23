@@ -4,7 +4,6 @@ grammar Rust;
 {
 	package it.unipr.rust.antlr;
 }
-
 // === Modules and items
 
 crate
@@ -1321,8 +1320,8 @@ BlockComment
    // BUG: `let [a, xs.., d] = out;` does not parse
    
    // BUG: ambiguity between expression macros, stmt macros, item macros
-  
-  fragment XID_Continue
+   
+fragment XID_Continue
    : '\u0030' .. '\u0039'
    | '\u0041' .. '\u005a'
    | '\u005f'
@@ -1793,8 +1792,7 @@ BlockComment
    | '\ud87e' '\ud400' .. '\ud61c'
    | '\udb40' '\udd00' .. '\uddee'
    ;
-  
-  
+
 fragment XID_Start
    : '\u0041' .. '\u005a'
    | '_'
@@ -2173,4 +2171,3 @@ fragment XID_Start
    | '\ud87e' '\ud400' .. '\ud61c'
    ;
 
-   
