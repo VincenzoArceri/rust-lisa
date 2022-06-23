@@ -16,7 +16,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Untyped;
 
 /**
- * This class models all the Rust comparison expressions and will be removed
+ * TODO: This class models all the Rust comparison expressions and will be removed
  * once we have implemented the Rust comparison expression
  */
 public class RustComparisonExpression extends BinaryExpression {
