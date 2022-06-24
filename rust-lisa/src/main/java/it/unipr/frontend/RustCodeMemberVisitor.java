@@ -1,11 +1,12 @@
 package it.unipr.frontend;
 
-import it.unipr.cfg.expression.RustOrExpression;
 import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
 import it.unipr.cfg.expression.bitwise.RustOrBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustRightShiftExpression;
+import it.unipr.cfg.expression.comparison.RustAndExpression;
 import it.unipr.cfg.expression.comparison.RustComparisonExpression;
+import it.unipr.cfg.expression.comparison.RustOrExpression;
 import it.unipr.cfg.expression.literal.RustBoolean;
 import it.unipr.cfg.expression.literal.RustChar;
 import it.unipr.cfg.expression.literal.RustFloat;
@@ -1388,73 +1389,63 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitCmp_expr_no_struct(Cmp_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitCmp_expr_no_struct(Cmp_expr_no_structContext ctx) {
+		TrueLiteral fake = new TrueLiteral(currentCfg, locationOf(ctx));
+		currentCfg.addNode(fake);
+		return fake;
 	}
 
 	@Override
-	public Object visitAnd_expr_no_struct(And_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitAnd_expr_no_struct(And_expr_no_structContext ctx) {
+		if (ctx.and_expr_no_struct() != null) {
+			Expression and = visitAnd_expr_no_struct(ctx.and_expr_no_struct());
+			Expression cmp = visitCmp_expr_no_struct(ctx.cmp_expr_no_struct());
+			
+			return new RustAndExpression(currentCfg, locationOf(ctx), and, cmp);
+		}
+		
+		return visitCmp_expr_no_struct(ctx.cmp_expr_no_struct());
 	}
 
 	@Override
-	public Object visitOr_expr_no_struct(Or_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitOr_expr_no_struct(Or_expr_no_structContext ctx) {
+		if (ctx.or_expr_no_struct() != null) {
+			Expression or = visitOr_expr_no_struct(ctx.or_expr_no_struct());
+			Expression and = visitAnd_expr_no_struct(ctx.and_expr_no_struct());
+			
+			return new RustOrExpression(currentCfg, locationOf(ctx), or, and);
+		}
+		
+		return visitAnd_expr_no_struct(ctx.and_expr_no_struct());
 	}
 
 	@Override
 	public Expression visitRange_expr_no_struct(Range_expr_no_structContext ctx) {
-		return null;
+		//Third grammar branch
+		if (ctx.getChild(0).getText().equals("..")) {
+			if (ctx.or_expr_no_struct(0) != null) {
+				Expression or = visitOr_expr_no_struct(ctx.or_expr_no_struct(0));
+				// TODO the rest is too complex for now
+			}
+		}
+		
+		// First and second grammar branch
+		Expression orLeft = visitOr_expr_no_struct(ctx.or_expr_no_struct(0));
+		if (ctx.or_expr_no_struct(1) != null) {
+			// second grammar branch
+			Expression orRight = visitOr_expr_no_struct(ctx.or_expr_no_struct(1));
+			// TODO the rest is too complex for now
+		}
+		
+		return orLeft;
 	}
 
 	@Override
 	public Expression visitAssign_expr_no_struct(Assign_expr_no_structContext ctx) {
-		Expression range = visitRange_expr_no_struct(ctx.range_expr_no_struct());
+		Expression rangeExpr = visitRange_expr_no_struct(ctx.range_expr_no_struct());
 		
-		switch(ctx.getChild(1).getText()) {
-			case "=":
-				
-			break;
-			
-			case "*=":
-				
-			break;
-			
-			case "/=":
-			break;
-			
-			case "%=":
-			break;
-			
-			case "+=":
-			break;
-			
-			case "-=":
-			break;
-			
-			case "<<=":
-			break;
-			
-			case ">>=":
-			break;
-			
-			case "&=":
-			break;
-			
-			case "^=":
-			break;
-			
-			case "|=":
-			break;
-		}
-		
-		Expression assigment = visitAssign_expr_no_struct(ctx.assign_expr_no_struct());
-		
-		// Change return type
-		return null;
+		return rangeExpr;
+		// TODO implement the second branch of the grammar
 	}
 
 	@Override

@@ -1,4 +1,4 @@
-package it.unipr.cfg.expression;
+package it.unipr.cfg.expression.comparison;
 
 import it.unipr.cfg.type.RustBooleanType;
 import it.unive.lisa.analysis.AbstractState;
