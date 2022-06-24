@@ -878,9 +878,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitExpr_no_struct(Expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitExpr_no_struct(Expr_no_structContext ctx) {
+		return visitAssign_expr_no_struct(ctx.assign_expr_no_struct());
 	}
 
 	@Override
@@ -1032,11 +1031,14 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitCond_or_pat(Cond_or_patContext ctx) {
-		// TODO return fake literal
-		TrueLiteral fake = new TrueLiteral(currentCfg, locationOf(ctx));
-		currentCfg.addNode(fake);
-
-		return fake;
+		if (ctx.getChild(0).getText().equals("let")) {
+			// TODO ignoring this if branch for now
+			Object o = visitPat(ctx.pat());
+			Statement pair = visitExpr(ctx.expr());
+			return null;
+		}
+		
+		return visitExpr_no_struct(ctx.expr_no_struct());
 	}
 
 	@Override
@@ -1404,14 +1406,54 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitRange_expr_no_struct(Range_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
+	public Expression visitRange_expr_no_struct(Range_expr_no_structContext ctx) {
 		return null;
 	}
 
 	@Override
-	public Object visitAssign_expr_no_struct(Assign_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
+	public Expression visitAssign_expr_no_struct(Assign_expr_no_structContext ctx) {
+		Expression range = visitRange_expr_no_struct(ctx.range_expr_no_struct());
+		
+		switch(ctx.getChild(1).getText()) {
+			case "=":
+				
+			break;
+			
+			case "*=":
+				
+			break;
+			
+			case "/=":
+			break;
+			
+			case "%=":
+			break;
+			
+			case "+=":
+			break;
+			
+			case "-=":
+			break;
+			
+			case "<<=":
+			break;
+			
+			case ">>=":
+			break;
+			
+			case "&=":
+			break;
+			
+			case "^=":
+			break;
+			
+			case "|=":
+			break;
+		}
+		
+		Expression assigment = visitAssign_expr_no_struct(ctx.assign_expr_no_struct());
+		
+		// Change return type
 		return null;
 	}
 
