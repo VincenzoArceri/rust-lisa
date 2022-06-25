@@ -3,16 +3,16 @@ fn main() {
         x = 1;
     } else if x != 1 {
         x = 2;
-    } else if x >= 10 {
+    } else if x >= 2 {
         x = 3;
-    } else if x <= 4 {
-        x = 5;
     } else if x > 3 {
         x = 4;
-    } else if x < 7 {
+    } else if x < 4 {
         x = 5;
-    } else {
+    } else if x <= 5 {
         x = 6;
+    } else {
+        x = 7;
     }
 }
 
