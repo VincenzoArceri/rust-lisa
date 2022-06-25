@@ -4,7 +4,9 @@ import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
 import it.unipr.cfg.expression.bitwise.RustOrBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustRightShiftExpression;
+import it.unipr.cfg.expression.bitwise.RustXorBitwiseExpression;
 import it.unipr.cfg.expression.comparison.RustAndExpression;
+import it.unipr.cfg.expression.comparison.RustCastExpression;
 import it.unipr.cfg.expression.comparison.RustDifferentExpression;
 import it.unipr.cfg.expression.comparison.RustEqualExpression;
 import it.unipr.cfg.expression.comparison.RustGreaterEqualExpression;
@@ -758,7 +760,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitTy_sum(Ty_sumContext ctx) {
+	public Expression visitTy_sum(Ty_sumContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -1364,51 +1366,112 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPre_expr_no_struct(Pre_expr_no_structContext ctx) {
+	public Expression visitPre_expr_no_struct(Pre_expr_no_structContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Object visitCast_expr_no_struct(Cast_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitCast_expr_no_struct(Cast_expr_no_structContext ctx) {
+		if (ctx.pre_expr_no_struct() != null)
+			return visitPre_expr_no_struct(ctx.pre_expr_no_struct());
+
+		Expression left = visitCast_expr_no_struct(ctx.cast_expr_no_struct());
+		Expression right = visitTy_sum(ctx.ty_sum());
+
+		return new RustCastExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitMul_expr_no_struct(Mul_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitMul_expr_no_struct(Mul_expr_no_structContext ctx) {
+		if (ctx.mul_expr_no_struct() == null)
+			return visitCast_expr_no_struct(ctx.cast_expr_no_struct());
+
+		if (ctx.getChild(1).getText().equals("*")) {
+			Expression left = visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+			Expression right = visitCast_expr_no_struct(ctx.cast_expr_no_struct());
+
+			return new RustMulExpression(currentCfg, locationOf(ctx), left, right);
+		} else if (ctx.getChild(1).getText().equals("/")) {
+			Expression left = visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+			Expression right = visitCast_expr_no_struct(ctx.cast_expr_no_struct());
+
+			return new RustDivExpression(currentCfg, locationOf(ctx), left, right);
+		} else {
+			Expression left = visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+			Expression right = visitCast_expr_no_struct(ctx.cast_expr_no_struct());
+
+			return new RustModExpression(currentCfg, locationOf(ctx), left, right);
+		}
 	}
 
 	@Override
-	public Object visitAdd_expr_no_struct(Add_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitAdd_expr_no_struct(Add_expr_no_structContext ctx) {
+		if (ctx.add_expr_no_struct() == null)
+			return visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+
+		if (ctx.getChild(1).getText().equals("+")) {
+			Expression left = visitAdd_expr_no_struct(ctx.add_expr_no_struct());
+			Expression right = visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+
+			return new RustAddExpression(currentCfg, locationOf(ctx), left, right);
+		} else {
+			Expression left = visitAdd_expr_no_struct(ctx.add_expr_no_struct());
+			Expression right = visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+
+			return new RustSubExpression(currentCfg, locationOf(ctx), left, right);
+		}
 	}
 
 	@Override
-	public Object visitShift_expr_no_struct(Shift_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitShift_expr_no_struct(Shift_expr_no_structContext ctx) {
+		if (ctx.shift_expr_no_struct() == null)
+			return visitAdd_expr_no_struct(ctx.add_expr_no_struct());
+
+		if (ctx.getChild(1).getText().equals("<")) {
+			Expression left = visitShift_expr_no_struct(ctx.shift_expr_no_struct());
+			Expression right = visitAdd_expr_no_struct(ctx.add_expr_no_struct());
+
+			return new RustLeftShiftExpression(currentCfg, locationOf(ctx), left, right);
+		} else {
+			Expression left = visitShift_expr_no_struct(ctx.shift_expr_no_struct());
+			Expression right = visitAdd_expr_no_struct(ctx.add_expr_no_struct());
+
+			return new RustRightShiftExpression(currentCfg, locationOf(ctx), left, right);
+		}
 	}
 
 	@Override
-	public Object visitBit_and_expr_no_struct(Bit_and_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitBit_and_expr_no_struct(Bit_and_expr_no_structContext ctx) {
+		if (ctx.bit_and_expr_no_struct() == null)
+			return visitShift_expr_no_struct(ctx.shift_expr_no_struct());
+
+		Expression left = visitBit_and_expr_no_struct(ctx.bit_and_expr_no_struct());
+		Expression right = visitShift_expr_no_struct(ctx.shift_expr_no_struct());
+
+		return new RustAndBitwiseExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitBit_xor_expr_no_struct(Bit_xor_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitBit_xor_expr_no_struct(Bit_xor_expr_no_structContext ctx) {
+		if (ctx.bit_xor_expr_no_struct() == null)
+			return visitBit_and_expr_no_struct(ctx.bit_and_expr_no_struct());
+
+		Expression left = visitBit_xor_expr_no_struct(ctx.bit_xor_expr_no_struct());
+		Expression right = visitBit_and_expr_no_struct(ctx.bit_and_expr_no_struct());
+
+		return new RustXorBitwiseExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
 	public Expression visitBit_or_expr_no_struct(Bit_or_expr_no_structContext ctx) {
-		RustBoolean fake = new RustBoolean(currentCfg, locationOf(ctx), true);
-		return fake;
+		if (ctx.bit_or_expr_no_struct() == null)
+			return visitBit_xor_expr_no_struct(ctx.bit_xor_expr_no_struct());
+
+		Expression left = visitBit_or_expr_no_struct(ctx.bit_or_expr_no_struct());
+		Expression right = visitBit_xor_expr_no_struct(ctx.bit_xor_expr_no_struct());
+
+		return new RustOrBitwiseExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override

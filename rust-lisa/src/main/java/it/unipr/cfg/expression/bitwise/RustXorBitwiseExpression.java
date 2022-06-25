@@ -20,7 +20,7 @@ import it.unive.lisa.type.Untyped;
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  */
-public class RustXOrBitwiseExpression extends BinaryExpression {
+public class RustXorBitwiseExpression extends BinaryExpression {
 
 	/**
 	 * Builds the xor bitwise expression.
@@ -30,7 +30,7 @@ public class RustXOrBitwiseExpression extends BinaryExpression {
 	 * @param left     the left-hand side of this expression
 	 * @param right    the right-hand side of this expression
 	 */
-	public RustXOrBitwiseExpression(CFG cfg, CodeLocation location,
+	public RustXorBitwiseExpression(CFG cfg, CodeLocation location,
 			Expression left, Expression right) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
