@@ -5,7 +5,6 @@ import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
 import it.unipr.cfg.expression.bitwise.RustOrBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustRightShiftExpression;
 import it.unipr.cfg.expression.comparison.RustAndExpression;
-import it.unipr.cfg.expression.comparison.RustComparisonExpression;
 import it.unipr.cfg.expression.comparison.RustDifferentExpression;
 import it.unipr.cfg.expression.comparison.RustEqualExpression;
 import it.unipr.cfg.expression.comparison.RustGreaterEqualExpression;
@@ -1292,12 +1291,28 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitCmp_expr(Cmp_exprContext ctx) {
-		if (ctx.bit_or_expr().size() == 1)
-			return visitBit_or_expr(ctx.bit_or_expr(0));
-
 		Expression left = visitBit_or_expr(ctx.bit_or_expr(0));
-		Expression right = visitBit_or_expr(ctx.bit_or_expr(1));
-		return new RustComparisonExpression(currentCfg, locationOf(ctx), left, right);
+
+		if (ctx.getChildCount() > 1) {
+			Expression right = visitBit_or_expr(ctx.bit_or_expr(1));
+
+			switch (ctx.getChild(1).getText()) {
+				case "==":
+					return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
+				case "!=":
+					return new RustDifferentExpression(currentCfg, locationOf(ctx), left, right);
+				case "<":
+					return new RustLessExpression(currentCfg, locationOf(ctx), left, right);
+				case "<=":
+					return new RustLessEqualExpression(currentCfg, locationOf(ctx), left, right);
+				case ">":
+					return new RustGreaterExpression(currentCfg, locationOf(ctx), left, right);
+				case ">=":
+					return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
+			}
+		}
+
+		return left;
 	}
 
 	@Override
@@ -1398,7 +1413,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public Expression visitCmp_expr_no_struct(Cmp_expr_no_structContext ctx) {
 		Expression left = visitBit_or_expr_no_struct(ctx.bit_or_expr_no_struct(0));
 
-		if (ctx.getChild(1).getText() != null) {
+		if (ctx.getChildCount() > 1) {
 			Expression right = visitBit_or_expr_no_struct(ctx.bit_or_expr_no_struct(1));
 
 			switch (ctx.getChild(1).getText()) {
