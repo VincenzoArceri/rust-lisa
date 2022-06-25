@@ -2,11 +2,11 @@ package it.unipr.frontend;
 
 import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
+import it.unipr.cfg.expression.bitwise.RustNotExpression;
 import it.unipr.cfg.expression.bitwise.RustOrBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustRightShiftExpression;
 import it.unipr.cfg.expression.bitwise.RustXorBitwiseExpression;
 import it.unipr.cfg.expression.comparison.RustAndExpression;
-import it.unipr.cfg.expression.comparison.RustCastExpression;
 import it.unipr.cfg.expression.comparison.RustDifferentExpression;
 import it.unipr.cfg.expression.comparison.RustEqualExpression;
 import it.unipr.cfg.expression.comparison.RustGreaterEqualExpression;
@@ -26,6 +26,10 @@ import it.unipr.cfg.expression.numeric.RustModExpression;
 import it.unipr.cfg.expression.numeric.RustMulExpression;
 import it.unipr.cfg.expression.numeric.RustPlusExpression;
 import it.unipr.cfg.expression.numeric.RustSubExpression;
+import it.unipr.cfg.type.RustBoxExpression;
+import it.unipr.cfg.type.RustCastExpression;
+import it.unipr.cfg.type.RustDerefExpression;
+import it.unipr.cfg.type.RustRefExpression;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
 import it.unive.lisa.program.CompilationUnit;
@@ -1080,8 +1084,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitExpr_attrs(Expr_attrsContext ctx) {
-		// TODO Auto-generated method stub
+	public Expression visitExpr_attrs(Expr_attrsContext ctx) {
+		for (AttrContext attr : ctx.attr()) {
+			// TODO figure out what to do here
+			// those "attr" does not seem to be terminal symbols.
+		}
 		return null;
 	}
 
@@ -1360,15 +1367,47 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPost_expr_no_struct(Post_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPost_expr_no_struct(Post_expr_no_structContext ctx) {
+		RustBoolean fake = new RustBoolean(currentCfg, locationOf(ctx), true);
+		return fake;
 	}
 
 	@Override
 	public Expression visitPre_expr_no_struct(Pre_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+		if (ctx.post_expr_no_struct() != null)
+			return visitPost_expr_no_struct(ctx.post_expr_no_struct());
+
+		Expression expr = visitPre_expr_no_struct(ctx.pre_expr_no_struct());
+
+		if (ctx.expr_attrs() != null) {
+			Expression left = visitExpr_attrs(ctx.expr_attrs());
+
+			// TODO figure out what to do here
+			return null;
+		}
+
+		// TODO figure out later what to do with mutability
+		boolean mutable = (ctx.getChild(1).getText().equals("mut") ? true : false);
+
+		switch(ctx.getChild(0).getText()) {
+			case "-":
+				return new RustMinusExpression(currentCfg, locationOf(ctx), expr);
+			case "!":
+				return new RustNotExpression(currentCfg, locationOf(ctx), expr);
+			case "&":
+				// TODO figure out later what to do with mutability
+				return new RustRefExpression(currentCfg, locationOf(ctx), expr);
+			case "&&":
+				boolean mutable1 = (ctx.getChild(1).getText().equals("mut") ? true : false);
+				// TODO figure out later what to do with mutability
+				// TODO should this be a double reference?
+				return new RustRefExpression(currentCfg, locationOf(ctx), expr);
+			case "*":
+				return new RustDerefExpression(currentCfg, locationOf(ctx), expr);
+			default:
+				// TODO figure out later what to do with boxes in this cases
+				return new RustBoxExpression(currentCfg, locationOf(ctx), expr);
+		}
 	}
 
 	@Override
@@ -1557,7 +1596,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitIdent(IdentContext ctx) {
-		// TODO: everything is mapped as a variable refeference, included auto,
+		// TODO: everything is mapped as a variable reference, included auto,
 		// default, union
 		return new VariableRef(currentCfg, locationOf(ctx), ctx.getText());
 	}

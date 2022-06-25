@@ -1,4 +1,4 @@
-package it.unipr.cfg.expression.numeric;
+package it.unipr.cfg.type;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -10,30 +10,33 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.datastructures.graph.GraphVisitor;
 
 /**
- * Rust unary minus expression (e.g., -x).
+ * Rust unary deref expression (e.g., *x).
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  */
-public class RustMinusExpression extends UnaryExpression {
+public class RustDerefExpression extends UnaryExpression {
 
 	/**
-	 * Builds the unary minus expression.
+	 * Builds the unary deref expression.
 	 * 
 	 * @param cfg      the {@link CFG} where this expression lies
 	 * @param location the location where this expression is defined
 	 * @param expr     the inner
 	 */
-	public RustMinusExpression(CFG cfg, CodeLocation location,
+	public RustDerefExpression(CFG cfg, CodeLocation location,
 			Expression expr) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, "-", Untyped.INSTANCE, expr);
+		super(cfg, location, "*", Untyped.INSTANCE, expr);
 	}
 
 	@Override
