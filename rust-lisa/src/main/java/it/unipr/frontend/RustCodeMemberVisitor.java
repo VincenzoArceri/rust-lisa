@@ -6,7 +6,12 @@ import it.unipr.cfg.expression.bitwise.RustOrBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustRightShiftExpression;
 import it.unipr.cfg.expression.comparison.RustAndExpression;
 import it.unipr.cfg.expression.comparison.RustComparisonExpression;
+import it.unipr.cfg.expression.comparison.RustDifferentExpression;
 import it.unipr.cfg.expression.comparison.RustEqualExpression;
+import it.unipr.cfg.expression.comparison.RustGreaterEqualExpression;
+import it.unipr.cfg.expression.comparison.RustGreaterExpression;
+import it.unipr.cfg.expression.comparison.RustLessEqualExpression;
+import it.unipr.cfg.expression.comparison.RustLessExpression;
 import it.unipr.cfg.expression.comparison.RustOrExpression;
 import it.unipr.cfg.expression.literal.RustBoolean;
 import it.unipr.cfg.expression.literal.RustChar;
@@ -1397,8 +1402,18 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			Expression right = visitBit_or_expr_no_struct(ctx.bit_or_expr_no_struct(1));
 
 			switch (ctx.getChild(1).getText()) {
-			case "==":
-				return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
+				case "==":
+					return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
+				case "!=":
+					return new RustDifferentExpression(currentCfg, locationOf(ctx), left, right);
+				case "<":
+					return new RustLessExpression(currentCfg, locationOf(ctx), left, right);
+				case "<=":
+					return new RustLessEqualExpression(currentCfg, locationOf(ctx), left, right);
+				case ">":
+					return new RustGreaterExpression(currentCfg, locationOf(ctx), left, right);
+				case ">=":
+					return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
 			}
 		}
 
