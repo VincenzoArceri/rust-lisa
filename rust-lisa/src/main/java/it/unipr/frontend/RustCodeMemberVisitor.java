@@ -1306,9 +1306,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				case "<=":
 					return new RustLessEqualExpression(currentCfg, locationOf(ctx), left, right);
 				case ">":
+					// Since the greater equal sign is split in the g4 grammar, a check is necessary
+					if (ctx.getChild(ctx.getChildCount() - 2).getText().equals("="))
+						return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
+
 					return new RustGreaterExpression(currentCfg, locationOf(ctx), left, right);
-				case ">=":
-					return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
 			}
 		}
 
@@ -1426,9 +1428,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				case "<=":
 					return new RustLessEqualExpression(currentCfg, locationOf(ctx), left, right);
 				case ">":
+					// Since the greater equal sign is split in the g4 grammar, a check is necessary
+					if (ctx.getChild(ctx.getChildCount() - 2).getText().equals("="))
+						return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
+
 					return new RustGreaterExpression(currentCfg, locationOf(ctx), left, right);
-				case ">=":
-					return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
 			}
 		}
 
