@@ -7,9 +7,15 @@ import org.junit.Test;
 public class RustCFGDeclarations extends RustLiSATestExecutor {
 
 	@Test
-	public void testSimpleIf() throws AnalysisSetupException {
+	public void testMutableDeclaration() throws AnalysisSetupException {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/mutable-variable-declaration", "mutable-variable-declaration.rs", conf);
+	}
+
+	@Test
+	public void testSimpleDeclaration() throws AnalysisSetupException {
+		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
+		perform("cfg/variable-declaration", "variable-declaration.rs", conf);
 	}
 
 }
