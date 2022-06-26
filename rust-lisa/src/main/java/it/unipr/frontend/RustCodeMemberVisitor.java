@@ -51,11 +51,8 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map.Entry;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -830,12 +827,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		// TODO figure out later what to do with mutability
 		boolean mutable = true;
-		
+
 		if (ctx.pat() != null) {
 			// TODO Ignoring the pat part for now
 			return visitPat(ctx.pat());
 		}
-			
+
 		Expression ident = visitIdent(ctx.ident());
 		return ident;
 	}
@@ -996,19 +993,20 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		for (AttrContext attr : ctx.attr()) {
 			break;
 		}
-				
+
 		if (ctx.pat() != null) {
 			Type type = (ctx.ty() == null ? Untyped.INSTANCE : visitTy(ctx.ty()));
 
 			// TODO do not take into account the attr part for now
 			if (ctx.expr() != null) {
-				// TODO this cast is safe until we model full statement as expression
+				// TODO this cast is safe until we model full statement as
+				// expression
 				Expression expr = (Expression) visitExpr(ctx.expr());
-				
+
 				Expression name = visitPat(ctx.pat());
 
 				VariableRef var = new VariableRef(currentCfg, locationOf(ctx), name.toString(), type);
-				
+
 				RustAssigmentExpression assigment = new RustAssigmentExpression(currentCfg, locationOf(ctx), var, expr);
 
 				currentCfg.addNode(assigment);
