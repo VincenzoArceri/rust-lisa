@@ -13,7 +13,8 @@ plugins {
    	id 'antlr'
    	id 'eclipse'   
    	id 'com.diffplug.spotless' version '5.15.0'
-    id 'checkstyle' 
+    id 'checkstyle'
+    id 'jacoco' // coverage reports 
 }
 
 repositories {
@@ -135,5 +136,17 @@ tasks.register('checkCodeStyle') {
     group = 'verification'
     description = 'Execute spotless and checkstyle to ensure code and javadoc formatting'
     dependsOn 'spotlessCheck', 'checkstyleMain', 'checkstyleTest'
+}
+
+jacocoTestReport {
+    dependsOn test 
+    
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                "it/unipr/rust/antlr/*"
+            ])
+        }))
+    }
 }
 
