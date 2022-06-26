@@ -21,7 +21,7 @@ import it.unive.lisa.type.Untyped;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustDifferentExpression extends BinaryExpression {
+public class RustNotEqualExpression extends BinaryExpression {
 
 	/**
 	 * Builds the different expression.
@@ -31,7 +31,7 @@ public class RustDifferentExpression extends BinaryExpression {
 	 * @param left     the left-hand side of this expression
 	 * @param right    the right-hand side of this expression
 	 */
-	public RustDifferentExpression(CFG cfg, CodeLocation location,
+	public RustNotEqualExpression(CFG cfg, CodeLocation location,
 			Expression left, Expression right) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types

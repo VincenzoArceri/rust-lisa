@@ -7,12 +7,12 @@ import it.unipr.cfg.expression.bitwise.RustOrBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustRightShiftExpression;
 import it.unipr.cfg.expression.bitwise.RustXorBitwiseExpression;
 import it.unipr.cfg.expression.comparison.RustAndExpression;
-import it.unipr.cfg.expression.comparison.RustDifferentExpression;
 import it.unipr.cfg.expression.comparison.RustEqualExpression;
 import it.unipr.cfg.expression.comparison.RustGreaterEqualExpression;
 import it.unipr.cfg.expression.comparison.RustGreaterExpression;
 import it.unipr.cfg.expression.comparison.RustLessEqualExpression;
 import it.unipr.cfg.expression.comparison.RustLessExpression;
+import it.unipr.cfg.expression.comparison.RustNotEqualExpression;
 import it.unipr.cfg.expression.comparison.RustOrExpression;
 import it.unipr.cfg.expression.literal.RustBoolean;
 import it.unipr.cfg.expression.literal.RustChar;
@@ -970,13 +970,14 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitStmt_tail(Stmt_tailContext ctx) {
-		if (ctx.expr() != null) {
+		if (ctx.getChild(0) instanceof ExprContext) {
 			Statement expr = visitExpr(ctx.expr());
 			currentCfg.addNode(expr);
 			return Pair.of(expr, expr);
 		}
 
 		// TODO: skipping the attr* part for now
+
 		return visitBlocky_expr(ctx.blocky_expr());
 	}
 
@@ -1349,7 +1350,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			case "==":
 				return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
 			case "!=":
-				return new RustDifferentExpression(currentCfg, locationOf(ctx), left, right);
+				return new RustNotEqualExpression(currentCfg, locationOf(ctx), left, right);
 			case "<":
 				return new RustLessExpression(currentCfg, locationOf(ctx), left, right);
 			case "<=":
@@ -1583,7 +1584,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			case "==":
 				return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
 			case "!=":
-				return new RustDifferentExpression(currentCfg, locationOf(ctx), left, right);
+				return new RustNotEqualExpression(currentCfg, locationOf(ctx), left, right);
 			case "<":
 				return new RustLessExpression(currentCfg, locationOf(ctx), left, right);
 			case "<=":
