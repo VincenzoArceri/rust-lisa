@@ -19,6 +19,7 @@ import it.unive.lisa.type.Untyped;
  * Rust type cast expression (e.g., x as Type).
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustCastExpression extends BinaryExpression {
 
