@@ -1092,7 +1092,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		for (AttrContext attr : ctx.attr()) {
 			Statement stmtAttr = visitAttr(attr);
 			currentCfg.addNode(stmtAttr);
-			
+
 			if (first == null) {
 				first = stmtAttr;
 				previous = stmtAttr;
@@ -1101,7 +1101,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				previous = stmtAttr;
 			}
 		}
-		
+
 		return Pair.of(first, previous);
 	}
 
@@ -1216,26 +1216,27 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Statement visitPost_expr_tail(Post_expr_tailContext ctx) {
 		switch (ctx.getChild(0).getText()) {
-			case "?":
-				// TODO should return the correct error handling operator on the correct type
-				return null;
-			case "[":
-				return visitExpr(ctx.expr());
-			case ".":
-				if (ctx.ident() == null) {
-					// TODO figure out what to return here
-					return null;
-				}
-				return visitExpr(ctx.expr());
-			case "(":
-				if (ctx.expr_list() != null) {
-					return visitExpr_list(ctx.expr_list());
-				}
-
+		case "?":
+			// TODO should return the correct error handling operator on the
+			// correct type
+			return null;
+		case "[":
+			return visitExpr(ctx.expr());
+		case ".":
+			if (ctx.ident() == null) {
 				// TODO figure out what to return here
-				NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
-				currentCfg.addNode(noOp);
-				return noOp;
+				return null;
+			}
+			return visitExpr(ctx.expr());
+		case "(":
+			if (ctx.expr_list() != null) {
+				return visitExpr_list(ctx.expr_list());
+			}
+
+			// TODO figure out what to return here
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+			currentCfg.addNode(noOp);
+			return noOp;
 		}
 		// Unreachable
 		return null;
@@ -1345,20 +1346,21 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			Expression right = visitBit_or_expr(ctx.bit_or_expr(1));
 
 			switch (ctx.getChild(1).getText()) {
-				case "==":
-					return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
-				case "!=":
-					return new RustDifferentExpression(currentCfg, locationOf(ctx), left, right);
-				case "<":
-					return new RustLessExpression(currentCfg, locationOf(ctx), left, right);
-				case "<=":
-					return new RustLessEqualExpression(currentCfg, locationOf(ctx), left, right);
-				case ">":
-					// Since the greater equal sign is split in the g4 grammar, a check is necessary
-					if (ctx.getChild(ctx.getChildCount() - 2).getText().equals("="))
-						return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case "==":
+				return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case "!=":
+				return new RustDifferentExpression(currentCfg, locationOf(ctx), left, right);
+			case "<":
+				return new RustLessExpression(currentCfg, locationOf(ctx), left, right);
+			case "<=":
+				return new RustLessEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case ">":
+				// Since the greater equal sign is split in the g4 grammar, a
+				// check is necessary
+				if (ctx.getChild(ctx.getChildCount() - 2).getText().equals("="))
+					return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
 
-					return new RustGreaterExpression(currentCfg, locationOf(ctx), left, right);
+				return new RustGreaterExpression(currentCfg, locationOf(ctx), left, right);
 			}
 		}
 
@@ -1411,7 +1413,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
 		}
 
-		// TODO it is necessary to think about what this function returns in the future
+		// TODO it is necessary to think about what this function returns in the
+		// future
 //		Pair<Statement, Statement> left = visitPost_expr_no_struct(ctx.post_expr_no_struct());
 //		Statement right = visitPost_expr_tail(ctx.post_expr_tail());
 //		
@@ -1420,7 +1423,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 //		currentCfg.addEdge(new SequentialEdge(left.getRight(), right));
 //
 //		return Pair.of(left.getLeft(), right);
-		
+
 		return null;
 	}
 
@@ -1432,7 +1435,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Expression expr = visitPre_expr_no_struct(ctx.pre_expr_no_struct());
 
 		if (ctx.expr_attrs() != null) {
-			// TODO it is necessary to think about what this function returns in the future
+			// TODO it is necessary to think about what this function returns in
+			// the future
 //			Pair<Statement, Statement> left = visitExpr_attrs(ctx.expr_attrs());
 //			currentCfg.addEdge(new SequentialEdge(left.getRight(), expr.getLeft()));
 //			
@@ -1442,26 +1446,26 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		// TODO figure out later what to do with mutability
 		boolean mutable = (ctx.getChild(1).getText().equals("mut") ? true : false);
-		
-		switch(ctx.getChild(0).getText()) {
-			case "-":
-				return new RustMinusExpression(currentCfg, locationOf(ctx), expr);
-			case "!":
-				return new RustNotExpression(currentCfg, locationOf(ctx), expr);
-			case "&":
-				// TODO figure out later what to do with mutability
-				return new RustRefExpression(currentCfg, locationOf(ctx), expr);
-			case "&&":
-				// TODO figure out later what to do with mutability
-				return new RustDoubleRefExpression(currentCfg, locationOf(ctx), expr);
-			case "*":
-				return new RustDerefExpression(currentCfg, locationOf(ctx), expr);
-			case "box":
-				// TODO figure out later what to do with boxes in this cases
-				return new RustBoxExpression(currentCfg, locationOf(ctx), expr);
-			default:
-				// Preceding cases are exhaustive
-				return null;
+
+		switch (ctx.getChild(0).getText()) {
+		case "-":
+			return new RustMinusExpression(currentCfg, locationOf(ctx), expr);
+		case "!":
+			return new RustNotExpression(currentCfg, locationOf(ctx), expr);
+		case "&":
+			// TODO figure out later what to do with mutability
+			return new RustRefExpression(currentCfg, locationOf(ctx), expr);
+		case "&&":
+			// TODO figure out later what to do with mutability
+			return new RustDoubleRefExpression(currentCfg, locationOf(ctx), expr);
+		case "*":
+			return new RustDerefExpression(currentCfg, locationOf(ctx), expr);
+		case "box":
+			// TODO figure out later what to do with boxes in this cases
+			return new RustBoxExpression(currentCfg, locationOf(ctx), expr);
+		default:
+			// Preceding cases are exhaustive
+			return null;
 		}
 	}
 
@@ -1576,20 +1580,21 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			Expression right = visitBit_or_expr_no_struct(ctx.bit_or_expr_no_struct(1));
 
 			switch (ctx.getChild(1).getText()) {
-				case "==":
-					return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
-				case "!=":
-					return new RustDifferentExpression(currentCfg, locationOf(ctx), left, right);
-				case "<":
-					return new RustLessExpression(currentCfg, locationOf(ctx), left, right);
-				case "<=":
-					return new RustLessEqualExpression(currentCfg, locationOf(ctx), left, right);
-				case ">":
-					// Since the greater equal sign is split in the g4 grammar, a check is necessary
-					if (ctx.getChild(ctx.getChildCount() - 2).getText().equals("="))
-						return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case "==":
+				return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case "!=":
+				return new RustDifferentExpression(currentCfg, locationOf(ctx), left, right);
+			case "<":
+				return new RustLessExpression(currentCfg, locationOf(ctx), left, right);
+			case "<=":
+				return new RustLessEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case ">":
+				// Since the greater equal sign is split in the g4 grammar, a
+				// check is necessary
+				if (ctx.getChild(ctx.getChildCount() - 2).getText().equals("="))
+					return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
 
-					return new RustGreaterExpression(currentCfg, locationOf(ctx), left, right);
+				return new RustGreaterExpression(currentCfg, locationOf(ctx), left, right);
 			}
 		}
 

@@ -35,7 +35,7 @@ public class RustCFGIf extends RustLiSATestExecutor {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/multiple-if", "multiple-if.rs", conf);
 	}
-	
+
 	@Test
 	public void testMoreThanOneIf() throws AnalysisSetupException {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
