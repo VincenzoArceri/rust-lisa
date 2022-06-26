@@ -24,7 +24,6 @@ import it.unipr.cfg.expression.numeric.RustDivExpression;
 import it.unipr.cfg.expression.numeric.RustMinusExpression;
 import it.unipr.cfg.expression.numeric.RustModExpression;
 import it.unipr.cfg.expression.numeric.RustMulExpression;
-import it.unipr.cfg.expression.numeric.RustPlusExpression;
 import it.unipr.cfg.expression.numeric.RustSubExpression;
 import it.unipr.cfg.type.RustAssigmentExpression;
 import it.unipr.cfg.type.RustBoxExpression;
@@ -1358,17 +1357,26 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitPre_expr(Pre_exprContext ctx) {
-		// TODO: skipping every production but unary + and -
+		// TODO Skipping every production: "in" etc. and expr_attrs pre_expr
 		if (ctx.post_expr() != null)
 			return visitPost_expr(ctx.post_expr());
 
-		String symbol = ctx.children.get(0).getText();
-		if (symbol.equals("+"))
-			return new RustPlusExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
-		else if (symbol.equals("-"))
+		switch (ctx.children.get(0).getText()) {
+		case "-":
 			return new RustMinusExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
-		else
+		case "!":
+			return new RustNotExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		case "&":
+			return new RustRefExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		case "&&":
+			return new RustDoubleRefExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		case "*":
+			return new RustDerefExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		case "box":
+			return new RustBoxExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		default:
 			return null;
+		}
 	}
 
 	@Override
