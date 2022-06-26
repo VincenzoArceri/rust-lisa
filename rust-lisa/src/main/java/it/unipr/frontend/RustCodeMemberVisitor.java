@@ -29,6 +29,7 @@ import it.unipr.cfg.expression.numeric.RustSubExpression;
 import it.unipr.cfg.type.RustBoxExpression;
 import it.unipr.cfg.type.RustCastExpression;
 import it.unipr.cfg.type.RustDerefExpression;
+import it.unipr.cfg.type.RustDoubleRefExpression;
 import it.unipr.cfg.type.RustRefExpression;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
@@ -552,7 +553,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitAttr(AttrContext ctx) {
+	public Statement visitAttr(AttrContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -894,7 +895,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitExpr_list(Expr_listContext ctx) {
+	public Statement visitExpr_list(Expr_listContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -1084,12 +1085,24 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitExpr_attrs(Expr_attrsContext ctx) {
+	public Pair<Statement, Statement> visitExpr_attrs(Expr_attrsContext ctx) {
+		Statement first = null;
+		Statement previous = null;
+
 		for (AttrContext attr : ctx.attr()) {
-			// TODO figure out what to do here
-			// those "attr" does not seem to be terminal symbols.
+			Statement stmtAttr = visitAttr(attr);
+			currentCfg.addNode(stmtAttr);
+			
+			if (first == null) {
+				first = stmtAttr;
+				previous = stmtAttr;
+			} else {
+				currentCfg.addEdge(new SequentialEdge(previous, stmtAttr));
+				previous = stmtAttr;
+			}
 		}
-		return null;
+		
+		return Pair.of(first, previous);
 	}
 
 	@Override
@@ -1109,6 +1122,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		// TODO: skipping every production but lit and path
 		if (ctx.lit() != null)
 			return visitLit(ctx.lit());
+		// TODO watch out for expression and statements
+//		else if (ctx.blocky_expr() != null) {
+//			return visitBlocky_expr(ctx.blocky_expr());
+//		}
 		else
 			// TODO: skipping macro_tail
 			return visitPath(ctx.path());
@@ -1197,8 +1214,30 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPost_expr_tail(Post_expr_tailContext ctx) {
-		// TODO Auto-generated method stub
+	public Statement visitPost_expr_tail(Post_expr_tailContext ctx) {
+		switch (ctx.getChild(0).getText()) {
+			case "?":
+				// TODO should return the correct error handling operator on the correct type
+				return null;
+			case "[":
+				return visitExpr(ctx.expr());
+			case ".":
+				if (ctx.ident() == null) {
+					// TODO figure out what to return here
+					return null;
+				}
+				return visitExpr(ctx.expr());
+			case "(":
+				if (ctx.expr_list() != null) {
+					return visitExpr_list(ctx.expr_list());
+				}
+
+				// TODO figure out what to return here
+				NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+				currentCfg.addNode(noOp);
+				return noOp;
+		}
+		// Unreachable
 		return null;
 	}
 
@@ -1368,8 +1407,21 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitPost_expr_no_struct(Post_expr_no_structContext ctx) {
-		RustBoolean fake = new RustBoolean(currentCfg, locationOf(ctx), true);
-		return fake;
+		if (ctx.prim_expr_no_struct() != null) {
+			return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
+		}
+
+		// TODO it is necessary to think about what this function returns in the future
+//		Pair<Statement, Statement> left = visitPost_expr_no_struct(ctx.post_expr_no_struct());
+//		Statement right = visitPost_expr_tail(ctx.post_expr_tail());
+//		
+//		currentCfg.addNode(right);
+//		
+//		currentCfg.addEdge(new SequentialEdge(left.getRight(), right));
+//
+//		return Pair.of(left.getLeft(), right);
+		
+		return null;
 	}
 
 	@Override
@@ -1380,15 +1432,17 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Expression expr = visitPre_expr_no_struct(ctx.pre_expr_no_struct());
 
 		if (ctx.expr_attrs() != null) {
-			Expression left = visitExpr_attrs(ctx.expr_attrs());
-
-			// TODO figure out what to do here
+			// TODO it is necessary to think about what this function returns in the future
+//			Pair<Statement, Statement> left = visitExpr_attrs(ctx.expr_attrs());
+//			currentCfg.addEdge(new SequentialEdge(left.getRight(), expr.getLeft()));
+//			
+//			return Pair.of(left.getRight(), expr.getLeft());
 			return null;
 		}
 
 		// TODO figure out later what to do with mutability
 		boolean mutable = (ctx.getChild(1).getText().equals("mut") ? true : false);
-
+		
 		switch(ctx.getChild(0).getText()) {
 			case "-":
 				return new RustMinusExpression(currentCfg, locationOf(ctx), expr);
@@ -1398,15 +1452,16 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				// TODO figure out later what to do with mutability
 				return new RustRefExpression(currentCfg, locationOf(ctx), expr);
 			case "&&":
-				boolean mutable1 = (ctx.getChild(1).getText().equals("mut") ? true : false);
 				// TODO figure out later what to do with mutability
-				// TODO should this be a double reference?
-				return new RustRefExpression(currentCfg, locationOf(ctx), expr);
+				return new RustDoubleRefExpression(currentCfg, locationOf(ctx), expr);
 			case "*":
 				return new RustDerefExpression(currentCfg, locationOf(ctx), expr);
-			default:
+			case "box":
 				// TODO figure out later what to do with boxes in this cases
 				return new RustBoxExpression(currentCfg, locationOf(ctx), expr);
+			default:
+				// Preceding cases are exhaustive
+				return null;
 		}
 	}
 
