@@ -1,4 +1,4 @@
-package it.unipr.cfg.type;
+package it.unipr.cfg.statement;
 
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -12,7 +12,7 @@ import it.unive.lisa.type.Untyped;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustAssigmentExpression extends Assignment {
+public class RustAssignment extends Assignment {
 
 	/**
 	 * Builds the and expression.
@@ -22,7 +22,7 @@ public class RustAssigmentExpression extends Assignment {
 	 * @param left     the left-hand side of this expression
 	 * @param right    the right-hand side of this expression
 	 */
-	public RustAssigmentExpression(CFG cfg, CodeLocation location,
+	public RustAssignment(CFG cfg, CodeLocation location,
 			Expression left, Expression right) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
