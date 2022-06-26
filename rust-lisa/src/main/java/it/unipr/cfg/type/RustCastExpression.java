@@ -34,7 +34,7 @@ public class RustCastExpression extends BinaryExpression {
 			Expression left, Expression right) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, " as ", Untyped.INSTANCE, left, right);
+		super(cfg, location, "as", Untyped.INSTANCE, left, right);
 	}
 
 	@Override

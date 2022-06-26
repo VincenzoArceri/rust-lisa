@@ -765,8 +765,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitTy_sum(Ty_sumContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+		RustBoolean fake = new RustBoolean(currentCfg, locationOf(ctx), true);
+		return fake;
 	}
 
 	@Override
