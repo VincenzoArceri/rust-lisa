@@ -18,4 +18,10 @@ public class RustCFGDeclarations extends RustLiSATestExecutor {
 		perform("cfg/variable-declaration", "variable-declaration.rs", conf);
 	}
 
+	@Test
+	public void testSimpleOperationDeclaration() throws AnalysisSetupException {
+		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
+		perform("cfg/simple-operation-variable-declaration", "simple-operation-variable-declaration.rs", conf);
+	}
+
 }
