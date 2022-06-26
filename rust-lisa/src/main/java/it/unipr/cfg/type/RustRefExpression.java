@@ -1,4 +1,4 @@
-package it.unipr.cfg.expression.numeric;
+package it.unipr.cfg.type;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -16,24 +16,25 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Untyped;
 
 /**
- * Rust unary minus expression (e.g., -x).
+ * Rust unary ref expression (e.g., &x).
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustMinusExpression extends UnaryExpression {
+public class RustRefExpression extends UnaryExpression {
 
 	/**
-	 * Builds the unary minus expression.
+	 * Builds the unary ref expression.
 	 * 
 	 * @param cfg      the {@link CFG} where this expression lies
 	 * @param location the location where this expression is defined
 	 * @param expr     the inner
 	 */
-	public RustMinusExpression(CFG cfg, CodeLocation location,
+	public RustRefExpression(CFG cfg, CodeLocation location,
 			Expression expr) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, "-", Untyped.INSTANCE, expr);
+		super(cfg, location, "&", Untyped.INSTANCE, expr);
 	}
 
 	@Override

@@ -1,6 +1,5 @@
-package it.unipr.cfg.expression;
+package it.unipr.cfg.expression.comparison;
 
-import it.unipr.cfg.type.RustBooleanType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -14,27 +13,29 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.type.Untyped;
 
 /**
- * Rust or expression (e.g., x || y).
- * 
+ * Rust less-equal expression (e.g., x <= y).
+ *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustOrExpression extends BinaryExpression {
+public class RustLessEqualExpression extends BinaryExpression {
 
 	/**
-	 * Builds the or expression.
-	 * 
+	 * Builds the less-equal expression.
+	 *
 	 * @param cfg      the {@link CFG} where this expression lies
 	 * @param location the location where this expression is defined
 	 * @param left     the left-hand side of this expression
 	 * @param right    the right-hand side of this expression
 	 */
-	public RustOrExpression(CFG cfg, CodeLocation location,
+	public RustLessEqualExpression(CFG cfg, CodeLocation location,
 			Expression left, Expression right) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, "||", RustBooleanType.INSTANCE, left, right);
+		super(cfg, location, "<=", Untyped.INSTANCE, left, right);
 	}
 
 	@Override

@@ -1,11 +1,19 @@
 package it.unipr.frontend;
 
-import it.unipr.cfg.expression.RustOrExpression;
 import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
+import it.unipr.cfg.expression.bitwise.RustNotExpression;
 import it.unipr.cfg.expression.bitwise.RustOrBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustRightShiftExpression;
-import it.unipr.cfg.expression.comparison.RustComparisonExpression;
+import it.unipr.cfg.expression.bitwise.RustXorBitwiseExpression;
+import it.unipr.cfg.expression.comparison.RustAndExpression;
+import it.unipr.cfg.expression.comparison.RustEqualExpression;
+import it.unipr.cfg.expression.comparison.RustGreaterEqualExpression;
+import it.unipr.cfg.expression.comparison.RustGreaterExpression;
+import it.unipr.cfg.expression.comparison.RustLessEqualExpression;
+import it.unipr.cfg.expression.comparison.RustLessExpression;
+import it.unipr.cfg.expression.comparison.RustNotEqualExpression;
+import it.unipr.cfg.expression.comparison.RustOrExpression;
 import it.unipr.cfg.expression.literal.RustBoolean;
 import it.unipr.cfg.expression.literal.RustChar;
 import it.unipr.cfg.expression.literal.RustFloat;
@@ -18,6 +26,11 @@ import it.unipr.cfg.expression.numeric.RustModExpression;
 import it.unipr.cfg.expression.numeric.RustMulExpression;
 import it.unipr.cfg.expression.numeric.RustPlusExpression;
 import it.unipr.cfg.expression.numeric.RustSubExpression;
+import it.unipr.cfg.type.RustBoxExpression;
+import it.unipr.cfg.type.RustCastExpression;
+import it.unipr.cfg.type.RustDerefExpression;
+import it.unipr.cfg.type.RustDoubleRefExpression;
+import it.unipr.cfg.type.RustRefExpression;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
 import it.unive.lisa.program.CompilationUnit;
@@ -35,7 +48,6 @@ import it.unive.lisa.program.cfg.statement.NoOp;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
-import it.unive.lisa.program.cfg.statement.literal.TrueLiteral;
 import it.unive.lisa.type.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -541,7 +553,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitAttr(AttrContext ctx) {
+	public Statement visitAttr(AttrContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -753,9 +765,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitTy_sum(Ty_sumContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitTy_sum(Ty_sumContext ctx) {
+		RustBoolean fake = new RustBoolean(currentCfg, locationOf(ctx), true);
+		return fake;
 	}
 
 	@Override
@@ -878,13 +890,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitExpr_no_struct(Expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitExpr_no_struct(Expr_no_structContext ctx) {
+		return visitAssign_expr_no_struct(ctx.assign_expr_no_struct());
 	}
 
 	@Override
-	public Object visitExpr_list(Expr_listContext ctx) {
+	public Statement visitExpr_list(Expr_listContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -959,13 +970,14 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitStmt_tail(Stmt_tailContext ctx) {
-		if (ctx.expr() != null) {
+		if (ctx.getChild(0) instanceof ExprContext) {
 			Statement expr = visitExpr(ctx.expr());
 			currentCfg.addNode(expr);
 			return Pair.of(expr, expr);
 		}
 
 		// TODO: skipping the attr* part for now
+
 		return visitBlocky_expr(ctx.blocky_expr());
 	}
 
@@ -989,6 +1001,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				BlockContext thenBlock = ctx.block(i);
 
 				Expression guard = visitCond_or_pat(copc);
+				currentCfg.addNode(guard);
 
 				Pair<Statement, Statement> trueBlock = visitBlock(thenBlock);
 
@@ -1032,11 +1045,14 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitCond_or_pat(Cond_or_patContext ctx) {
-		// TODO return fake literal
-		TrueLiteral fake = new TrueLiteral(currentCfg, locationOf(ctx));
-		currentCfg.addNode(fake);
+		if (ctx.getChild(0).getText().equals("let")) {
+			// TODO ignoring this if branch for now
+			Object o = visitPat(ctx.pat());
+			Statement pair = visitExpr(ctx.expr());
+			return null;
+		}
 
-		return fake;
+		return visitExpr_no_struct(ctx.expr_no_struct());
 	}
 
 	@Override
@@ -1070,9 +1086,24 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitExpr_attrs(Expr_attrsContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Pair<Statement, Statement> visitExpr_attrs(Expr_attrsContext ctx) {
+		Statement first = null;
+		Statement previous = null;
+
+		for (AttrContext attr : ctx.attr()) {
+			Statement stmtAttr = visitAttr(attr);
+			currentCfg.addNode(stmtAttr);
+
+			if (first == null) {
+				first = stmtAttr;
+				previous = stmtAttr;
+			} else {
+				currentCfg.addEdge(new SequentialEdge(previous, stmtAttr));
+				previous = stmtAttr;
+			}
+		}
+
+		return Pair.of(first, previous);
 	}
 
 	@Override
@@ -1092,6 +1123,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		// TODO: skipping every production but lit and path
 		if (ctx.lit() != null)
 			return visitLit(ctx.lit());
+		// TODO watch out for expression and statements
+//		else if (ctx.blocky_expr() != null) {
+//			return visitBlocky_expr(ctx.blocky_expr());
+//		}
 		else
 			// TODO: skipping macro_tail
 			return visitPath(ctx.path());
@@ -1180,8 +1215,31 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPost_expr_tail(Post_expr_tailContext ctx) {
-		// TODO Auto-generated method stub
+	public Statement visitPost_expr_tail(Post_expr_tailContext ctx) {
+		switch (ctx.getChild(0).getText()) {
+		case "?":
+			// TODO should return the correct error handling operator on the
+			// correct type
+			return null;
+		case "[":
+			return visitExpr(ctx.expr());
+		case ".":
+			if (ctx.ident() == null) {
+				// TODO figure out what to return here
+				return null;
+			}
+			return visitExpr(ctx.expr());
+		case "(":
+			if (ctx.expr_list() != null) {
+				return visitExpr_list(ctx.expr_list());
+			}
+
+			// TODO figure out what to return here
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+			currentCfg.addNode(noOp);
+			return noOp;
+		}
+		// Unreachable
 		return null;
 	}
 
@@ -1283,12 +1341,31 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitCmp_expr(Cmp_exprContext ctx) {
-		if (ctx.bit_or_expr().size() == 1)
-			return visitBit_or_expr(ctx.bit_or_expr(0));
-
 		Expression left = visitBit_or_expr(ctx.bit_or_expr(0));
-		Expression right = visitBit_or_expr(ctx.bit_or_expr(1));
-		return new RustComparisonExpression(currentCfg, locationOf(ctx), left, right);
+
+		if (ctx.getChildCount() > 1) {
+			Expression right = visitBit_or_expr(ctx.bit_or_expr(1));
+
+			switch (ctx.getChild(1).getText()) {
+			case "==":
+				return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case "!=":
+				return new RustNotEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case "<":
+				return new RustLessExpression(currentCfg, locationOf(ctx), left, right);
+			case "<=":
+				return new RustLessEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case ">":
+				// Since the greater equal sign is split in the g4 grammar, a
+				// check is necessary
+				if (ctx.getChild(ctx.getChildCount() - 2).getText().equals("="))
+					return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
+
+				return new RustGreaterExpression(currentCfg, locationOf(ctx), left, right);
+			}
+		}
+
+		return left;
 	}
 
 	@Override
@@ -1332,92 +1409,255 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPost_expr_no_struct(Post_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
+	public Expression visitPost_expr_no_struct(Post_expr_no_structContext ctx) {
+		if (ctx.prim_expr_no_struct() != null) {
+			return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
+		}
+
+		// TODO it is necessary to think about what this function returns in the
+		// future
+//		Pair<Statement, Statement> left = visitPost_expr_no_struct(ctx.post_expr_no_struct());
+//		Statement right = visitPost_expr_tail(ctx.post_expr_tail());
+//		
+//		currentCfg.addNode(right);
+//		
+//		currentCfg.addEdge(new SequentialEdge(left.getRight(), right));
+//
+//		return Pair.of(left.getLeft(), right);
+
 		return null;
 	}
 
 	@Override
-	public Object visitPre_expr_no_struct(Pre_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPre_expr_no_struct(Pre_expr_no_structContext ctx) {
+		if (ctx.post_expr_no_struct() != null)
+			return visitPost_expr_no_struct(ctx.post_expr_no_struct());
+
+		Expression expr = visitPre_expr_no_struct(ctx.pre_expr_no_struct());
+
+		if (ctx.expr_attrs() != null) {
+			// TODO it is necessary to think about what this function returns in
+			// the future
+//			Pair<Statement, Statement> left = visitExpr_attrs(ctx.expr_attrs());
+//			currentCfg.addEdge(new SequentialEdge(left.getRight(), expr.getLeft()));
+//			
+//			return Pair.of(left.getRight(), expr.getLeft());
+			return null;
+		}
+
+		// TODO figure out later what to do with mutability
+		boolean mutable = (ctx.getChild(1).getText().equals("mut") ? true : false);
+
+		switch (ctx.getChild(0).getText()) {
+		case "-":
+			return new RustMinusExpression(currentCfg, locationOf(ctx), expr);
+		case "!":
+			return new RustNotExpression(currentCfg, locationOf(ctx), expr);
+		case "&":
+			// TODO figure out later what to do with mutability
+			return new RustRefExpression(currentCfg, locationOf(ctx), expr);
+		case "&&":
+			// TODO figure out later what to do with mutability
+			return new RustDoubleRefExpression(currentCfg, locationOf(ctx), expr);
+		case "*":
+			return new RustDerefExpression(currentCfg, locationOf(ctx), expr);
+		case "box":
+			// TODO figure out later what to do with boxes in this cases
+			return new RustBoxExpression(currentCfg, locationOf(ctx), expr);
+		default:
+			// Preceding cases are exhaustive
+			return null;
+		}
 	}
 
 	@Override
-	public Object visitCast_expr_no_struct(Cast_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitCast_expr_no_struct(Cast_expr_no_structContext ctx) {
+		if (ctx.pre_expr_no_struct() != null)
+			return visitPre_expr_no_struct(ctx.pre_expr_no_struct());
+
+		Expression left = visitCast_expr_no_struct(ctx.cast_expr_no_struct());
+		Expression right = visitTy_sum(ctx.ty_sum());
+
+		return new RustCastExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitMul_expr_no_struct(Mul_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitMul_expr_no_struct(Mul_expr_no_structContext ctx) {
+		if (ctx.mul_expr_no_struct() == null)
+			return visitCast_expr_no_struct(ctx.cast_expr_no_struct());
+
+		if (ctx.getChild(1).getText().equals("*")) {
+			Expression left = visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+			Expression right = visitCast_expr_no_struct(ctx.cast_expr_no_struct());
+
+			return new RustMulExpression(currentCfg, locationOf(ctx), left, right);
+		} else if (ctx.getChild(1).getText().equals("/")) {
+			Expression left = visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+			Expression right = visitCast_expr_no_struct(ctx.cast_expr_no_struct());
+
+			return new RustDivExpression(currentCfg, locationOf(ctx), left, right);
+		} else {
+			Expression left = visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+			Expression right = visitCast_expr_no_struct(ctx.cast_expr_no_struct());
+
+			return new RustModExpression(currentCfg, locationOf(ctx), left, right);
+		}
 	}
 
 	@Override
-	public Object visitAdd_expr_no_struct(Add_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitAdd_expr_no_struct(Add_expr_no_structContext ctx) {
+		if (ctx.add_expr_no_struct() == null)
+			return visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+
+		if (ctx.getChild(1).getText().equals("+")) {
+			Expression left = visitAdd_expr_no_struct(ctx.add_expr_no_struct());
+			Expression right = visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+
+			return new RustAddExpression(currentCfg, locationOf(ctx), left, right);
+		} else {
+			Expression left = visitAdd_expr_no_struct(ctx.add_expr_no_struct());
+			Expression right = visitMul_expr_no_struct(ctx.mul_expr_no_struct());
+
+			return new RustSubExpression(currentCfg, locationOf(ctx), left, right);
+		}
 	}
 
 	@Override
-	public Object visitShift_expr_no_struct(Shift_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitShift_expr_no_struct(Shift_expr_no_structContext ctx) {
+		if (ctx.shift_expr_no_struct() == null)
+			return visitAdd_expr_no_struct(ctx.add_expr_no_struct());
+
+		if (ctx.getChild(1).getText().equals("<")) {
+			Expression left = visitShift_expr_no_struct(ctx.shift_expr_no_struct());
+			Expression right = visitAdd_expr_no_struct(ctx.add_expr_no_struct());
+
+			return new RustLeftShiftExpression(currentCfg, locationOf(ctx), left, right);
+		} else {
+			Expression left = visitShift_expr_no_struct(ctx.shift_expr_no_struct());
+			Expression right = visitAdd_expr_no_struct(ctx.add_expr_no_struct());
+
+			return new RustRightShiftExpression(currentCfg, locationOf(ctx), left, right);
+		}
 	}
 
 	@Override
-	public Object visitBit_and_expr_no_struct(Bit_and_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitBit_and_expr_no_struct(Bit_and_expr_no_structContext ctx) {
+		if (ctx.bit_and_expr_no_struct() == null)
+			return visitShift_expr_no_struct(ctx.shift_expr_no_struct());
+
+		Expression left = visitBit_and_expr_no_struct(ctx.bit_and_expr_no_struct());
+		Expression right = visitShift_expr_no_struct(ctx.shift_expr_no_struct());
+
+		return new RustAndBitwiseExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitBit_xor_expr_no_struct(Bit_xor_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitBit_xor_expr_no_struct(Bit_xor_expr_no_structContext ctx) {
+		if (ctx.bit_xor_expr_no_struct() == null)
+			return visitBit_and_expr_no_struct(ctx.bit_and_expr_no_struct());
+
+		Expression left = visitBit_xor_expr_no_struct(ctx.bit_xor_expr_no_struct());
+		Expression right = visitBit_and_expr_no_struct(ctx.bit_and_expr_no_struct());
+
+		return new RustXorBitwiseExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitBit_or_expr_no_struct(Bit_or_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitBit_or_expr_no_struct(Bit_or_expr_no_structContext ctx) {
+		if (ctx.bit_or_expr_no_struct() == null)
+			return visitBit_xor_expr_no_struct(ctx.bit_xor_expr_no_struct());
+
+		Expression left = visitBit_or_expr_no_struct(ctx.bit_or_expr_no_struct());
+		Expression right = visitBit_xor_expr_no_struct(ctx.bit_xor_expr_no_struct());
+
+		return new RustOrBitwiseExpression(currentCfg, locationOf(ctx), left, right);
 	}
 
 	@Override
-	public Object visitCmp_expr_no_struct(Cmp_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitCmp_expr_no_struct(Cmp_expr_no_structContext ctx) {
+		Expression left = visitBit_or_expr_no_struct(ctx.bit_or_expr_no_struct(0));
+
+		if (ctx.getChildCount() > 1) {
+			Expression right = visitBit_or_expr_no_struct(ctx.bit_or_expr_no_struct(1));
+
+			switch (ctx.getChild(1).getText()) {
+			case "==":
+				return new RustEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case "!=":
+				return new RustNotEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case "<":
+				return new RustLessExpression(currentCfg, locationOf(ctx), left, right);
+			case "<=":
+				return new RustLessEqualExpression(currentCfg, locationOf(ctx), left, right);
+			case ">":
+				// Since the greater equal sign is split in the g4 grammar, a
+				// check is necessary
+				if (ctx.getChild(ctx.getChildCount() - 2).getText().equals("="))
+					return new RustGreaterEqualExpression(currentCfg, locationOf(ctx), left, right);
+
+				return new RustGreaterExpression(currentCfg, locationOf(ctx), left, right);
+			}
+		}
+
+		return left;
 	}
 
 	@Override
-	public Object visitAnd_expr_no_struct(And_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitAnd_expr_no_struct(And_expr_no_structContext ctx) {
+		if (ctx.and_expr_no_struct() != null) {
+			Expression and = visitAnd_expr_no_struct(ctx.and_expr_no_struct());
+			Expression cmp = visitCmp_expr_no_struct(ctx.cmp_expr_no_struct());
+
+			return new RustAndExpression(currentCfg, locationOf(ctx), and, cmp);
+		}
+
+		return visitCmp_expr_no_struct(ctx.cmp_expr_no_struct());
 	}
 
 	@Override
-	public Object visitOr_expr_no_struct(Or_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitOr_expr_no_struct(Or_expr_no_structContext ctx) {
+		if (ctx.or_expr_no_struct() != null) {
+			Expression or = visitOr_expr_no_struct(ctx.or_expr_no_struct());
+			Expression and = visitAnd_expr_no_struct(ctx.and_expr_no_struct());
+
+			return new RustOrExpression(currentCfg, locationOf(ctx), or, and);
+		}
+
+		return visitAnd_expr_no_struct(ctx.and_expr_no_struct());
 	}
 
 	@Override
-	public Object visitRange_expr_no_struct(Range_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitRange_expr_no_struct(Range_expr_no_structContext ctx) {
+		// Third grammar branch
+		if (ctx.getChild(0).getText().equals("..")) {
+			if (ctx.or_expr_no_struct(0) != null) {
+				Expression or = visitOr_expr_no_struct(ctx.or_expr_no_struct(0));
+				// TODO the rest is too complex for now
+			}
+		}
+
+		// First and second grammar branch
+		Expression orLeft = visitOr_expr_no_struct(ctx.or_expr_no_struct(0));
+		if (ctx.or_expr_no_struct(1) != null) {
+			// second grammar branch
+			Expression orRight = visitOr_expr_no_struct(ctx.or_expr_no_struct(1));
+			// TODO the rest is too complex for now
+		}
+
+		return orLeft;
 	}
 
 	@Override
-	public Object visitAssign_expr_no_struct(Assign_expr_no_structContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitAssign_expr_no_struct(Assign_expr_no_structContext ctx) {
+		Expression rangeExpr = visitRange_expr_no_struct(ctx.range_expr_no_struct());
+
+		return rangeExpr;
+		// TODO implement the second branch of the grammar
 	}
 
 	@Override
 	public Expression visitIdent(IdentContext ctx) {
-		// TODO: everything is mapped as a variable refeference, included auto,
+		// TODO: everything is mapped as a variable reference, included auto,
 		// default, union
 		return new VariableRef(currentCfg, locationOf(ctx), ctx.getText());
 	}

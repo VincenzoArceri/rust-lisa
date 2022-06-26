@@ -1,4 +1,4 @@
-package it.unipr.cfg.expression.numeric;
+package it.unipr.cfg.type;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -10,39 +10,42 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
+import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Untyped;
 
 /**
- * Rust unary minus expression (e.g., -x).
+ * Rust type cast expression (e.g., x as Type).
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustMinusExpression extends UnaryExpression {
+public class RustCastExpression extends BinaryExpression {
 
 	/**
-	 * Builds the unary minus expression.
+	 * Builds the cast expression.
 	 * 
 	 * @param cfg      the {@link CFG} where this expression lies
 	 * @param location the location where this expression is defined
-	 * @param expr     the inner
+	 * @param left     the left-hand side of this expression
+	 * @param right    the right-hand side of this expression
 	 */
-	public RustMinusExpression(CFG cfg, CodeLocation location,
-			Expression expr) {
+	public RustCastExpression(CFG cfg, CodeLocation location,
+			Expression left, Expression right) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, "-", Untyped.INSTANCE, expr);
+		super(cfg, location, "as", Untyped.INSTANCE, left, right);
 	}
 
 	@Override
 	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
-			T extends TypeDomain<T>> AnalysisState<A, H, V, T> unarySemantics(
+			T extends TypeDomain<T>> AnalysisState<A, H, V, T> binarySemantics(
 					InterproceduralAnalysis<A, H, V, T> interprocedural, AnalysisState<A, H, V, T> state,
-					SymbolicExpression expr, StatementStore<A, H, V, T> expressions) throws SemanticException {
+					SymbolicExpression left, SymbolicExpression right, StatementStore<A, H, V, T> expressions)
+					throws SemanticException {
 		// TODO too coarse
 		return state.top();
 	}
