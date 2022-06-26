@@ -26,6 +26,7 @@ import it.unipr.cfg.expression.numeric.RustModExpression;
 import it.unipr.cfg.expression.numeric.RustMulExpression;
 import it.unipr.cfg.expression.numeric.RustPlusExpression;
 import it.unipr.cfg.expression.numeric.RustSubExpression;
+import it.unipr.cfg.type.RustAssigmentExpression;
 import it.unipr.cfg.type.RustBoxExpression;
 import it.unipr.cfg.type.RustCastExpression;
 import it.unipr.cfg.type.RustDerefExpression;
@@ -49,8 +50,12 @@ import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
+
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -735,9 +740,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitTy(TyContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Type visitTy(TyContext ctx) {
+		// TODO figure out later how to parse this
+		return Untyped.INSTANCE;
 	}
 
 	@Override
@@ -819,13 +824,24 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPat(PatContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPat(PatContext ctx) {
+		if (ctx.pat_no_mut() != null)
+			return visitPat_no_mut(ctx.pat_no_mut());
+
+		// TODO figure out later what to do with mutability
+		boolean mutable = true;
+		
+		if (ctx.pat() != null) {
+			// TODO Ignoring the pat part for now
+			return visitPat(ctx.pat());
+		}
+			
+		Expression ident = visitIdent(ctx.ident());
+		return ident;
 	}
 
 	@Override
-	public Object visitPat_no_mut(Pat_no_mutContext ctx) {
+	public Expression visitPat_no_mut(Pat_no_mutContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -976,8 +992,32 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return Pair.of(expr, expr);
 		}
 
-		// TODO: skipping the attr* part for now
+		// TODO figure out what to do here
+		for (AttrContext attr : ctx.attr()) {
+			break;
+		}
+				
+		if (ctx.pat() != null) {
+			Type type = (ctx.ty() == null ? Untyped.INSTANCE : visitTy(ctx.ty()));
 
+			// TODO do not take into account the attr part for now
+			if (ctx.expr() != null) {
+				// TODO this cast is safe until we model full statement as expression
+				Expression expr = (Expression) visitExpr(ctx.expr());
+				
+				Expression name = visitPat(ctx.pat());
+
+				VariableRef var = new VariableRef(currentCfg, locationOf(ctx), name.toString(), type);
+				
+				RustAssigmentExpression assigment = new RustAssigmentExpression(currentCfg, locationOf(ctx), var, expr);
+
+				currentCfg.addNode(assigment);
+
+				return Pair.of(assigment, assigment);
+			}
+		}
+
+		// TODO do not take into account the attr part for now
 		return visitBlocky_expr(ctx.blocky_expr());
 	}
 
