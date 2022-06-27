@@ -1,4 +1,4 @@
-package it.unipr.cfg.type;
+package it.unipr.cfg.expression;
 
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;

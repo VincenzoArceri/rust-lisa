@@ -1,5 +1,10 @@
 package it.unipr.frontend;
 
+import it.unipr.cfg.expression.RustBoxExpression;
+import it.unipr.cfg.expression.RustCastExpression;
+import it.unipr.cfg.expression.RustDerefExpression;
+import it.unipr.cfg.expression.RustDoubleRefExpression;
+import it.unipr.cfg.expression.RustRefExpression;
 import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
 import it.unipr.cfg.expression.bitwise.RustNotExpression;
@@ -24,13 +29,8 @@ import it.unipr.cfg.expression.numeric.RustDivExpression;
 import it.unipr.cfg.expression.numeric.RustMinusExpression;
 import it.unipr.cfg.expression.numeric.RustModExpression;
 import it.unipr.cfg.expression.numeric.RustMulExpression;
-import it.unipr.cfg.expression.numeric.RustPlusExpression;
 import it.unipr.cfg.expression.numeric.RustSubExpression;
-import it.unipr.cfg.type.RustBoxExpression;
-import it.unipr.cfg.type.RustCastExpression;
-import it.unipr.cfg.type.RustDerefExpression;
-import it.unipr.cfg.type.RustDoubleRefExpression;
-import it.unipr.cfg.type.RustRefExpression;
+import it.unipr.cfg.statement.RustLetAssignment;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
 import it.unive.lisa.program.CompilationUnit;
@@ -49,6 +49,7 @@ import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.Untyped;
 import java.util.ArrayList;
 import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -735,9 +736,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitTy(TyContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Type visitTy(TyContext ctx) {
+		// TODO figure out later how to parse this
+		return Untyped.INSTANCE;
 	}
 
 	@Override
@@ -819,15 +820,74 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPat(PatContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPat(PatContext ctx) {
+		if (ctx.pat_no_mut() != null)
+			return visitPat_no_mut(ctx.pat_no_mut());
+
+		// TODO figure out later what to do with mutability
+		boolean mutable = true;
+
+		if (ctx.pat() != null) {
+			// TODO Ignoring the pat part for now
+			return visitPat(ctx.pat());
+		}
+
+		Expression ident = visitIdent(ctx.ident());
+		return ident;
 	}
 
 	@Override
-	public Object visitPat_no_mut(Pat_no_mutContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPat_no_mut(Pat_no_mutContext ctx) {
+		if (ctx.pat_lit() != null) {
+			return visitPat_lit(ctx.pat_lit());
+		}
+
+		if (ctx.ident() != null) {
+			// TODO figure out what to do with all this stuff
+			boolean isRef = (ctx.getChild(0) != null && ctx.getChild(0).getText().equals("ref") ? true : false);
+			boolean isMut = (ctx.getChild(1) != null && ctx.getChild(1).getText().equals("mut") ? true : false);
+
+			if (ctx.pat() != null) {
+				// TODO figure out what to do
+				Expression pat = visitPat(ctx.pat());
+			}
+
+			// Parse the identifier
+			return visitIdent(ctx.ident());
+		}
+
+		switch (ctx.getChild(0).getText()) {
+		case "_":
+			return new VariableRef(currentCfg, locationOf(ctx), "_");
+		case "(":
+			return visitPat_list_with_dots(ctx.pat_list_with_dots());
+		case "[":
+			return visitPat_elt_list(ctx.pat_elt_list());
+		case "&":
+			if (ctx.getChild(1).getText().equals("mut")) {
+				return visitPat(ctx.pat());
+			}
+			return visitPat_no_mut(ctx.pat_no_mut());
+		case "&&":
+			if (ctx.getChild(1).getText().equals("mut")) {
+				return visitPat(ctx.pat());
+			}
+			return visitPat_no_mut(ctx.pat_no_mut());
+		case "box":
+			return visitPat(ctx.pat());
+		default:
+			// TODO need to implement the other cases:
+//			pat_no_mut:
+//			   : pat_range_end '...' pat_range_end
+//			   | pat_range_end '..' pat_range_end // experimental `feature(exclusive_range_pattern)`
+//			   | path macro_tail
+//			   | 'ref'? ident ('@' pat)?
+//			   | 'ref' 'mut' ident ('@' pat)?
+//			   | path '(' pat_list_with_dots? ')'
+//			   | path '{' pat_fields? '}'
+//			   | path // BUG: ambiguity with bare ident case (above)
+			return null;
+		}
 	}
 
 	@Override
@@ -837,38 +897,65 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPat_lit(Pat_litContext ctx) {
-		// TODO Auto-generated method stub
+	public Expression visitPat_lit(Pat_litContext ctx) {
+		Expression lit = visitLit(ctx.lit());
+		if (ctx.getChild(0).getText().equals("-")) {
+			return new RustMinusExpression(currentCfg, locationOf(ctx), lit);
+		}
+
+		return lit;
+	}
+
+	@Override
+	public Expression visitPat_list(Pat_listContext ctx) {
+		// TODO figure out what to do here
+		for (PatContext patContext : ctx.pat()) {
+
+		}
 		return null;
 	}
 
 	@Override
-	public Object visitPat_list(Pat_listContext ctx) {
-		// TODO Auto-generated method stub
+	public Expression visitPat_list_with_dots(Pat_list_with_dotsContext ctx) {
+		if (ctx.pat_list_dots_tail() != null) {
+			return visitPat_list_dots_tail(ctx.pat_list_dots_tail());
+		}
+
+		// TODO figure out what to do in the other cases
+		for (PatContext patContext : ctx.pat()) {
+
+		}
+		// TODO figure out what to do in the other cases
+		if (ctx.pat_list_dots_tail() != null) {
+			visitPat_list_dots_tail(ctx.pat_list_dots_tail());
+		}
+
 		return null;
 	}
 
 	@Override
-	public Object visitPat_list_with_dots(Pat_list_with_dotsContext ctx) {
-		// TODO Auto-generated method stub
+	public Expression visitPat_list_dots_tail(Pat_list_dots_tailContext ctx) {
+		// TODO figure out what to do here
+		if (ctx.pat_list() != null)
+			return visitPat_list(ctx.pat_list());
 		return null;
 	}
 
 	@Override
-	public Object visitPat_list_dots_tail(Pat_list_dots_tailContext ctx) {
-		// TODO Auto-generated method stub
+	public Expression visitPat_elt(Pat_eltContext ctx) {
+		if (ctx.pat() != null)
+			return visitPat(ctx.pat());
+		// TODO figure out what to do in the other case
 		return null;
 	}
 
 	@Override
-	public Object visitPat_elt(Pat_eltContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	public Expression visitPat_elt_list(Pat_elt_listContext ctx) {
+		for (Pat_eltContext patContext : ctx.pat_elt()) {
+			// TODO figure out what to do here
+			Expression pat = visitPat_elt(patContext);
+		}
 
-	@Override
-	public Object visitPat_elt_list(Pat_elt_listContext ctx) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -976,8 +1063,33 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return Pair.of(expr, expr);
 		}
 
-		// TODO: skipping the attr* part for now
+		// TODO figure out what to do here
+		for (AttrContext attr : ctx.attr()) {
+			break;
+		}
 
+		if (ctx.pat() != null) {
+			Type type = (ctx.ty() == null ? Untyped.INSTANCE : visitTy(ctx.ty()));
+
+			// TODO do not take into account the attr part for now
+			if (ctx.expr() != null) {
+				// TODO this cast is safe until we model full statement as
+				// expression
+				Expression expr = (Expression) visitExpr(ctx.expr());
+
+				Expression name = visitPat(ctx.pat());
+
+				VariableRef var = new VariableRef(currentCfg, locationOf(ctx), name.toString(), type);
+
+				RustLetAssignment assigment = new RustLetAssignment(currentCfg, locationOf(ctx), var, expr);
+
+				currentCfg.addNode(assigment);
+
+				return Pair.of(assigment, assigment);
+			}
+		}
+
+		// TODO do not take into account the attr part for now
 		return visitBlocky_expr(ctx.blocky_expr());
 	}
 
@@ -1245,17 +1357,26 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitPre_expr(Pre_exprContext ctx) {
-		// TODO: skipping every production but unary + and -
+		// TODO Skipping every production: "in" etc. and expr_attrs pre_expr
 		if (ctx.post_expr() != null)
 			return visitPost_expr(ctx.post_expr());
 
-		String symbol = ctx.children.get(0).getText();
-		if (symbol.equals("+"))
-			return new RustPlusExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
-		else if (symbol.equals("-"))
+		switch (ctx.children.get(0).getText()) {
+		case "-":
 			return new RustMinusExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
-		else
+		case "!":
+			return new RustNotExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		case "&":
+			return new RustRefExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		case "&&":
+			return new RustDoubleRefExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		case "*":
+			return new RustDerefExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		case "box":
+			return new RustBoxExpression(currentCfg, locationOf(ctx), visitPre_expr(ctx.pre_expr()));
+		default:
 			return null;
+		}
 	}
 
 	@Override
