@@ -30,7 +30,7 @@ import it.unipr.cfg.expression.numeric.RustMinusExpression;
 import it.unipr.cfg.expression.numeric.RustModExpression;
 import it.unipr.cfg.expression.numeric.RustMulExpression;
 import it.unipr.cfg.expression.numeric.RustSubExpression;
-import it.unipr.cfg.statement.RustAssignment;
+import it.unipr.cfg.statement.RustLetAssignment;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
 import it.unive.lisa.program.CompilationUnit;
@@ -1081,7 +1081,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 				VariableRef var = new VariableRef(currentCfg, locationOf(ctx), name.toString(), type);
 
-				RustAssignment assigment = new RustAssignment(currentCfg, locationOf(ctx), var, expr);
+				RustLetAssignment assigment = new RustLetAssignment(currentCfg, locationOf(ctx), var, expr);
 
 				currentCfg.addNode(assigment);
 
