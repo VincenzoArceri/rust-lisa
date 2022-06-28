@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Unique instance of the Rust array type.
+ * Instance of the Rust tuple type.
  *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
@@ -16,12 +16,12 @@ import java.util.Set;
 public class RustTupleType implements Type {
 
 	/**
-	 * Collection of all parse arrays.
+	 * Collection of all parse tuples.
 	 */
 	public static final Set<RustTupleType> INSTANCE = new HashSet<>();
 
 	/**
-	 * If the same array type was already parsed, return the instance; otherwise
+	 * If the same tuple type was already parsed, return the instance; otherwise
 	 * add it and return it.
 	 */
 	public static RustTupleType lookup(RustTupleType type) {
