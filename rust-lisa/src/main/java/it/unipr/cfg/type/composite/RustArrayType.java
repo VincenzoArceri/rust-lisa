@@ -21,8 +21,12 @@ public class RustArrayType implements ArrayType {
 	public static final Set<RustArrayType> INSTANCE = new HashSet<>();
 
 	/**
-	 * If the same array type was already parsed, return the instance; otherwise
-	 * add it and return it.
+	 * Yields the first instance that matches array type requested or adds it if
+	 * not present.
+	 * 
+	 * @param type the RustArrayType to look for
+	 * 
+	 * @return the first RustArrayType inserted of the same kind
 	 */
 	public static RustArrayType lookup(RustArrayType type) {
 		if (!INSTANCE.contains(type))
@@ -37,6 +41,12 @@ public class RustArrayType implements ArrayType {
 	private Type contentType;
 	private Integer length;
 
+	/**
+	 * Construct the RustArrayType object.
+	 * 
+	 * @param contentType the type of the element in the array
+	 * @param length      the length of the array
+	 */
 	public RustArrayType(Type contentType, Integer length) {
 		this.contentType = contentType;
 		this.length = length;

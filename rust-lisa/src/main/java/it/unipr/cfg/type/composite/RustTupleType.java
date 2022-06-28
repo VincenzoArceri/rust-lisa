@@ -21,8 +21,12 @@ public class RustTupleType implements Type {
 	public static final Set<RustTupleType> INSTANCE = new HashSet<>();
 
 	/**
-	 * If the same tuple type was already parsed, return the instance; otherwise
-	 * add it and return it.
+	 * Yields the first instance that matches tuple type requested or adds it if
+	 * not present.
+	 * 
+	 * @param type the RustTupleType to look for
+	 * 
+	 * @return the first RustTupleType inserted of the same kind
 	 */
 	public static RustTupleType lookup(RustTupleType type) {
 		if (!INSTANCE.contains(type))
@@ -33,11 +37,16 @@ public class RustTupleType implements Type {
 
 	private List<Type> types;
 
+	/**
+	 * Construct the RustTupleType object.
+	 * 
+	 * @param types an ordered list of types inside the tuple
+	 */
 	public RustTupleType(List<Type> types) {
 		this.types = types;
 	}
 
-	public boolean checkAssignment(Object other) {
+	private boolean checkAssignment(Object other) {
 		if (other instanceof RustTupleType) {
 			RustTupleType o = (RustTupleType) other;
 

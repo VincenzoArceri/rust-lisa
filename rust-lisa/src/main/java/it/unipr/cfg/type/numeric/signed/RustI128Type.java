@@ -11,11 +11,10 @@ import java.util.Collections;
  *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
- * 
- * @TODO LiSA does not support 128 bits type. So no method isXXBits will be
- *           true.
  */
 public class RustI128Type implements NumericType {
+	// TODO LiSA does not support 128 bits type. So no method isXXBits will be
+	// true.
 
 	/**
 	 * Unique instance of Rust i128 type.
