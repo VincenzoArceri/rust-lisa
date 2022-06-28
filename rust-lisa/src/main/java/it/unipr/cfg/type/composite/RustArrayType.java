@@ -40,7 +40,7 @@ public class RustArrayType implements ArrayType {
 	public RustArrayType(Type contentType, Integer length) {
 		this.contentType = contentType;
 		this.length = length;
-	} 
+	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
@@ -81,13 +81,12 @@ public class RustArrayType implements ArrayType {
 
 		return contentType;
 	}
-	
 
 	@Override
 	public int hashCode() {
 		return contentType.hashCode() + length;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof RustArrayType) {

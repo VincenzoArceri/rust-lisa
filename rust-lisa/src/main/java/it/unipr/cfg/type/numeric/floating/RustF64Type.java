@@ -70,12 +70,12 @@ public class RustF64Type implements NumericType {
 	public boolean isIntegral() {
 		return false;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		return (obj instanceof RustF64Type) ? true : false;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);

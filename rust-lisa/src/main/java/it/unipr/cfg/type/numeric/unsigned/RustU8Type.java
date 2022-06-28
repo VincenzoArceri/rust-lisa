@@ -70,13 +70,12 @@ public class RustU8Type implements NumericType {
 	public boolean isIntegral() {
 		return true;
 	}
-	
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		return (obj instanceof RustU8Type) ? true : false;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
