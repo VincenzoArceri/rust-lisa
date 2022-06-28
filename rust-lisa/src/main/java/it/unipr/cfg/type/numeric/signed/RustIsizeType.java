@@ -1,4 +1,4 @@
-package it.unipr.cfg.type;
+package it.unipr.cfg.type.numeric.signed;
 
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
@@ -7,31 +7,31 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Unique instance of the Rust i32 type.
+ * Unique instance of the Rust isize type.
  *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustI32Type implements NumericType {
+public class RustIsizeType implements NumericType {
 
 	/**
-	 * Unique instance of Rust i32 type.
+	 * Unique instance of Rust isize type.
 	 */
-	public static final RustI32Type INSTANCE = new RustI32Type();
+	public static final RustIsizeType INSTANCE = new RustIsizeType();
 
-	private RustI32Type() {
+	private RustIsizeType() {
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof RustI32Type || other instanceof Untyped;
+		return other instanceof RustIsizeType || other instanceof Untyped;
 	}
 
 	@Override
 	public Type commonSupertype(Type other) {
 		// Rust cast ought to be explicit by design
 		// https://doc.rust-lang.org/rust-by-example/types/cast.html
-		if (other instanceof RustI32Type)
+		if (other instanceof RustIsizeType)
 			return other;
 		return Untyped.INSTANCE;
 	}
@@ -58,7 +58,7 @@ public class RustI32Type implements NumericType {
 
 	@Override
 	public boolean is64Bits() {
-		return false;
+		return true;
 	}
 
 	@Override

@@ -1,4 +1,4 @@
-package it.unipr.cfg.type;
+package it.unipr.cfg.type.numeric.signed;
 
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;

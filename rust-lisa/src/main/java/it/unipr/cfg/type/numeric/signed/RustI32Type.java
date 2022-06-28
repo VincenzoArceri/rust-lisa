@@ -1,4 +1,4 @@
-package it.unipr.cfg.type;
+package it.unipr.cfg.type.numeric.signed;
 
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
@@ -7,31 +7,31 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Unique instance of the Rust f64 type.
+ * Unique instance of the Rust i32 type.
  *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustF64Type implements NumericType {
+public class RustI32Type implements NumericType {
 
 	/**
-	 * Unique instance of Rust f64 type.
+	 * Unique instance of Rust i32 type.
 	 */
-	public static final RustF64Type INSTANCE = new RustF64Type();
+	public static final RustI32Type INSTANCE = new RustI32Type();
 
-	private RustF64Type() {
+	private RustI32Type() {
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof RustF64Type || other instanceof Untyped;
+		return other instanceof RustI32Type || other instanceof Untyped;
 	}
 
 	@Override
 	public Type commonSupertype(Type other) {
 		// Rust cast ought to be explicit by design
 		// https://doc.rust-lang.org/rust-by-example/types/cast.html
-		if (other instanceof RustF64Type)
+		if (other instanceof RustI32Type)
 			return other;
 		return Untyped.INSTANCE;
 	}
@@ -53,12 +53,12 @@ public class RustF64Type implements NumericType {
 
 	@Override
 	public boolean is32Bits() {
-		return false;
+		return true;
 	}
 
 	@Override
 	public boolean is64Bits() {
-		return true;
+		return false;
 	}
 
 	@Override
@@ -68,7 +68,7 @@ public class RustF64Type implements NumericType {
 
 	@Override
 	public boolean isIntegral() {
-		return false;
+		return true;
 	}
 
 }

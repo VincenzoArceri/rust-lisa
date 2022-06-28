@@ -1,4 +1,4 @@
-package it.unipr.cfg.type;
+package it.unipr.cfg.type.numeric.signed;
 
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
@@ -7,31 +7,34 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Unique instance of the Rust usize type.
+ * Unique instance of the Rust i128 type.
  *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
+ * 
+ * @TODO LiSA does not support 128 bits type. So no method isXXBits will be
+ *           true.
  */
-public class RustUsizeType implements NumericType {
+public class RustI128Type implements NumericType {
 
 	/**
-	 * Unique instance of Rust usize type.
+	 * Unique instance of Rust i128 type.
 	 */
-	public static final RustUsizeType INSTANCE = new RustUsizeType();
+	public static final RustI128Type INSTANCE = new RustI128Type();
 
-	private RustUsizeType() {
+	private RustI128Type() {
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof RustUsizeType || other instanceof Untyped;
+		return other instanceof RustI128Type || other instanceof Untyped;
 	}
 
 	@Override
 	public Type commonSupertype(Type other) {
 		// Rust cast ought to be explicit by design
 		// https://doc.rust-lang.org/rust-by-example/types/cast.html
-		if (other instanceof RustUsizeType)
+		if (other instanceof RustI128Type)
 			return other;
 		return Untyped.INSTANCE;
 	}
@@ -53,17 +56,17 @@ public class RustUsizeType implements NumericType {
 
 	@Override
 	public boolean is32Bits() {
-		return true;
+		return false;
 	}
 
 	@Override
 	public boolean is64Bits() {
-		return true;
+		return false;
 	}
 
 	@Override
 	public boolean isUnsigned() {
-		return true;
+		return false;
 	}
 
 	@Override
