@@ -70,5 +70,16 @@ public class RustU32Type implements NumericType {
 	public boolean isIntegral() {
 		return true;
 	}
+	
+	
+	@Override
+	public boolean equals(Object obj) {
+		return (obj instanceof RustU32Type) ? true : false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return System.identityHashCode(INSTANCE);
+	}
 
 }

@@ -71,4 +71,14 @@ public class RustIsizeType implements NumericType {
 		return true;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		return (obj instanceof RustIsizeType) ? true : false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return System.identityHashCode(INSTANCE);
+	}
+
 }

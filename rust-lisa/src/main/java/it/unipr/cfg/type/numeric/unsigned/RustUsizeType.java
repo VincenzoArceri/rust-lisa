@@ -69,6 +69,16 @@ public class RustUsizeType implements NumericType {
 	@Override
 	public boolean isIntegral() {
 		return true;
+	}	
+	
+	@Override
+	public boolean equals(Object obj) {
+		return (obj instanceof RustUsizeType) ? true : false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return System.identityHashCode(INSTANCE);
 	}
 
 }
