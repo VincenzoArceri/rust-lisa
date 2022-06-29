@@ -12,4 +12,10 @@ public class RustCFGControlStructure extends RustLiSATestExecutor {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/loop", "loop.rs", conf);
 	}
+
+	@Test
+	public void testWhile() throws AnalysisSetupException {
+		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
+		perform("cfg/while", "while.rs", conf);
+	}
 }
