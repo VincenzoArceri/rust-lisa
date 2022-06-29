@@ -1113,7 +1113,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		Statement firstStmt = null;
 		Statement lastStmt = null;
-
+		
+		// TODO Figure out what to do with the loop label
+		Object loop_label = null;
+		if (ctx.loop_label() != null) {
+			loop_label = visitLoop_label(ctx.loop_label());
+		}
+		
 		if (ctx.children.get(0).getText().equals("if")) {
 			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
 			currentCfg.addNode(noOp);
@@ -1160,13 +1166,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			firstStmt = elseIfGuardList.get(0);
 			lastStmt = noOp;
 
-		} else if (ctx.children.get(1).getText().equals("loop")) {
-			// TODO Figure out what to do with the loop label
-			Object loop_label = null;
-			if (ctx.loop_label() != null) {
-				loop_label = visitLoop_label(ctx.loop_label());
-			}
-
+		} else if ((loop_label == null && ctx.children.get(0).getText().equals("loop")) 
+			|| ctx.children.get(1).getText().equals("loop"))
+		{
 			Pair<Statement, Statement> stmt = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 			currentCfg.addEdge(new SequentialEdge(stmt.getRight(), stmt.getLeft()));
 
