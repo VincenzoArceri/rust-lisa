@@ -46,6 +46,7 @@ import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NoOp;
 import it.unive.lisa.program.cfg.statement.Ret;
+import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.type.Type;
@@ -972,7 +973,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Statement visitExpr(ExprContext ctx) {
+	public Expression visitExpr(ExprContext ctx) {
 		return visitAssign_expr(ctx.assign_expr());
 	}
 
@@ -1035,6 +1036,18 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				entryNode = currentStmt.getLeft();
 			lastStmt = currentStmt.getRight();
 		}
+
+		// This expr is the one of return from a function
+		if (ctx.expr() != null) {
+			Expression expr = visitExpr(ctx.expr());
+
+			Return ret = new Return(currentCfg, locationOf(ctx), expr);
+
+			currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
+
+			lastStmt = ret;
+		}
+
 		return Pair.of(entryNode, lastStmt);
 	}
 
@@ -1095,15 +1108,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitBlocky_expr(Blocky_exprContext ctx) {
-		if (ctx.block_with_inner_attrs() != null)
+		if (ctx.getChild(0) instanceof Blocky_exprContext && ctx.block_with_inner_attrs() != null)
 			return visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 
 		Statement firstStmt = null;
 		Statement lastStmt = null;
 
-		// TODO: ignoring "loop_label?" part
-		switch (ctx.children.get(0).getText()) {
-		case "if":
+		if (ctx.children.get(0).getText().equals("if")) {
 			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
 			currentCfg.addNode(noOp);
 
@@ -1148,7 +1159,19 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 			firstStmt = elseIfGuardList.get(0);
 			lastStmt = noOp;
-			break;
+
+		} else if (ctx.children.get(1).getText().equals("loop")) {
+			// TODO Figure out what to do with the loop label
+			Object loop_label = null;
+			if (ctx.loop_label() != null) {
+				loop_label = visitLoop_label(ctx.loop_label());
+			}
+
+			Pair<Statement, Statement> stmt = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+			currentCfg.addEdge(new SequentialEdge(stmt.getRight(), stmt.getLeft()));
+
+			firstStmt = stmt.getLeft();
+			lastStmt = stmt.getRight();
 		}
 
 		return Pair.of(firstStmt, lastStmt);
