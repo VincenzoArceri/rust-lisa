@@ -38,8 +38,8 @@ public class RustArrayType implements ArrayType {
 	/**
 	 * In rust an array is characterized by type of its elements and length.
 	 */
-	private Type contentType;
-	private Integer length;
+	private final Type contentType;
+	private final Integer length;
 
 	/**
 	 * Construct the RustArrayType object.

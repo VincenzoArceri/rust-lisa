@@ -35,7 +35,7 @@ public class RustTupleType implements Type {
 		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
 	}
 
-	private List<Type> types;
+	private final List<Type> types;
 
 	/**
 	 * Construct the RustTupleType object.
