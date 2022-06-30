@@ -18,27 +18,27 @@ public class RustTupleType implements Type {
 	/**
 	 * Collection of all parse tuples.
 	 */
-	public static final Set<RustTupleType> INSTANCE = new HashSet<>();
+	private static final Set<RustTupleType> INSTANCES = new HashSet<>();
 
 	/**
 	 * Yields the first instance that matches tuple type requested or adds it if
 	 * not present.
 	 * 
-	 * @param type the RustTupleType to look for
+	 * @param type the {@link RustTupleType} to look for
 	 * 
-	 * @return the first RustTupleType inserted of the same kind
+	 * @return the first {@link RustTupleType} inserted of the same kind
 	 */
 	public static RustTupleType lookup(RustTupleType type) {
-		if (!INSTANCE.contains(type))
-			INSTANCE.add(type);
+		if (!INSTANCES.contains(type))
+			INSTANCES.add(type);
 
-		return INSTANCE.stream().filter(x -> x.equals(type)).findFirst().get();
+		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
 	}
 
-	private List<Type> types;
+	private final List<Type> types;
 
 	/**
-	 * Construct the RustTupleType object.
+	 * Construct the {@link RustTupleType} object.
 	 * 
 	 * @param types an ordered list of types inside the tuple
 	 */
@@ -56,7 +56,7 @@ public class RustTupleType implements Type {
 			return this.types.equals(o.types);
 		}
 
-		return false;
+		return other instanceof Untyped;
 	}
 
 	@Override
@@ -72,7 +72,7 @@ public class RustTupleType implements Type {
 	@Override
 	public Collection<Type> allInstances() {
 		Collection<Type> instances = new HashSet<>();
-		for (RustTupleType tuple : INSTANCE)
+		for (RustTupleType tuple : INSTANCES)
 			instances.add(tuple);
 
 		return instances;

@@ -73,7 +73,7 @@ public class RustIsizeType implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return (obj instanceof RustIsizeType) ? true : false;
+		return obj instanceof RustIsizeType;
 	}
 
 	@Override
