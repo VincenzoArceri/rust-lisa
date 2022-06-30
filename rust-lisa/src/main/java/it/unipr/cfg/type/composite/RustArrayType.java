@@ -18,21 +18,21 @@ public class RustArrayType implements ArrayType {
 	/**
 	 * Collection of all arrays.
 	 */
-	public static final Set<RustArrayType> INSTANCE = new HashSet<>();
+	private static final Set<RustArrayType> INSTANCES = new HashSet<>();
 
 	/**
 	 * Yields the first instance that matches array type requested or adds it if
 	 * not present.
 	 * 
-	 * @param type the RustArrayType to look for
+	 * @param type the {@link RustArrayType} to look for
 	 * 
-	 * @return the first RustArrayType inserted of the same kind
+	 * @return the first {@link RustArrayType} inserted of the same kind
 	 */
 	public static RustArrayType lookup(RustArrayType type) {
-		if (!INSTANCE.contains(type))
-			INSTANCE.add(type);
+		if (!INSTANCES.contains(type))
+			INSTANCES.add(type);
 
-		return INSTANCE.stream().filter(x -> x.equals(type)).findFirst().get();
+		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
 	}
 
 	/**
@@ -58,7 +58,7 @@ public class RustArrayType implements ArrayType {
 			return contentType.canBeAssignedTo(((RustArrayType) other).contentType)
 					&& length.equals(((RustArrayType) other).length);
 
-		return false;
+		return other instanceof Untyped || false;
 	}
 
 	@Override
@@ -73,7 +73,7 @@ public class RustArrayType implements ArrayType {
 	@Override
 	public Collection<Type> allInstances() {
 		Collection<Type> instances = new HashSet<>();
-		for (RustArrayType array : INSTANCE)
+		for (RustArrayType array : INSTANCES)
 			instances.add(array);
 
 		return instances;
@@ -101,7 +101,7 @@ public class RustArrayType implements ArrayType {
 	public boolean equals(Object obj) {
 		if (obj instanceof RustArrayType) {
 			RustArrayType other = (RustArrayType) obj;
-			return this.contentType == other.contentType && this.length == other.length;
+			return this.contentType.equals(other.contentType) && this.length == other.length;
 		}
 		return false;
 	}
