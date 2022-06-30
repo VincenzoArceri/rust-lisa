@@ -38,7 +38,7 @@ public class RustTupleType implements Type {
 	private final List<Type> types;
 
 	/**
-	 * Construct the RustTupleType object.
+	 * Construct the {@link RustTupleType} object.
 	 * 
 	 * @param types an ordered list of types inside the tuple
 	 */

@@ -42,7 +42,7 @@ public class RustArrayType implements ArrayType {
 	private final Integer length;
 
 	/**
-	 * Construct the RustArrayType object.
+	 * Construct the {@link RustArrayType} object.
 	 * 
 	 * @param contentType the type of the element in the array
 	 * @param length      the length of the array

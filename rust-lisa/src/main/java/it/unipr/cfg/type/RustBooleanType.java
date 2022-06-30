@@ -1,6 +1,5 @@
 package it.unipr.cfg.type;
 
-import it.unipr.cfg.type.numeric.floating.RustF32Type;
 import it.unive.lisa.type.BooleanType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -38,12 +37,12 @@ public class RustBooleanType implements BooleanType {
 	public Collection<Type> allInstances() {
 		return Collections.singleton(INSTANCE);
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		return obj instanceof RustBooleanType;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
