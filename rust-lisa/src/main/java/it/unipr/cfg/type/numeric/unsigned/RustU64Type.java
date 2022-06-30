@@ -73,7 +73,7 @@ public class RustU64Type implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return (obj instanceof RustU64Type) ? true : false;
+		return obj instanceof RustU64Type;
 	}
 
 	@Override

@@ -73,7 +73,7 @@ public class RustI8Type implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return (obj instanceof RustI8Type) ? true : false;
+		return obj instanceof RustI8Type;
 	}
 
 	@Override

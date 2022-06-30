@@ -73,7 +73,7 @@ public class RustF64Type implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return (obj instanceof RustF64Type) ? true : false;
+		return obj instanceof RustF64Type;
 	}
 
 	@Override

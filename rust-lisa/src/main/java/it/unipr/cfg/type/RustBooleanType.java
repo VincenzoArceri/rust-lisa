@@ -41,7 +41,7 @@ public class RustBooleanType implements BooleanType {
 	
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustF32Type;
+		return obj instanceof RustBooleanType;
 	}
 	
 	@Override

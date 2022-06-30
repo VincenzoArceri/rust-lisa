@@ -75,7 +75,7 @@ public class RustU128Type implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return (obj instanceof RustU128Type) ? true : false;
+		return obj instanceof RustU128Type;
 	}
 
 	@Override

@@ -73,7 +73,7 @@ public class RustU16Type implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return (obj instanceof RustU16Type) ? true : false;
+		return obj instanceof RustU16Type;
 	}
 
 	@Override
