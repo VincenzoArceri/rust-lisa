@@ -58,7 +58,7 @@ public class RustArrayType implements ArrayType {
 			return contentType.canBeAssignedTo(((RustArrayType) other).contentType)
 					&& length.equals(((RustArrayType) other).length);
 
-		return other instanceof Untyped || false;
+		return other instanceof Untyped;
 	}
 
 	@Override
