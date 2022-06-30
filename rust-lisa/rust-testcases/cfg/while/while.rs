@@ -3,7 +3,7 @@ fn main() {
     let y = 6;
 
     while x < y {
-        x + 1;
+        x += 1;
     }
 }
 

@@ -4,6 +4,8 @@ import it.unipr.cfg.expression.RustBoxExpression;
 import it.unipr.cfg.expression.RustCastExpression;
 import it.unipr.cfg.expression.RustDerefExpression;
 import it.unipr.cfg.expression.RustDoubleRefExpression;
+import it.unipr.cfg.expression.RustRangeExpression;
+import it.unipr.cfg.expression.RustRangeFromExpression;
 import it.unipr.cfg.expression.RustRefExpression;
 import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
@@ -1553,22 +1555,81 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitRange_expr(Range_exprContext ctx) {
-		// TODO: for the moment, we skip the other productions
-		// and we focus just on or_expr
-		if (ctx.children.size() == 1)
+		if (ctx.children.size() == 1) { // First production
 			return visitOr_expr(ctx.or_expr(0));
-		return null;
+			
+		} else if (ctx.children.size() == 3) { // Second full production
+			Expression left = visitOr_expr(ctx.or_expr().get(0));
+			Expression right = visitOr_expr(ctx.or_expr().get(1));
+			
+			return new RustRangeExpression(currentCfg, locationOf(ctx), left, right);
+			
+		} else { // Second (case with two members) and third production
+			
+			if (ctx.getChild(0).getText().equals("..")) { // Third production
+				if (ctx.or_expr() != null) {
+					// TODO The following here is to parse "..end" which is a RangeTo type,
+					// but it does not have a Iterator implementation, but it is used as slicing index.
+					// https://doc.rust-lang.org/std/ops/struct.RangeTo.html
+					// We should figure that out later
+					return null;
+				}
+				
+				// TODO The following here is to parse ".." which is a RangeFull type,
+				// but it does not have a Iterator implementation, but it is used as slicing index.
+				// https://doc.rust-lang.org/std/ops/struct.RangeFull.html
+				// We should figure that out later
+				return null;
+
+			} else { // Second (case with two members) production
+				Expression left = visitOr_expr(ctx.or_expr().get(0));
+				return new RustRangeFromExpression(currentCfg, locationOf(ctx), left);
+			}
+		}
 	}
 
 	@Override
 	public Expression visitAssign_expr(Assign_exprContext ctx) {
 		if (ctx.assign_expr() == null)
 			return visitRange_expr(ctx.range_expr());
-
-		Expression lhs = visitRange_expr(ctx.range_expr());
-		Expression rhs = visitAssign_expr(ctx.assign_expr());
-		Assignment asg = new Assignment(currentCfg, locationOf(ctx), lhs, rhs);
-		return asg;
+		
+		Expression rangeExpr = visitRange_expr(ctx.range_expr());
+		Expression right = visitAssign_expr(ctx.assign_expr());
+		
+		switch (ctx.getChild(1).getText()) {
+		case "=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr, right);
+		case "*=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustMulExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "/=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustDivExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "%=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustModExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "+=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustAddExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "-=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustSubExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "<<=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustLeftShiftExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case ">": // catches only ">" which is separated in the g4 grammar
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustRightShiftExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "&=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustAndBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "^=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustXorBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		default: //operator "|="
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustOrBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		}
 	}
 
 	@Override
