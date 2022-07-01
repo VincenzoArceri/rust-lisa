@@ -1087,24 +1087,25 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		}
 
 		if (ctx.pat() != null) {
+			Expression name = visitPat(ctx.pat());
+
 			Type type = (ctx.ty() == null ? Untyped.INSTANCE : visitTy(ctx.ty()));
 
 			// TODO do not take into account the attr part for now
 			if (ctx.expr() != null) {
-				// TODO this cast is safe until we model full statement as
-				// expression
-				Expression expr = (Expression) visitExpr(ctx.expr());
-
-				Expression name = visitPat(ctx.pat());
+				Expression expr = visitExpr(ctx.expr());
 
 				VariableRef var = new VariableRef(currentCfg, locationOf(ctx), name.toString(), type);
 
 				RustLetAssignment assigment = new RustLetAssignment(currentCfg, locationOf(ctx), var, expr);
-
 				currentCfg.addNode(assigment);
 
 				return Pair.of(assigment, assigment);
 			}
+
+			VariableRef var = new VariableRef(currentCfg, locationOf(ctx), name.toString(), type);
+			currentCfg.addNode(var);
+			return Pair.of(var, var);
 		}
 
 		// TODO do not take into account the attr part for now
@@ -1113,7 +1114,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitBlocky_expr(Blocky_exprContext ctx) {
-		if (ctx.getChild(0) instanceof Blocky_exprContext && ctx.block_with_inner_attrs() != null)
+		if (ctx.getChild(0) instanceof Block_with_inner_attrsContext && ctx.block_with_inner_attrs() != null)
 			return visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 
 		Statement firstStmt = null;
