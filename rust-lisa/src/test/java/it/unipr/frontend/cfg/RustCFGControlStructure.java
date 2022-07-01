@@ -30,4 +30,10 @@ public class RustCFGControlStructure extends RustLiSATestExecutor {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/nested-loops", "nested-loops.rs", conf);
 	}
+
+	@Test
+	public void testEuclidianGCD() throws AnalysisSetupException {
+		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
+		perform("cfg/euclidian-gcd", "euclidian-gcd.rs", conf);
+	}
 }
