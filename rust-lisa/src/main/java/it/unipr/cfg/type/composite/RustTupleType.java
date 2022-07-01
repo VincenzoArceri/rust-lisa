@@ -5,6 +5,7 @@ import it.unive.lisa.type.Untyped;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -80,16 +81,29 @@ public class RustTupleType implements Type {
 
 	@Override
 	public int hashCode() {
-		int accumulator = 0;
-		for (Type t : types)
-			accumulator += t.hashCode();
-
-		return accumulator;
+		return Objects.hash(types);
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		return types.equals(obj);
+		if (this == obj)
+			return true;
+
+		if (obj == null)
+			return false;
+
+		if (getClass() != obj.getClass())
+			return false;
+
+		RustTupleType other = (RustTupleType) obj;
+
+		if (types == null) {
+			if (other.types != null)
+				return false;
+		} else if (!types.equals(other.types))
+			return false;
+
+		return true;
 	}
 
 }

@@ -99,11 +99,29 @@ public class RustArrayType implements ArrayType {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof RustArrayType) {
-			RustArrayType other = (RustArrayType) obj;
-			return this.contentType.equals(other.contentType) && this.length == other.length;
-		}
-		return false;
-	}
+		if (this == obj)
+			return true;
 
+		if (obj == null)
+			return false;
+
+		if (getClass() != obj.getClass())
+			return false;
+
+		RustArrayType other = (RustArrayType) obj;
+
+		if (contentType == null) {
+			if (other.contentType != null)
+				return false;
+		} else if (!contentType.equals(other.contentType))
+			return false;
+
+		if (length == null) {
+			if (other.length != null)
+				return false;
+		} else if (!length.equals(other.length))
+			return false;
+
+		return true;
+	}
 }
