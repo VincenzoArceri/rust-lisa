@@ -37,4 +37,14 @@ public class RustBooleanType implements BooleanType {
 	public Collection<Type> allInstances() {
 		return Collections.singleton(INSTANCE);
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof RustBooleanType;
+	}
+
+	@Override
+	public int hashCode() {
+		return System.identityHashCode(INSTANCE);
+	}
 }
