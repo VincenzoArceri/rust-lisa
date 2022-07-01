@@ -44,7 +44,7 @@ public class RustTupleType implements Type {
 	 * @param types an ordered list of types inside the tuple
 	 */
 	public RustTupleType(List<Type> types) {
-		this.types = types;
+		this.types = Objects.requireNonNull(types);
 	}
 
 	private boolean checkAssignment(Object other) {

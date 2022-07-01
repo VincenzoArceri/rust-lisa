@@ -5,6 +5,7 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -48,8 +49,8 @@ public class RustArrayType implements ArrayType {
 	 * @param length      the length of the array
 	 */
 	public RustArrayType(Type contentType, Integer length) {
-		this.contentType = contentType;
-		this.length = length;
+		this.contentType = Objects.requireNonNull(contentType);
+		this.length = Objects.requireNonNull(length);
 	}
 
 	@Override
