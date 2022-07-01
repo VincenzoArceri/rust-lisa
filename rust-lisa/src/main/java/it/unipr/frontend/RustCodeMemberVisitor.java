@@ -1,5 +1,6 @@
 package it.unipr.frontend;
 
+import it.unipr.cfg.expression.RustAccessMemberFunctionExpression;
 import it.unipr.cfg.expression.RustBoxExpression;
 import it.unipr.cfg.expression.RustCastExpression;
 import it.unipr.cfg.expression.RustDerefExpression;
@@ -45,13 +46,13 @@ import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
-import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NoOp;
 import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.ArrayList;
@@ -1193,10 +1194,52 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			currentCfg.addEdge(new FalseEdge(guard, noOp));
 			currentCfg.addEdge(new SequentialEdge(body.getRight(), guard));
 			lastStmt = noOp;
+
+		} else if ((loop_label == null && ctx.children.get(0).getText().equals("for"))
+				|| ctx.children.get(1).getText().equals("for")) {
+
+			Expression pat = visitPat(ctx.pat());
+			Expression range = visitExpr_no_struct(ctx.expr_no_struct());
+			Pair<Statement, Statement> body = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+
+			VariableRef fresh = new VariableRef(currentCfg, locationOf(ctx), "RUSTLISA_FRESH");
+			Expression freshAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), fresh, range);
+			currentCfg.addNode(freshAssignment);
+
+			// TODO This should be mutable
+			Expression patAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), pat,
+					new RustAccessMemberFunctionExpression(currentCfg, locationOf(ctx), fresh, "next",
+							new Expression[0]));
+			currentCfg.addNode(patAssignment);
+			currentCfg.addEdge(new SequentialEdge(freshAssignment, patAssignment));
+
+			// TODO NullLiteral here is to represent the None type, change this
+			// in the future
+			Expression guard = new RustNotEqualExpression(currentCfg, locationOf(ctx), pat,
+					new NullLiteral(currentCfg, locationOf(ctx)));
+			currentCfg.addNode(guard);
+
+			currentCfg.addEdge(new SequentialEdge(patAssignment, guard));
+
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+			currentCfg.addNode(noOp);
+
+			currentCfg.addEdge(new TrueEdge(guard, body.getLeft()));
+			currentCfg.addEdge(new FalseEdge(guard, noOp));
+
+			Expression increment = new RustAssignment(currentCfg, locationOf(ctx), pat,
+					new RustAccessMemberFunctionExpression(currentCfg, locationOf(ctx), pat, "next",
+							new Expression[0]));
+			currentCfg.addNode(increment);
+
+			currentCfg.addEdge(new SequentialEdge(body.getRight(), increment));
+			currentCfg.addEdge(new SequentialEdge(increment, guard));
+
+			firstStmt = freshAssignment;
+			lastStmt = noOp;
 		}
 
 		return Pair.of(firstStmt, lastStmt);
-
 	}
 
 	@Override
@@ -1557,26 +1600,30 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public Expression visitRange_expr(Range_exprContext ctx) {
 		if (ctx.children.size() == 1) { // First production
 			return visitOr_expr(ctx.or_expr(0));
-			
+
 		} else if (ctx.children.size() == 3) { // Second full production
 			Expression left = visitOr_expr(ctx.or_expr().get(0));
 			Expression right = visitOr_expr(ctx.or_expr().get(1));
-			
+
 			return new RustRangeExpression(currentCfg, locationOf(ctx), left, right);
-			
+
 		} else { // Second (case with two members) and third production
-			
+
 			if (ctx.getChild(0).getText().equals("..")) { // Third production
 				if (ctx.or_expr() != null) {
-					// TODO The following here is to parse "..end" which is a RangeTo type,
-					// but it does not have a Iterator implementation, but it is used as slicing index.
+					// TODO The following here is to parse "..end" which is a
+					// RangeTo type,
+					// that does not have a Iterator implementation, but it is
+					// used as slicing index.
 					// https://doc.rust-lang.org/std/ops/struct.RangeTo.html
 					// We should figure that out later
 					return null;
 				}
-				
-				// TODO The following here is to parse ".." which is a RangeFull type,
-				// but it does not have a Iterator implementation, but it is used as slicing index.
+
+				// TODO The following here is to parse ".." which is a RangeFull
+				// type,
+				// that does not have a Iterator implementation, but it is used
+				// as slicing index.
 				// https://doc.rust-lang.org/std/ops/struct.RangeFull.html
 				// We should figure that out later
 				return null;
@@ -1592,10 +1639,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public Expression visitAssign_expr(Assign_exprContext ctx) {
 		if (ctx.assign_expr() == null)
 			return visitRange_expr(ctx.range_expr());
-		
+
 		Expression rangeExpr = visitRange_expr(ctx.range_expr());
 		Expression right = visitAssign_expr(ctx.assign_expr());
-		
+
 		switch (ctx.getChild(1).getText()) {
 		case "=":
 			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr, right);
@@ -1626,7 +1673,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		case "^=":
 			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
 					new RustXorBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
-		default: //operator "|="
+		default: // operator "|="
 			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
 					new RustOrBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
 		}
@@ -1852,23 +1899,41 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitRange_expr_no_struct(Range_expr_no_structContext ctx) {
-		// Third grammar branch
-		if (ctx.getChild(0).getText().equals("..")) {
-			if (ctx.or_expr_no_struct(0) != null) {
-				Expression or = visitOr_expr_no_struct(ctx.or_expr_no_struct(0));
-				// TODO the rest is too complex for now
+		if (ctx.children.size() == 1) { // First production
+			return visitOr_expr_no_struct(ctx.or_expr_no_struct(0));
+
+		} else if (ctx.children.size() == 3) { // Second full production
+			Expression left = visitOr_expr_no_struct(ctx.or_expr_no_struct().get(0));
+			Expression right = visitOr_expr_no_struct(ctx.or_expr_no_struct().get(1));
+
+			return new RustRangeExpression(currentCfg, locationOf(ctx), left, right);
+
+		} else { // Second (case with two members) and third production
+
+			if (ctx.getChild(0).getText().equals("..")) { // Third production
+				if (ctx.or_expr_no_struct() != null) {
+					// TODO The following here is to parse "..end" which is a
+					// RangeTo type,
+					// that does not have a Iterator implementation, but it is
+					// used as slicing index.
+					// https://doc.rust-lang.org/std/ops/struct.RangeTo.html
+					// We should figure that out later
+					return null;
+				}
+
+				// TODO The following here is to parse ".." which is a RangeFull
+				// type,
+				// that does not have a Iterator implementation, but it is used
+				// as slicing index.
+				// https://doc.rust-lang.org/std/ops/struct.RangeFull.html
+				// We should figure that out later
+				return null;
+
+			} else { // Second (case with two members) production
+				Expression left = visitOr_expr_no_struct(ctx.or_expr_no_struct().get(0));
+				return new RustRangeFromExpression(currentCfg, locationOf(ctx), left);
 			}
 		}
-
-		// First and second grammar branch
-		Expression orLeft = visitOr_expr_no_struct(ctx.or_expr_no_struct(0));
-		if (ctx.or_expr_no_struct(1) != null) {
-			// second grammar branch
-			Expression orRight = visitOr_expr_no_struct(ctx.or_expr_no_struct(1));
-			// TODO the rest is too complex for now
-		}
-
-		return orLeft;
 	}
 
 	@Override
@@ -1887,6 +1952,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			case "/=":
 				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
 						new RustDivExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+			case "%=":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+						new RustModExpression(currentCfg, locationOf(ctx), rangeExpr, right));
 			case "+=":
 				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
 						new RustAddExpression(currentCfg, locationOf(ctx), rangeExpr, right));
