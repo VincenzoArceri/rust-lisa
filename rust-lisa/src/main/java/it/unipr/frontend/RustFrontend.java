@@ -11,6 +11,14 @@ import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.statement.call.assignment.OrderPreservingAssigningStrategy;
+import it.unive.lisa.program.cfg.statement.call.assignment.ParameterAssigningStrategy;
+import it.unive.lisa.program.cfg.statement.call.resolution.ParameterMatchingStrategy;
+import it.unive.lisa.program.cfg.statement.call.resolution.RuntimeTypesMatchingStrategy;
+import it.unive.lisa.program.cfg.statement.call.traversal.HierarcyTraversalStrategy;
+import it.unive.lisa.program.cfg.statement.call.traversal.SingleInheritanceTraversalStrategy;
+import it.unive.lisa.program.cfg.statement.evaluation.EvaluationOrder;
+import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +49,27 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	 * Reference to the current unit
 	 */
 	private CompilationUnit currentUnit;
+
+	/**
+	 * The strategy of traversing super-unit to search for target call
+	 * implementation.
+	 */
+	public static final HierarcyTraversalStrategy HIERARCY_TRAVERSAL_STRATEGY = SingleInheritanceTraversalStrategy.INSTANCE;
+
+	/**
+	 * The parameter assigning strategy for calls.
+	 */
+	public static final ParameterAssigningStrategy PARAMETER_ASSIGN_STRATEGY = OrderPreservingAssigningStrategy.INSTANCE;
+
+	/**
+	 * The parameter matching strategy for matching method and function calls.
+	 */
+	public static final ParameterMatchingStrategy METHOD_MATCHING_STRATEGY = RuntimeTypesMatchingStrategy.INSTANCE;
+
+	/**
+	 * The parameter evaluation order strategy.
+	 */
+	public static final EvaluationOrder EVALUATION_ORDER = LeftToRightEvaluation.INSTANCE;
 
 	private RustFrontend(String filePath) {
 		this.filePath = filePath;

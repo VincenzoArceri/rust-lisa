@@ -4,6 +4,8 @@ import it.unipr.cfg.expression.RustBoxExpression;
 import it.unipr.cfg.expression.RustCastExpression;
 import it.unipr.cfg.expression.RustDerefExpression;
 import it.unipr.cfg.expression.RustDoubleRefExpression;
+import it.unipr.cfg.expression.RustRangeExpression;
+import it.unipr.cfg.expression.RustRangeFromExpression;
 import it.unipr.cfg.expression.RustRefExpression;
 import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
@@ -30,6 +32,7 @@ import it.unipr.cfg.expression.numeric.RustMinusExpression;
 import it.unipr.cfg.expression.numeric.RustModExpression;
 import it.unipr.cfg.expression.numeric.RustMulExpression;
 import it.unipr.cfg.expression.numeric.RustSubExpression;
+import it.unipr.cfg.statement.RustAssignment;
 import it.unipr.cfg.statement.RustLetAssignment;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
@@ -42,12 +45,15 @@ import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
-import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NoOp;
 import it.unive.lisa.program.cfg.statement.Ret;
+import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
+import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.ArrayList;
@@ -877,15 +883,16 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitPat(ctx.pat());
 		default:
 			// TODO need to implement the other cases:
-//			pat_no_mut:
-//			   : pat_range_end '...' pat_range_end
-//			   | pat_range_end '..' pat_range_end // experimental `feature(exclusive_range_pattern)`
-//			   | path macro_tail
-//			   | 'ref'? ident ('@' pat)?
-//			   | 'ref' 'mut' ident ('@' pat)?
-//			   | path '(' pat_list_with_dots? ')'
-//			   | path '{' pat_fields? '}'
-//			   | path // BUG: ambiguity with bare ident case (above)
+			// pat_no_mut:
+			// : pat_range_end '...' pat_range_end
+			// | pat_range_end '..' pat_range_end // experimental
+			// `feature(exclusive_range_pattern)`
+			// | path macro_tail
+			// | 'ref'? ident ('@' pat)?
+			// | 'ref' 'mut' ident ('@' pat)?
+			// | path '(' pat_list_with_dots? ')'
+			// | path '{' pat_fields? '}'
+			// | path // BUG: ambiguity with bare ident case (above)
 			return null;
 		}
 	}
@@ -972,7 +979,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Statement visitExpr(ExprContext ctx) {
+	public Expression visitExpr(ExprContext ctx) {
 		return visitAssign_expr(ctx.assign_expr());
 	}
 
@@ -1033,8 +1040,21 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
 			else
 				entryNode = currentStmt.getLeft();
+
 			lastStmt = currentStmt.getRight();
 		}
+
+		// This expr is the one of return from a function
+		if (ctx.expr() != null) {
+			Expression expr = visitExpr(ctx.expr());
+
+			Return ret = new Return(currentCfg, locationOf(ctx), expr);
+
+			currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
+
+			lastStmt = ret;
+		}
+
 		return Pair.of(entryNode, lastStmt);
 	}
 
@@ -1069,24 +1089,25 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		}
 
 		if (ctx.pat() != null) {
+			Expression name = visitPat(ctx.pat());
+
 			Type type = (ctx.ty() == null ? Untyped.INSTANCE : visitTy(ctx.ty()));
 
 			// TODO do not take into account the attr part for now
 			if (ctx.expr() != null) {
-				// TODO this cast is safe until we model full statement as
-				// expression
-				Expression expr = (Expression) visitExpr(ctx.expr());
-
-				Expression name = visitPat(ctx.pat());
+				Expression expr = visitExpr(ctx.expr());
 
 				VariableRef var = new VariableRef(currentCfg, locationOf(ctx), name.toString(), type);
 
 				RustLetAssignment assigment = new RustLetAssignment(currentCfg, locationOf(ctx), var, expr);
-
 				currentCfg.addNode(assigment);
 
 				return Pair.of(assigment, assigment);
 			}
+
+			VariableRef var = new VariableRef(currentCfg, locationOf(ctx), name.toString(), type);
+			currentCfg.addNode(var);
+			return Pair.of(var, var);
 		}
 
 		// TODO do not take into account the attr part for now
@@ -1095,15 +1116,19 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitBlocky_expr(Blocky_exprContext ctx) {
-		if (ctx.block_with_inner_attrs() != null)
+		if (ctx.getChild(0) instanceof Block_with_inner_attrsContext && ctx.block_with_inner_attrs() != null)
 			return visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 
 		Statement firstStmt = null;
 		Statement lastStmt = null;
 
-		// TODO: ignoring "loop_label?" part
-		switch (ctx.children.get(0).getText()) {
-		case "if":
+		// TODO Figure out what to do with the loop label
+		Object loop_label = null;
+		if (ctx.loop_label() != null) {
+			loop_label = visitLoop_label(ctx.loop_label());
+		}
+
+		if (ctx.children.get(0).getText().equals("if")) {
 			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
 			currentCfg.addNode(noOp);
 
@@ -1148,11 +1173,88 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 			firstStmt = elseIfGuardList.get(0);
 			lastStmt = noOp;
-			break;
+
+		} else if ((loop_label == null && ctx.children.get(0).getText().equals("loop"))
+				|| ctx.children.get(1).getText().equals("loop")) {
+			Pair<Statement, Statement> stmt = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+			currentCfg.addEdge(new SequentialEdge(stmt.getRight(), stmt.getLeft()));
+
+			firstStmt = stmt.getLeft();
+			lastStmt = stmt.getRight();
+
+		} else if ((loop_label == null && ctx.children.get(0).getText().equals("while"))
+				|| ctx.children.get(1).getText().equals("while")) {
+			Expression guard = visitCond_or_pat(ctx.cond_or_pat(0));
+			currentCfg.addNode(guard);
+
+			Pair<Statement, Statement> body = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+			currentCfg.addNode(noOp);
+
+			firstStmt = guard;
+			currentCfg.addEdge(new TrueEdge(guard, body.getLeft()));
+			currentCfg.addEdge(new FalseEdge(guard, noOp));
+			currentCfg.addEdge(new SequentialEdge(body.getRight(), guard));
+			lastStmt = noOp;
+
+		} else if ((loop_label == null && ctx.children.get(0).getText().equals("for"))
+				|| ctx.children.get(1).getText().equals("for")) {
+
+			Expression pat = visitPat(ctx.pat());
+			Expression range = visitExpr_no_struct(ctx.expr_no_struct());
+			Pair<Statement, Statement> body = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+
+			VariableRef fresh = new VariableRef(currentCfg, locationOf(ctx), "RUSTLISA_FRESH");
+			Expression freshAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), fresh, range);
+			currentCfg.addNode(freshAssignment);
+
+			UnresolvedCall nextCall = new UnresolvedCall(currentCfg, locationOf(ctx),
+					RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
+					RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.INSTANCE, fresh.toString(), "next",
+					RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, new Expression[0]);
+
+			// TODO This should be mutable
+			Expression patAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), pat, nextCall);
+			// TODO Keep in mind that this is also a function
+			// call to pat.next() which
+			// returns a std::ops::Option which is Some(n) if n
+			// is the next iterator in the
+			// sequence and None otherwise.
+
+			currentCfg.addNode(patAssignment);
+			currentCfg.addEdge(new SequentialEdge(freshAssignment, patAssignment));
+
+			// TODO NullLiteral here is to represent the None type, change this
+			// in the future
+			Expression guard = new RustNotEqualExpression(currentCfg, locationOf(ctx), pat,
+					new NullLiteral(currentCfg, locationOf(ctx)));
+			currentCfg.addNode(guard);
+
+			currentCfg.addEdge(new SequentialEdge(patAssignment, guard));
+
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
+			currentCfg.addNode(noOp);
+
+			currentCfg.addEdge(new TrueEdge(guard, body.getLeft()));
+			currentCfg.addEdge(new FalseEdge(guard, noOp));
+
+			Expression increment = new RustAssignment(currentCfg, locationOf(ctx), pat, nextCall);
+			// TODO Keep in mind that this is also a function
+			// call to pat.next() which
+			// returns a std::ops::Option which is Some(n) if n
+			// is the next iterator in the
+			// sequence and None otherwise.
+			currentCfg.addNode(increment);
+
+			currentCfg.addEdge(new SequentialEdge(body.getRight(), increment));
+			currentCfg.addEdge(new SequentialEdge(increment, guard));
+
+			firstStmt = freshAssignment;
+			lastStmt = noOp;
 		}
 
 		return Pair.of(firstStmt, lastStmt);
-
 	}
 
 	@Override
@@ -1236,9 +1338,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (ctx.lit() != null)
 			return visitLit(ctx.lit());
 		// TODO watch out for expression and statements
-//		else if (ctx.blocky_expr() != null) {
-//			return visitBlocky_expr(ctx.blocky_expr());
-//		}
+		// else if (ctx.blocky_expr() != null) {
+		// return visitBlocky_expr(ctx.blocky_expr());
+		// }
 		else
 			// TODO: skipping macro_tail
 			return visitPath(ctx.path());
@@ -1511,11 +1613,41 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitRange_expr(Range_exprContext ctx) {
-		// TODO: for the moment, we skip the other productions
-		// and we focus just on or_expr
-		if (ctx.children.size() == 1)
+		if (ctx.children.size() == 1) { // First production
 			return visitOr_expr(ctx.or_expr(0));
-		return null;
+
+		} else if (ctx.children.size() == 3) { // Second full production
+			Expression left = visitOr_expr(ctx.or_expr().get(0));
+			Expression right = visitOr_expr(ctx.or_expr().get(1));
+
+			return new RustRangeExpression(currentCfg, locationOf(ctx), left, right);
+
+		} else { // Second (case with two members) and third production
+
+			if (ctx.getChild(0).getText().equals("..")) { // Third production
+				if (ctx.or_expr() != null) {
+					// TODO The following here is to parse "..end" which is a
+					// RangeTo type,
+					// that does not have a Iterator implementation, but it is
+					// used as slicing index.
+					// https://doc.rust-lang.org/std/ops/struct.RangeTo.html
+					// We should figure that out later
+					return null;
+				}
+
+				// TODO The following here is to parse ".." which is a RangeFull
+				// type,
+				// that does not have a Iterator implementation, but it is used
+				// as slicing index.
+				// https://doc.rust-lang.org/std/ops/struct.RangeFull.html
+				// We should figure that out later
+				return null;
+
+			} else { // Second (case with two members) production
+				Expression left = visitOr_expr(ctx.or_expr().get(0));
+				return new RustRangeFromExpression(currentCfg, locationOf(ctx), left);
+			}
+		}
 	}
 
 	@Override
@@ -1523,10 +1655,43 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (ctx.assign_expr() == null)
 			return visitRange_expr(ctx.range_expr());
 
-		Expression lhs = visitRange_expr(ctx.range_expr());
-		Expression rhs = visitAssign_expr(ctx.assign_expr());
-		Assignment asg = new Assignment(currentCfg, locationOf(ctx), lhs, rhs);
-		return asg;
+		Expression rangeExpr = visitRange_expr(ctx.range_expr());
+		Expression right = visitAssign_expr(ctx.assign_expr());
+
+		switch (ctx.getChild(1).getText()) {
+		case "=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr, right);
+		case "*=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustMulExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "/=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustDivExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "%=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustModExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "+=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustAddExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "-=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustSubExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "<<=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustLeftShiftExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case ">": // catches only ">" which is separated in the g4 grammar
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustRightShiftExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "&=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustAndBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		case "^=":
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustXorBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		default: // operator "|="
+			return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+					new RustOrBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+		}
 	}
 
 	@Override
@@ -1537,14 +1702,15 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		// TODO it is necessary to think about what this function returns in the
 		// future
-//		Pair<Statement, Statement> left = visitPost_expr_no_struct(ctx.post_expr_no_struct());
-//		Statement right = visitPost_expr_tail(ctx.post_expr_tail());
-//		
-//		currentCfg.addNode(right);
-//		
-//		currentCfg.addEdge(new SequentialEdge(left.getRight(), right));
-//
-//		return Pair.of(left.getLeft(), right);
+		// Pair<Statement, Statement> left =
+		// visitPost_expr_no_struct(ctx.post_expr_no_struct());
+		// Statement right = visitPost_expr_tail(ctx.post_expr_tail());
+		//
+		// currentCfg.addNode(right);
+		//
+		// currentCfg.addEdge(new SequentialEdge(left.getRight(), right));
+		//
+		// return Pair.of(left.getLeft(), right);
 
 		return null;
 	}
@@ -1559,10 +1725,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (ctx.expr_attrs() != null) {
 			// TODO it is necessary to think about what this function returns in
 			// the future
-//			Pair<Statement, Statement> left = visitExpr_attrs(ctx.expr_attrs());
-//			currentCfg.addEdge(new SequentialEdge(left.getRight(), expr.getLeft()));
-//			
-//			return Pair.of(left.getRight(), expr.getLeft());
+			// Pair<Statement, Statement> left =
+			// visitExpr_attrs(ctx.expr_attrs());
+			// currentCfg.addEdge(new SequentialEdge(left.getRight(),
+			// expr.getLeft()));
+			//
+			// return Pair.of(left.getRight(), expr.getLeft());
 			return null;
 		}
 
@@ -1749,31 +1917,84 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitRange_expr_no_struct(Range_expr_no_structContext ctx) {
-		// Third grammar branch
-		if (ctx.getChild(0).getText().equals("..")) {
-			if (ctx.or_expr_no_struct(0) != null) {
-				Expression or = visitOr_expr_no_struct(ctx.or_expr_no_struct(0));
-				// TODO the rest is too complex for now
+		if (ctx.children.size() == 1) { // First production
+			return visitOr_expr_no_struct(ctx.or_expr_no_struct(0));
+
+		} else if (ctx.children.size() == 3) { // Second full production
+			Expression left = visitOr_expr_no_struct(ctx.or_expr_no_struct().get(0));
+			Expression right = visitOr_expr_no_struct(ctx.or_expr_no_struct().get(1));
+
+			return new RustRangeExpression(currentCfg, locationOf(ctx), left, right);
+
+		} else { // Second (case with two members) and third production
+
+			if (ctx.getChild(0).getText().equals("..")) { // Third production
+				if (ctx.or_expr_no_struct() != null) {
+					// TODO The following here is to parse "..end" which is a
+					// RangeTo type,
+					// that does not have a Iterator implementation, but it is
+					// used as slicing index.
+					// https://doc.rust-lang.org/std/ops/struct.RangeTo.html
+					// We should figure that out later
+					return null;
+				}
+
+				// TODO The following here is to parse ".." which is a RangeFull
+				// type,
+				// that does not have a Iterator implementation, but it is used
+				// as slicing index.
+				// https://doc.rust-lang.org/std/ops/struct.RangeFull.html
+				// We should figure that out later
+				return null;
+
+			} else { // Second (case with two members) production
+				Expression left = visitOr_expr_no_struct(ctx.or_expr_no_struct().get(0));
+				return new RustRangeFromExpression(currentCfg, locationOf(ctx), left);
 			}
 		}
-
-		// First and second grammar branch
-		Expression orLeft = visitOr_expr_no_struct(ctx.or_expr_no_struct(0));
-		if (ctx.or_expr_no_struct(1) != null) {
-			// second grammar branch
-			Expression orRight = visitOr_expr_no_struct(ctx.or_expr_no_struct(1));
-			// TODO the rest is too complex for now
-		}
-
-		return orLeft;
 	}
 
 	@Override
 	public Expression visitAssign_expr_no_struct(Assign_expr_no_structContext ctx) {
 		Expression rangeExpr = visitRange_expr_no_struct(ctx.range_expr_no_struct());
 
+		if (ctx.assign_expr_no_struct() != null) {
+			Expression right = visitAssign_expr_no_struct(ctx.assign_expr_no_struct());
+
+			switch (ctx.getChild(1).getText()) {
+			case "=":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr, right);
+			case "*=":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+						new RustMulExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+			case "/=":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+						new RustDivExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+			case "%=":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+						new RustModExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+			case "+=":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+						new RustAddExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+			case "<<=":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+						new RustLeftShiftExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+			case ">":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+						new RustRightShiftExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+			case "&=":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+						new RustAndBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+			case "^=":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+						new RustXorBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+			case "|=":
+				return new RustAssignment(currentCfg, locationOf(ctx), rangeExpr,
+						new RustOrBitwiseExpression(currentCfg, locationOf(ctx), rangeExpr, right));
+			}
+		}
+
 		return rangeExpr;
-		// TODO implement the second branch of the grammar
 	}
 
 	@Override
