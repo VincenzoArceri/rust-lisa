@@ -1,6 +1,6 @@
 package it.unipr.frontend;
 
-import it.unipr.cfg.expression.RustAccessMemberFunctionExpression;
+import it.unipr.cfg.expression.RustAccessMemberExpression;
 import it.unipr.cfg.expression.RustBoxExpression;
 import it.unipr.cfg.expression.RustCastExpression;
 import it.unipr.cfg.expression.RustDerefExpression;
@@ -1209,8 +1209,21 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 			// TODO This should be mutable
 			Expression patAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), pat,
-					new RustAccessMemberFunctionExpression(currentCfg, locationOf(ctx), fresh, "next",
-							new Expression[0]));
+					new RustAccessMemberExpression(currentCfg, locationOf(ctx), fresh,
+							// TODO Currently using RustString, so that the
+							// graph generated looks ok, but
+							// this is NOT a RustString. This is an access to a
+							// field called "next" but
+							// currently we have no way of modeling the rust's
+							// member "next" because we do
+							// not have struct parsing.
+							// TODO Keep in mind that this is also a function
+							// call to pat.next() which
+							// returns a std::ops::Option which is Some(n) if n
+							// is the next iterator in the
+							// sequence and None otherwise.
+							new RustString(currentCfg, locationOf(ctx), "next()")));
+
 			currentCfg.addNode(patAssignment);
 			currentCfg.addEdge(new SequentialEdge(freshAssignment, patAssignment));
 
@@ -1229,8 +1242,20 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			currentCfg.addEdge(new FalseEdge(guard, noOp));
 
 			Expression increment = new RustAssignment(currentCfg, locationOf(ctx), pat,
-					new RustAccessMemberFunctionExpression(currentCfg, locationOf(ctx), pat, "next",
-							new Expression[0]));
+					new RustAccessMemberExpression(currentCfg, locationOf(ctx), pat,
+							// TODO Currently using RustString, so that the
+							// graph generated looks ok, but
+							// this is NOT a RustString. This is an access to a
+							// field called "next" but
+							// currently we have no way of modeling the rust's
+							// member "next" because we do
+							// not have struct parsing.
+							// TODO Keep in mind that this is also a function
+							// call to pat.next() which
+							// returns a std::ops::Option which is Some(n) if n
+							// is the next iterator in the
+							// sequence and None otherwise.
+							new RustString(currentCfg, locationOf(ctx), "next()")));
 			currentCfg.addNode(increment);
 
 			currentCfg.addEdge(new SequentialEdge(body.getRight(), increment));
