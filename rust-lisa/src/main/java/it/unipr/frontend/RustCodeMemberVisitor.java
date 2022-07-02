@@ -1,6 +1,5 @@
 package it.unipr.frontend;
 
-import it.unipr.cfg.expression.RustAccessMemberExpression;
 import it.unipr.cfg.expression.RustBoxExpression;
 import it.unipr.cfg.expression.RustCastExpression;
 import it.unipr.cfg.expression.RustDerefExpression;
@@ -52,6 +51,8 @@ import it.unive.lisa.program.cfg.statement.Ret;
 import it.unive.lisa.program.cfg.statement.Return;
 import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
+import it.unive.lisa.program.cfg.statement.call.Call.CallType;
+import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
 import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -882,15 +883,16 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitPat(ctx.pat());
 		default:
 			// TODO need to implement the other cases:
-//			pat_no_mut:
-//			   : pat_range_end '...' pat_range_end
-//			   | pat_range_end '..' pat_range_end // experimental `feature(exclusive_range_pattern)`
-//			   | path macro_tail
-//			   | 'ref'? ident ('@' pat)?
-//			   | 'ref' 'mut' ident ('@' pat)?
-//			   | path '(' pat_list_with_dots? ')'
-//			   | path '{' pat_fields? '}'
-//			   | path // BUG: ambiguity with bare ident case (above)
+			// pat_no_mut:
+			// : pat_range_end '...' pat_range_end
+			// | pat_range_end '..' pat_range_end // experimental
+			// `feature(exclusive_range_pattern)`
+			// | path macro_tail
+			// | 'ref'? ident ('@' pat)?
+			// | 'ref' 'mut' ident ('@' pat)?
+			// | path '(' pat_list_with_dots? ')'
+			// | path '{' pat_fields? '}'
+			// | path // BUG: ambiguity with bare ident case (above)
 			return null;
 		}
 	}
@@ -1207,22 +1209,18 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			Expression freshAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), fresh, range);
 			currentCfg.addNode(freshAssignment);
 
+			UnresolvedCall nextCall = new UnresolvedCall(currentCfg, locationOf(ctx),
+					RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
+					RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.INSTANCE, fresh.toString(), "next",
+					RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, new Expression[0]);
+
 			// TODO This should be mutable
-			Expression patAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), pat,
-					new RustAccessMemberExpression(currentCfg, locationOf(ctx), fresh,
-							// TODO Currently using RustString, so that the
-							// graph generated looks ok, but
-							// this is NOT a RustString. This is an access to a
-							// field called "next" but
-							// currently we have no way of modeling the rust's
-							// member "next" because we do
-							// not have struct parsing.
-							// TODO Keep in mind that this is also a function
-							// call to pat.next() which
-							// returns a std::ops::Option which is Some(n) if n
-							// is the next iterator in the
-							// sequence and None otherwise.
-							new RustString(currentCfg, locationOf(ctx), "next()")));
+			Expression patAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), pat, nextCall);
+			// TODO Keep in mind that this is also a function
+			// call to pat.next() which
+			// returns a std::ops::Option which is Some(n) if n
+			// is the next iterator in the
+			// sequence and None otherwise.
 
 			currentCfg.addNode(patAssignment);
 			currentCfg.addEdge(new SequentialEdge(freshAssignment, patAssignment));
@@ -1241,21 +1239,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			currentCfg.addEdge(new TrueEdge(guard, body.getLeft()));
 			currentCfg.addEdge(new FalseEdge(guard, noOp));
 
-			Expression increment = new RustAssignment(currentCfg, locationOf(ctx), pat,
-					new RustAccessMemberExpression(currentCfg, locationOf(ctx), pat,
-							// TODO Currently using RustString, so that the
-							// graph generated looks ok, but
-							// this is NOT a RustString. This is an access to a
-							// field called "next" but
-							// currently we have no way of modeling the rust's
-							// member "next" because we do
-							// not have struct parsing.
-							// TODO Keep in mind that this is also a function
-							// call to pat.next() which
-							// returns a std::ops::Option which is Some(n) if n
-							// is the next iterator in the
-							// sequence and None otherwise.
-							new RustString(currentCfg, locationOf(ctx), "next()")));
+			Expression increment = new RustAssignment(currentCfg, locationOf(ctx), pat, nextCall);
+			// TODO Keep in mind that this is also a function
+			// call to pat.next() which
+			// returns a std::ops::Option which is Some(n) if n
+			// is the next iterator in the
+			// sequence and None otherwise.
 			currentCfg.addNode(increment);
 
 			currentCfg.addEdge(new SequentialEdge(body.getRight(), increment));
@@ -1349,9 +1338,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (ctx.lit() != null)
 			return visitLit(ctx.lit());
 		// TODO watch out for expression and statements
-//		else if (ctx.blocky_expr() != null) {
-//			return visitBlocky_expr(ctx.blocky_expr());
-//		}
+		// else if (ctx.blocky_expr() != null) {
+		// return visitBlocky_expr(ctx.blocky_expr());
+		// }
 		else
 			// TODO: skipping macro_tail
 			return visitPath(ctx.path());
@@ -1713,14 +1702,15 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		// TODO it is necessary to think about what this function returns in the
 		// future
-//		Pair<Statement, Statement> left = visitPost_expr_no_struct(ctx.post_expr_no_struct());
-//		Statement right = visitPost_expr_tail(ctx.post_expr_tail());
-//		
-//		currentCfg.addNode(right);
-//		
-//		currentCfg.addEdge(new SequentialEdge(left.getRight(), right));
-//
-//		return Pair.of(left.getLeft(), right);
+		// Pair<Statement, Statement> left =
+		// visitPost_expr_no_struct(ctx.post_expr_no_struct());
+		// Statement right = visitPost_expr_tail(ctx.post_expr_tail());
+		//
+		// currentCfg.addNode(right);
+		//
+		// currentCfg.addEdge(new SequentialEdge(left.getRight(), right));
+		//
+		// return Pair.of(left.getLeft(), right);
 
 		return null;
 	}
@@ -1735,10 +1725,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (ctx.expr_attrs() != null) {
 			// TODO it is necessary to think about what this function returns in
 			// the future
-//			Pair<Statement, Statement> left = visitExpr_attrs(ctx.expr_attrs());
-//			currentCfg.addEdge(new SequentialEdge(left.getRight(), expr.getLeft()));
-//			
-//			return Pair.of(left.getRight(), expr.getLeft());
+			// Pair<Statement, Statement> left =
+			// visitExpr_attrs(ctx.expr_attrs());
+			// currentCfg.addEdge(new SequentialEdge(left.getRight(),
+			// expr.getLeft()));
+			//
+			// return Pair.of(left.getRight(), expr.getLeft());
 			return null;
 		}
 
