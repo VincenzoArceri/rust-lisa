@@ -1,37 +1,38 @@
-package it.unipr.cfg.type.numeric.signed;
+package it.unipr.cfg.type;
 
 import it.unive.lisa.type.NumericType;
+import it.unive.lisa.type.StringType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Unique instance of the Rust i32 type.
+ * Unique instance of the Rust char type.
  *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustI32Type implements NumericType {
+public class RustStrType implements StringType {
 
 	/**
-	 * Unique instance of Rust i32 type.
+	 * Unique instance of Rust char type.
 	 */
-	public static final RustI32Type INSTANCE = new RustI32Type();
+	public static final RustStrType INSTANCE = new RustStrType();
 
-	private RustI32Type() {
+	private RustStrType() {
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		return other instanceof RustI32Type || other instanceof Untyped;
+		return other instanceof RustStrType || other instanceof Untyped;
 	}
 
 	@Override
 	public Type commonSupertype(Type other) {
 		// Rust cast ought to be explicit by design
 		// https://doc.rust-lang.org/rust-by-example/types/cast.html
-		if (other instanceof RustI32Type)
+		if (other instanceof RustStrType)
 			return other;
 		return Untyped.INSTANCE;
 	}
@@ -42,38 +43,8 @@ public class RustI32Type implements NumericType {
 	}
 
 	@Override
-	public boolean is8Bits() {
-		return false;
-	}
-
-	@Override
-	public boolean is16Bits() {
-		return false;
-	}
-
-	@Override
-	public boolean is32Bits() {
-		return true;
-	}
-
-	@Override
-	public boolean is64Bits() {
-		return false;
-	}
-
-	@Override
-	public boolean isUnsigned() {
-		return false;
-	}
-
-	@Override
-	public boolean isIntegral() {
-		return true;
-	}
-
-	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustI32Type;
+		return obj instanceof RustStrType;
 	}
 
 	@Override
@@ -81,8 +52,4 @@ public class RustI32Type implements NumericType {
 		return System.identityHashCode(INSTANCE);
 	}
 
-	@Override
-	public String toString() {
-		return "i32";
-	}
 }

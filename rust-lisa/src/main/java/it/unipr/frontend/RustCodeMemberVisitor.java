@@ -743,8 +743,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Type visitTy(TyContext ctx) {
-		// TODO figure out later how to parse this
-		return Untyped.INSTANCE;
+		return new RustTypeVisitor().visitTy(ctx);
 	}
 
 	@Override
@@ -1099,7 +1098,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 				VariableRef var = new VariableRef(currentCfg, locationOf(ctx), name.toString(), type);
 
-				RustLetAssignment assigment = new RustLetAssignment(currentCfg, locationOf(ctx), var, expr);
+				RustLetAssignment assigment = new RustLetAssignment(currentCfg, locationOf(ctx), type, var, expr);
 				currentCfg.addNode(assigment);
 
 				return Pair.of(assigment, assigment);
@@ -1206,7 +1205,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			Pair<Statement, Statement> body = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 
 			VariableRef fresh = new VariableRef(currentCfg, locationOf(ctx), "RUSTLISA_FRESH");
-			Expression freshAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), fresh, range);
+			Expression freshAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), Untyped.INSTANCE, fresh, range);
 			currentCfg.addNode(freshAssignment);
 
 			UnresolvedCall nextCall = new UnresolvedCall(currentCfg, locationOf(ctx),
@@ -1215,7 +1214,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 					RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, new Expression[0]);
 
 			// TODO This should be mutable
-			Expression patAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), pat, nextCall);
+			Expression patAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), Untyped.INSTANCE, pat, nextCall);
 			// TODO Keep in mind that this is also a function
 			// call to pat.next() which
 			// returns a std::ops::Option which is Some(n) if n
