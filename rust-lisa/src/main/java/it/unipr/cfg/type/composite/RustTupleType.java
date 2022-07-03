@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.apache.logging.log4j.util.Strings;
+
 /**
  * Instance of the Rust tuple type.
  *
@@ -22,8 +24,8 @@ public class RustTupleType implements Type {
 	private static final Set<RustTupleType> INSTANCES = new HashSet<>();
 
 	/**
-	 * Yields the first instance that matches tuple type requested or adds it if
-	 * not present.
+	 * Yields the first instance that matches tuple type requested or adds it if not
+	 * present.
 	 * 
 	 * @param type the {@link RustTupleType} to look for
 	 * 
@@ -104,6 +106,11 @@ public class RustTupleType implements Type {
 			return false;
 
 		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "(" + Strings.join(types, ',') + ")";
 	}
 
 }

@@ -80,5 +80,10 @@ public class RustU16Type implements NumericType {
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
 	}
+	
+	@Override
+	public String toString() {
+		return "u16";
+	}
 
 }

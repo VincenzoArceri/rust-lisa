@@ -51,5 +51,10 @@ public class RustStrType implements StringType {
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
 	}
+	
+	@Override
+	public String toString() {
+		return "&str";
+	}
 
 }

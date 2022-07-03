@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import org.apache.logging.log4j.util.Strings;
+
 /**
  * Instance of the Rust array type.
  *
@@ -124,5 +126,10 @@ public class RustArrayType implements ArrayType {
 			return false;
 
 		return true;
+	}
+	
+	@Override
+	public String toString() {
+		return "[" + contentType.toString() + ";" + length.toString() + "]";
 	}
 }

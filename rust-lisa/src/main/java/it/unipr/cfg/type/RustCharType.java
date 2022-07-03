@@ -50,5 +50,10 @@ public class RustCharType implements Type {
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
 	}
+	
+	@Override
+	public String toString() {
+		return "char";
+	}
 
 }
