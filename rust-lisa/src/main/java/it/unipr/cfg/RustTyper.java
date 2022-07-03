@@ -6,7 +6,7 @@ import it.unive.lisa.type.Untyped;
 
 /**
  * Used to statically infer the type of a expression given the types of the
- * subcomponents
+ * subcomponents.
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>

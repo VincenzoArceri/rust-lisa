@@ -1,21 +1,21 @@
 digraph {
-	"node0" [shape="rect",color="black",label=<a = -(42)>];
-	"node1" [shape="rect",color="gray",label=<z = *(y)>];
-	"node2" [shape="rect",color="gray",label=<d = &amp;&amp;(42)>];
-	"node3" [shape="rect",color="gray",label=<q = +(a, a)>];
-	"node4" [shape="rect",color="gray",label=<x = y>];
+	"node0" [shape="rect",color="black",label=<let a : untyped = -(42)>];
+	"node1" [shape="rect",color="gray",label=<let c : untyped = &amp;(42)>];
+	"node2" [shape="rect",color="gray",label=<let b : untyped = !(true)>];
+	"node3" [shape="rect",color="gray",label=<let z : untyped = *(y)>];
+	"node4" [shape="rect",color="gray",label=<let q : untyped = +(a, a)>];
 	"node5" [shape="rect",color="black",peripheries="2",label=<ret>];
-	"node6" [shape="rect",color="gray",label=<e = box(42)>];
-	"node7" [shape="rect",color="gray",label=<c = &amp;(42)>];
-	"node8" [shape="rect",color="gray",label=<b = !(true)>];
-	"node1" -> "node6" [color="black"];
-	"node2" -> "node4" [color="black"];
-	"node3" -> "node5" [color="black"];
-	"node4" -> "node1" [color="black"];
-	"node0" -> "node8" [color="black"];
+	"node6" [shape="rect",color="gray",label=<let x : untyped = y>];
+	"node7" [shape="rect",color="gray",label=<let e : untyped = box(42)>];
+	"node8" [shape="rect",color="gray",label=<let d : untyped = &amp;&amp;(42)>];
+	"node1" -> "node8" [color="black"];
+	"node2" -> "node1" [color="black"];
+	"node3" -> "node7" [color="black"];
+	"node0" -> "node2" [color="black"];
+	"node4" -> "node5" [color="black"];
 	"node6" -> "node3" [color="black"];
-	"node7" -> "node2" [color="black"];
-	"node8" -> "node7" [color="black"];
+	"node7" -> "node4" [color="black"];
+	"node8" -> "node6" [color="black"];
 subgraph cluster_legend {
 	label="Legend";
 	style=dotted;

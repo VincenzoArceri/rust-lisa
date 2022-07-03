@@ -17,7 +17,6 @@ import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import java.util.Arrays;
-
 import org.apache.logging.log4j.util.Strings;
 
 /**
@@ -31,10 +30,10 @@ public class RustTupleLiteral extends NaryExpression {
 	/**
 	 * Build the tuple literal.
 	 * 
-	 * @param cfg        the {@link CFG} where this literal lies
-	 * @param location   the location where this literal is defined
-	 * @param staticType the static types of the tuples elements
-	 * @param values     the values inside the literal
+	 * @param cfg      the {@link CFG} where this literal lies
+	 * @param location the location where this literal is defined
+	 * @param types    the static types of the tuples elements
+	 * @param values   the values inside the literal
 	 */
 	protected RustTupleLiteral(CFG cfg, CodeLocation location, Type[] types, Expression[] values) {
 		super(cfg, location, "()", new RustTupleType(Arrays.asList(types)), values);
