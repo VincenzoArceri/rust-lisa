@@ -1,5 +1,6 @@
 package it.unipr.cfg.expression.comparison;
 
+import it.unipr.cfg.RustTyper;
 import it.unipr.cfg.type.RustBooleanType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -34,7 +35,7 @@ public class RustOrExpression extends BinaryExpression {
 			Expression left, Expression right) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, "||", RustBooleanType.INSTANCE, left, right);
+		super(cfg, location, "||", RustTyper.resultType(left, right), left, right);
 	}
 
 	@Override

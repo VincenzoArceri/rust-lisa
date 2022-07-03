@@ -1,5 +1,6 @@
 package it.unipr.cfg.expression.comparison;
 
+import it.unipr.cfg.RustTyper;
 import it.unipr.cfg.type.RustBooleanType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -19,6 +20,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
  * Rust and expression (e.g., x && y).
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustAndExpression extends BinaryExpression {
 
@@ -34,7 +36,7 @@ public class RustAndExpression extends BinaryExpression {
 			Expression left, Expression right) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, "&&", RustBooleanType.INSTANCE, left, right);
+		super(cfg, location, "&&", RustTyper.resultType(left, right), left, right);
 	}
 
 	@Override
