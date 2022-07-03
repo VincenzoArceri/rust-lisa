@@ -20,6 +20,7 @@ import it.unive.lisa.type.Untyped;
  * Rust add expression (e.g., x + y).
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustAddExpression extends BinaryExpression {
 
