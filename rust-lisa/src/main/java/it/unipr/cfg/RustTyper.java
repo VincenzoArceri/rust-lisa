@@ -11,4 +11,11 @@ public class RustTyper {
 		
 		return Untyped.INSTANCE;
 	}
+	
+	public static Type resultType(Expression expr) {
+		if (expr.getStaticType() instanceof Untyped)
+			return Untyped.INSTANCE;
+		
+		return expr.getStaticType();
+	}
 }
