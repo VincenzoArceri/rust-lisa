@@ -1,5 +1,6 @@
 package it.unipr.cfg.expression.literal;
 
+import it.unipr.cfg.type.composite.RustTupleType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -17,29 +18,31 @@ import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import java.util.Arrays;
 
+import org.apache.logging.log4j.util.Strings;
+
 /**
- * Rust array literal.
+ * Rust tuple literal.
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustArrayLiteral extends NaryExpression {
+public class RustTupleLiteral extends NaryExpression {
 
 	/**
-	 * Build the array literal.
+	 * Build the tuple literal.
 	 * 
 	 * @param cfg        the {@link CFG} where this literal lies
 	 * @param location   the location where this literal is defined
-	 * @param staticType the static type of the array
+	 * @param staticType the static types of the tuples elements
 	 * @param values     the values inside the literal
 	 */
-	protected RustArrayLiteral(CFG cfg, CodeLocation location, Type staticType, Expression... values) {
-		super(cfg, location, "[]", staticType, values);
+	protected RustTupleLiteral(CFG cfg, CodeLocation location, Type[] types, Expression[] values) {
+		super(cfg, location, "()", new RustTupleType(Arrays.asList(types)), values);
 	}
 
 	@Override
 	public String toString() {
-		return Arrays.toString(getSubExpressions());
+		return "(" + Strings.join(Arrays.asList(getSubExpressions()), ',') + ")";
 	}
 
 	@Override
