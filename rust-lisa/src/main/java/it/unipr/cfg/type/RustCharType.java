@@ -1,6 +1,5 @@
 package it.unipr.cfg.type;
 
-import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
@@ -50,7 +49,7 @@ public class RustCharType implements Type {
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "char";

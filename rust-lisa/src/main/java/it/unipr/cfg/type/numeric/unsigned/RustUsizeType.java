@@ -80,7 +80,7 @@ public class RustUsizeType implements NumericType {
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "usize";

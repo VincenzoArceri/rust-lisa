@@ -1205,7 +1205,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			Pair<Statement, Statement> body = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 
 			VariableRef fresh = new VariableRef(currentCfg, locationOf(ctx), "RUSTLISA_FRESH");
-			Expression freshAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), Untyped.INSTANCE, fresh, range);
+			Expression freshAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), Untyped.INSTANCE, fresh,
+					range);
 			currentCfg.addNode(freshAssignment);
 
 			UnresolvedCall nextCall = new UnresolvedCall(currentCfg, locationOf(ctx),
@@ -1214,7 +1215,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 					RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, new Expression[0]);
 
 			// TODO This should be mutable
-			Expression patAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), Untyped.INSTANCE, pat, nextCall);
+			Expression patAssignment = new RustLetAssignment(currentCfg, locationOf(ctx), Untyped.INSTANCE, pat,
+					nextCall);
 			// TODO Keep in mind that this is also a function
 			// call to pat.next() which
 			// returns a std::ops::Option which is Some(n) if n

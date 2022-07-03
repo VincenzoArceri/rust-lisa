@@ -10,7 +10,6 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.statement.Assignment;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
@@ -29,6 +28,7 @@ public class RustLetAssignment extends BinaryExpression {
 	 * 
 	 * @param cfg      the {@link CFG} where this expression lies
 	 * @param location the location where this expression is defined
+	 * @param type     the static type of this expression
 	 * @param left     the left-hand side of this expression
 	 * @param right    the right-hand side of this expression
 	 */
@@ -38,12 +38,12 @@ public class RustLetAssignment extends BinaryExpression {
 		// once we have modeled Rust types
 		super(cfg, location, "=", type, left, right);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "let " + getLeft() + " : " + getStaticType().toString() + " = " + getRight();
 	}
-	
+
 	@Override
 	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,

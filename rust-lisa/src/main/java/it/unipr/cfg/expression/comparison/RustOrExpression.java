@@ -1,7 +1,6 @@
 package it.unipr.cfg.expression.comparison;
 
 import it.unipr.cfg.RustTyper;
-import it.unipr.cfg.type.RustBooleanType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;

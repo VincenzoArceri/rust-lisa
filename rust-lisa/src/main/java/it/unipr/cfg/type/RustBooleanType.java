@@ -47,7 +47,7 @@ public class RustBooleanType implements BooleanType {
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "bool";

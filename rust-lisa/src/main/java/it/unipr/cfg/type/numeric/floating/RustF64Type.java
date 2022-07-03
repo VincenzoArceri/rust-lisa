@@ -80,7 +80,7 @@ public class RustF64Type implements NumericType {
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "f64";

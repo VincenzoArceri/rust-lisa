@@ -1,6 +1,5 @@
 package it.unipr.cfg.type;
 
-import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.StringType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -51,7 +50,7 @@ public class RustStrType implements StringType {
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "&str";

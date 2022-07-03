@@ -5,7 +5,6 @@ import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.literal.Literal;
 import it.unive.lisa.type.ReferenceType;
-import it.unive.lisa.type.Untyped;
 
 /**
  * Rust string literal.

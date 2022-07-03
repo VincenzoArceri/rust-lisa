@@ -22,15 +22,16 @@ public class RustTypeVisitor extends RustBaseVisitor<Type> {
 	@Override
 	public Type visitTy(TyContext ctx) {
 		if (ctx.ty_path() != null) {
-			//TODO Skipping macro_tail? part
+			// TODO Skipping macro_tail? part
 			return visitTy_path(ctx.ty_path());
 		}
-		
+
 		switch (ctx.getChild(0).getText()) {
 		case "_":
 			return Untyped.INSTANCE;
-		
-		default: // TODO When parsing in this function will be complete, delete me
+
+		default: // TODO When parsing in this function will be complete, delete
+					// me
 			return Untyped.INSTANCE;
 		}
 	}
@@ -59,7 +60,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Type> {
 		// TODO skipping ty_args?
 		return ctx.ident() == null ? Untyped.INSTANCE : visitIdent(ctx.ident());
 	}
-	
+
 	@Override
 	public Type visitIdent(IdentContext ctx) {
 		// TODO skipping "auto", "default" and "union"
