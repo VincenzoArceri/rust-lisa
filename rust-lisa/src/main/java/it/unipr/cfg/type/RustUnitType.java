@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Unique instance of the Rust boolean type.
+ * Unique instance of the Rust unit type.
  *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>

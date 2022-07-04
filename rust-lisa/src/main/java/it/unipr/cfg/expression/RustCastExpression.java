@@ -35,9 +35,14 @@ public class RustCastExpression extends UnaryExpression {
 			Expression expr) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, "as_" + type, type, expr);
+		super(cfg, location, "as", type, expr);
 	}
 
+	@Override
+	public String toString() {
+		return getSubExpression() + " as " + getStaticType();
+	}
+	
 	@Override
 	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
