@@ -771,15 +771,14 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitTy_sum(Ty_sumContext ctx) {
-		RustBoolean fake = new RustBoolean(currentCfg, locationOf(ctx), true);
-		return fake;
+	public Type visitTy_sum(Ty_sumContext ctx) {
+		// TODO skipping ('+' bound)? grammar branch
+		return new RustTypeVisitor().visitTy(ctx.ty());
 	}
 
 	@Override
-	public Object visitTy_sum_list(Ty_sum_listContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Type> visitTy_sum_list(Ty_sum_listContext ctx) {
+		return new RustTypeVisitor().visitTy_sum_list(ctx);
 	}
 
 	@Override
@@ -1766,9 +1765,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitPre_expr_no_struct(ctx.pre_expr_no_struct());
 
 		Expression left = visitCast_expr_no_struct(ctx.cast_expr_no_struct());
-		Expression right = visitTy_sum(ctx.ty_sum());
+		Type type = visitTy_sum(ctx.ty_sum());
 
-		return new RustCastExpression(currentCfg, locationOf(ctx), left, right);
+		return new RustCastExpression(currentCfg, locationOf(ctx), type, left);
 	}
 
 	@Override
