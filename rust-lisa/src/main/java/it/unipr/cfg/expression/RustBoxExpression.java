@@ -13,6 +13,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Untyped;
 
 /**
@@ -34,7 +35,12 @@ public class RustBoxExpression extends UnaryExpression {
 			Expression expr) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, "box", Untyped.INSTANCE, expr);
+		super(cfg, location, "box", new ReferenceType(Untyped.INSTANCE), expr);
+	}
+	
+	@Override
+	public String toString() {
+		return "box " + getSubExpression();
 	}
 
 	@Override
