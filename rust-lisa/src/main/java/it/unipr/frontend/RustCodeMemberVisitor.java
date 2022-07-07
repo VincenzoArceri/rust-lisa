@@ -34,6 +34,7 @@ import it.unipr.cfg.expression.numeric.RustMulExpression;
 import it.unipr.cfg.expression.numeric.RustSubExpression;
 import it.unipr.cfg.statement.RustAssignment;
 import it.unipr.cfg.statement.RustLetAssignment;
+import it.unipr.cfg.type.RustUnitType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
 import it.unive.lisa.program.CompilationUnit;
@@ -173,7 +174,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public CFG visitFn_decl(Fn_declContext ctx) {
 		String fnName = getFnName(ctx.fn_head());
-		// TODO: skipping return type
+		
+		Type returnType = RustUnitType.INSTANCE;
+		if (ctx.fn_rtype() != null) {
+			returnType = new RustTypeVisitor(this).visitFn_rtype(ctx.fn_rtype());
+		}
+		// TODO figure out what to do with return type
+		
 		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, fnName, new Parameter[0]);
 		currentCfg = new CFG(cfgDesc);
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());

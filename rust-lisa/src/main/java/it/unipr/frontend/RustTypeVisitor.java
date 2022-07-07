@@ -23,6 +23,7 @@ import it.unipr.cfg.type.numeric.unsigned.RustUsizeType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.Assign_exprContext;
 import it.unipr.rust.antlr.RustParser.ExprContext;
+import it.unipr.rust.antlr.RustParser.Fn_rtypeContext;
 import it.unipr.rust.antlr.RustParser.IdentContext;
 import it.unipr.rust.antlr.RustParser.Shift_exprContext;
 import it.unipr.rust.antlr.RustParser.TyContext;
@@ -211,4 +212,12 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 		return types;
 	}
 	
+	@Override
+	public Type visitFn_rtype(Fn_rtypeContext ctx) {
+		// TODO Ignoring "impl" and "!" types
+		if (ctx.ty() != null)
+			return visitTy(ctx.ty());
+		
+		return Untyped.INSTANCE;
+	}
 }
