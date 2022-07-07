@@ -1,9 +1,25 @@
 package it.unipr.frontend;
 
+import it.unipr.cfg.type.RustBooleanType;
+import it.unipr.cfg.type.RustCharType;
+import it.unipr.cfg.type.RustStrType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustArrayType;
 import it.unipr.cfg.type.composite.RustTupleType;
+import it.unipr.cfg.type.numeric.floating.RustF32Type;
+import it.unipr.cfg.type.numeric.floating.RustF64Type;
+import it.unipr.cfg.type.numeric.signed.RustI128Type;
+import it.unipr.cfg.type.numeric.signed.RustI16Type;
 import it.unipr.cfg.type.numeric.signed.RustI32Type;
+import it.unipr.cfg.type.numeric.signed.RustI64Type;
+import it.unipr.cfg.type.numeric.signed.RustI8Type;
+import it.unipr.cfg.type.numeric.signed.RustIsizeType;
+import it.unipr.cfg.type.numeric.unsigned.RustU128Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU16Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU32Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU64Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU8Type;
+import it.unipr.cfg.type.numeric.unsigned.RustUsizeType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.Assign_exprContext;
 import it.unipr.rust.antlr.RustParser.ExprContext;
@@ -120,10 +136,42 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 	public Type visitIdent(IdentContext ctx) {
 		// TODO skipping "auto", "default" and "union"
 		switch (ctx.Ident().getText()) {
+		case "f32":
+			return RustF32Type.INSTANCE;
+		case "f64":
+			return RustF64Type.INSTANCE;
+		case "i8":
+			return RustI8Type.INSTANCE;
+		case "i16":
+			return RustI16Type.INSTANCE;
 		case "i32":
-			System.out.println("SONO QUA");
 			return RustI32Type.INSTANCE;
+		case "i64":
+			return RustI64Type.INSTANCE;
+		case "i128":
+			return RustI128Type.INSTANCE;
+		case "isize":
+			return RustIsizeType.INSTANCE;
+		case "u8":
+			return RustU8Type.INSTANCE;
+		case "u16":
+			return RustU16Type.INSTANCE;
+		case "u32":
+			return RustU32Type.INSTANCE;
+		case "u64":
+			return RustU64Type.INSTANCE;
+		case "u128":
+			return RustU128Type.INSTANCE;
+		case "usize":
+			return RustUsizeType.INSTANCE;
+		case "bool":
+			return RustBooleanType.INSTANCE;
+		case "&str":
+			return RustStrType.INSTANCE;
+		case "char":
+			return RustCharType.INSTANCE;
 		default:
+			// TODO User defined type here
 			return Untyped.INSTANCE;
 		}
 	}
