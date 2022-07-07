@@ -747,9 +747,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitMut_or_const(Mut_or_constContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public String visitMut_or_const(Mut_or_constContext ctx) {
+		return ctx.getText().equals("mut") ? "mut" : "const";
 	}
 
 	@Override

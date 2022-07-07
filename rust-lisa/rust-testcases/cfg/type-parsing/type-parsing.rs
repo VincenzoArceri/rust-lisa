@@ -3,4 +3,5 @@ fn main() {
 
 	let y = 7;
 
+	let z : [i32; 4];
 }

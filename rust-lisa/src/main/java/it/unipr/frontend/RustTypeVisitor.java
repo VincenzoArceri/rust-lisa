@@ -33,6 +33,7 @@ import it.unipr.rust.antlr.RustParser.Ty_path_tailContext;
 import it.unipr.rust.antlr.RustParser.Ty_sumContext;
 import it.unipr.rust.antlr.RustParser.Ty_sum_listContext;
 import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.LinkedList;
@@ -58,6 +59,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			// TODO Skipping macro_tail? part
 			return visitTy_path(ctx.ty_path());
 		}
+		boolean mutable = false;
 
 		switch (ctx.getChild(0).getText()) {
 		case "_":
@@ -85,7 +87,31 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 				return new RustArrayType(arrayType, getConstantValue(ctx.expr()));
 			}
 
-		default: // TODO skipping other productions
+		case "&":
+			// TODO Ignoring lifetimes for now
+			// TODO Figure out what to do with mutable
+			if (ctx.getChild(2).getText().equals("mut"))
+				mutable = true;
+			
+			return new ReferenceType(visitTy(ctx.ty()));
+		
+		case "&&":
+			// TODO Ignoring lifetimes for now
+			// TODO Figure out what to do with mutable
+			if (ctx.getChild(2).getText().equals("mut"))
+				mutable = true;
+			
+			return new ReferenceType(new ReferenceType(visitTy(ctx.ty())));
+		
+		case "*":
+			// TODO Figure out what to do with mutable
+			// TODO The difference between a "*mut" and "*const" is about wheter dereferencing them yields a mutable or immutable expression.
+			if (codeVisitor.visitMut_or_const(ctx.mut_or_const()).equals("mut"))
+				mutable = true;
+			
+			return Untyped.INSTANCE;
+
+		default: // TODO skipping the other productions
 			return Untyped.INSTANCE;
 		}
 	}
@@ -184,4 +210,5 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 		}
 		return types;
 	}
+	
 }
