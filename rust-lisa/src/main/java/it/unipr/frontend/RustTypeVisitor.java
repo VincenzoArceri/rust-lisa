@@ -1,10 +1,14 @@
 package it.unipr.frontend;
 
 import it.unipr.cfg.type.RustUnitType;
+import it.unipr.cfg.type.composite.RustArrayType;
 import it.unipr.cfg.type.composite.RustTupleType;
 import it.unipr.cfg.type.numeric.signed.RustI32Type;
 import it.unipr.rust.antlr.RustBaseVisitor;
+import it.unipr.rust.antlr.RustParser.Assign_exprContext;
+import it.unipr.rust.antlr.RustParser.ExprContext;
 import it.unipr.rust.antlr.RustParser.IdentContext;
+import it.unipr.rust.antlr.RustParser.Shift_exprContext;
 import it.unipr.rust.antlr.RustParser.TyContext;
 import it.unipr.rust.antlr.RustParser.Ty_pathContext;
 import it.unipr.rust.antlr.RustParser.Ty_path_mainContext;
@@ -12,6 +16,7 @@ import it.unipr.rust.antlr.RustParser.Ty_path_segment_no_superContext;
 import it.unipr.rust.antlr.RustParser.Ty_path_tailContext;
 import it.unipr.rust.antlr.RustParser.Ty_sumContext;
 import it.unipr.rust.antlr.RustParser.Ty_sum_listContext;
+import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.LinkedList;
@@ -24,6 +29,12 @@ import java.util.List;
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustTypeVisitor extends RustBaseVisitor<Object> {
+	
+	private final RustCodeMemberVisitor codeVisitor;
+	
+	public RustTypeVisitor(RustCodeMemberVisitor codeVisitor) {
+		this.codeVisitor = codeVisitor;
+	}
 
 	@Override
 	public Type visitTy(TyContext ctx) {
@@ -50,23 +61,46 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			}
 
 			return RustUnitType.INSTANCE;
+			
+		case "[":
+			Type arrayType = codeVisitor.visitTy_sum(ctx.ty_sum());
+			
+			if (ctx.expr() != null) {
+				return new RustArrayType(arrayType, getConstantValue(ctx.expr()));
+			}
 
-		default: // TODO When parsing in this function will be complete, delete
-					// me
+		default: // TODO skipping other productions
 			return Untyped.INSTANCE;
 		}
+	}
+	
+	private boolean isInteger(String s) {
+		try {
+			Integer.parseInt(s);
+			return true;
+		} catch (NumberFormatException nfe) {
+			return false;
+		}
+	}
+
+	private Integer getConstantValue(ExprContext expr) {
+		// TODO We are just parsing the simple literal integers, the rest for now is out of our scope
+		if (isInteger(expr.getText()))
+			return Integer.parseInt(expr.getText());
+		
+		return null;
 	}
 
 	@Override
 	public Type visitTy_path(Ty_pathContext ctx) {
 		// TODO: we skip for the moment for_lifetime?
-		return (Type) super.visitTy_path_main(ctx.ty_path_main());
+		return visitTy_path_main(ctx.ty_path_main());
 	}
 
 	@Override
 	public Type visitTy_path_main(Ty_path_mainContext ctx) {
 		// TODO: we are currently handling just the production ty_path_tail
-		return (Type) super.visitTy_path_tail(ctx.ty_path_tail());
+		return visitTy_path_tail(ctx.ty_path_tail());
 	}
 
 	@Override

@@ -743,7 +743,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Type visitTy(TyContext ctx) {
-		return new RustTypeVisitor().visitTy(ctx);
+		return new RustTypeVisitor(this).visitTy(ctx);
 	}
 
 	@Override
@@ -773,12 +773,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Type visitTy_sum(Ty_sumContext ctx) {
 		// TODO skipping ('+' bound)? grammar branch
-		return new RustTypeVisitor().visitTy(ctx.ty());
+		return new RustTypeVisitor(this).visitTy(ctx.ty());
 	}
 
 	@Override
 	public List<Type> visitTy_sum_list(Ty_sum_listContext ctx) {
-		return new RustTypeVisitor().visitTy_sum_list(ctx);
+		return new RustTypeVisitor(this).visitTy_sum_list(ctx);
 	}
 
 	@Override
