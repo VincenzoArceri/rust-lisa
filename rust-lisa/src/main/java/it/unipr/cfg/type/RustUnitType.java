@@ -14,7 +14,7 @@ import java.util.Collections;
 public class RustUnitType implements Type {
 
 	/**
-	 * Unique instance of RustBoolean type.
+	 * Unique instance of RustUnitType type.
 	 */
 	public static final RustUnitType INSTANCE = new RustUnitType();
 
