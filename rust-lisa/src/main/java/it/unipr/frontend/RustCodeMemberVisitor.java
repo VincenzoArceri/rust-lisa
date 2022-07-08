@@ -227,6 +227,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	private String getFnName(Fn_headContext fnHead) {
+		// TODO skipping: 'const'? 'unsafe'? extern_abi? ty_params?
 		return fnHead.ident().getText();
 	}
 
@@ -357,9 +358,28 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitMethod_decl(Method_declContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public CFG visitMethod_decl(Method_declContext ctx) {
+		String methodName = getFnName(ctx.fn_head());
+		
+		Type returnType = RustUnitType.INSTANCE;
+		if (ctx.fn_rtype() != null) {
+			returnType = new RustTypeVisitor(this).visitFn_rtype(ctx.fn_rtype());
+		}
+		// TODO figure out what to do with return type
+		
+		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, methodName, new Parameter[0]);
+		currentCfg = new CFG(cfgDesc);
+		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
+		currentCfg.getEntrypoints().add(block.getLeft());
+
+		if (currentCfg.getAllExitpoints().isEmpty()) {
+			Ret ret = new Ret(currentCfg, locationOf(ctx));
+			currentCfg.addNode(ret);
+			currentCfg.addEdge(new SequentialEdge(block.getRight(), ret));
+		}
+
+		currentCfg.simplify();
+		return currentCfg;
 	}
 
 	@Override
@@ -381,15 +401,17 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitParam(ParamContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Parameter visitParam(ParamContext ctx) {
+		Expression expression = visitPat(ctx.pat());
+		Type type = visitParam_ty(ctx.param_ty());
+		
+		return new Parameter(locationOf(ctx), expression.toString(), type);
 	}
 
 	@Override
-	public Object visitParam_ty(Param_tyContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Type visitParam_ty(Param_tyContext ctx) {
+		// TODO skipping second production
+		return visitTy_sum(ctx.ty_sum());
 	}
 
 	@Override
@@ -411,15 +433,31 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitSelf_param(Self_paramContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Parameter visitSelf_param(Self_paramContext ctx) {
+		// TODO Skipping second production
+		
+		// TODO as of now, mutability in params requires more infrastructure
+		boolean mutability = false;
+		if (ctx.getChild(0).getText().equals("mut"))
+			mutability = true;
+		
+		Type type = visitTy_sum(ctx.ty_sum());
+		
+		return new Parameter(locationOf(ctx), "self", type);
 	}
 
 	@Override
-	public Object visitMethod_param_list(Method_param_listContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Parameter> visitMethod_param_list(Method_param_listContext ctx) {
+		List<Parameter> parameters = new ArrayList<>();
+		
+		if (ctx.self_param() != null) {
+			parameters.add(visitSelf_param(ctx.self_param()));
+		}
+		
+		for (ParamContext pCtx : ctx.param())
+			parameters.add(visitParam(pCtx));
+			
+		return parameters;
 	}
 
 	@Override
@@ -461,9 +499,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Type visitStruct_decl(Struct_declContext ctx) {
 		Expression name = visitIdent(ctx.ident());
-	
-		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, name.toString(), new Parameter[0]);
-		currentCfg = new CFG(cfgDesc);
 		
 		// TODO skipping ty_params? production
 		List<Expression> declarations = new RustTypeVisitor(this).visitStruct_tail(ctx.struct_tail());
@@ -571,27 +606,35 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitImpl_block(Impl_blockContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public CompilationUnit visitImpl_block(Impl_blockContext ctx) {
+		// TODO Ignoring: 'unsafe'?, tye_params? where_clause?
+		Type struct = visitImpl_what(ctx.impl_what());
+		
+		CompilationUnit structUnit = program.getUnit(struct.toString());
+		
+		for (Impl_itemContext fdCtx: ctx.impl_item())
+			structUnit.addCFG(visitImpl_item(fdCtx));		
+		
+		// TODO Figure out what to return here
+		return structUnit;
 	}
 
 	@Override
-	public Object visitImpl_what(Impl_whatContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Type visitImpl_what(Impl_whatContext ctx) {
+		// TODO Skipping trait implementation and parsing only the last rule
+		return visitTy_sum(ctx.ty_sum(0));
 	}
 
 	@Override
-	public Object visitImpl_item(Impl_itemContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public CFG visitImpl_item(Impl_itemContext ctx) {
+		// TODO skipping attr* and visibility?
+		return visitImpl_item_tail(ctx.impl_item_tail());
 	}
 
 	@Override
-	public Object visitImpl_item_tail(Impl_item_tailContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public CFG visitImpl_item_tail(Impl_item_tailContext ctx) {
+		// TODO skipping all production except "method_decl"
+		return visitMethod_decl(ctx.method_decl());
 	}
 
 	@Override
