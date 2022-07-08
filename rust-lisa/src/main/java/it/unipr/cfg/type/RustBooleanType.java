@@ -21,7 +21,7 @@ public class RustBooleanType implements BooleanType, RustType {
 		return mutability? INSTANCE : MUTABLE_INSTANCE;
 	}
 	
-	private boolean mutable;
+	private final boolean mutable;
 
 	private RustBooleanType(boolean mutability) {
 		mutable = mutability;

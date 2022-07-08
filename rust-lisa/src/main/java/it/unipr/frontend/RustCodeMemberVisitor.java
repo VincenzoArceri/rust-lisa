@@ -40,6 +40,7 @@ import it.unipr.cfg.statement.RustLetAssignment;
 import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustArrayType;
+import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.cfg.type.composite.RustTupleType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
@@ -107,13 +108,31 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	 * @param filePath file path of the Rust program to be analyzed
 	 * @param program  reference to the LiSA program that it is currently
 	 *                     analyzed
-	 * @param unit     current compilation unit to whic code members should be
+	 * @param unit     current compilation unit to which code members should be
 	 *                     added
 	 */
 	public RustCodeMemberVisitor(String filePath, Program program, CompilationUnit unit) {
 		this.filePath = filePath;
 		this.program = program;
 		this.unit = unit;
+	}
+	
+	/**
+	 * Yields the current control flow graph.
+	 * 
+	 * @return the current cfg
+	 */
+	public CFG getCurrentCfg() {
+		return currentCfg;
+	}
+	
+	/**
+	 * Yields the current compilation unit.
+	 * 
+	 * @return the current compilation unit
+	 */
+	public CompilationUnit getCompilationUnit() {
+		return unit;
 	}
 
 	/**
@@ -440,15 +459,25 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitStruct_decl(Struct_declContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitStruct_tail(Struct_tailContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Type visitStruct_decl(Struct_declContext ctx) {
+		Expression name = visitIdent(ctx.ident());
+	
+		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, name.toString(), new Parameter[0]);
+		currentCfg = new CFG(cfgDesc);
+		
+		// TODO skipping ty_params? production
+		List<Expression> declarations = new RustTypeVisitor(this).visitStruct_tail(ctx.struct_tail());
+		
+		return RustStructType.lookup(
+			name.toString(),
+			unit, 
+			false, 
+			declarations
+				.stream()
+				.map(x -> x.getStaticType())
+				.collect(Collectors.toList())
+				.toArray(new RustType[0])
+			);
 	}
 
 	@Override
@@ -459,18 +488,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Object visitTuple_struct_field_list(Tuple_struct_field_listContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitField_decl(Field_declContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitField_decl_list(Field_decl_listContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
 	}

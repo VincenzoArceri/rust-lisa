@@ -20,7 +20,7 @@ public class RustCharType implements RustType {
 		return mutability? INSTANCE : MUTABLE_INSTANCE;
 	}
 	
-	private boolean mutable;
+	private final boolean mutable;
 
 	private RustCharType(boolean mutability) {
 		mutable = mutability;

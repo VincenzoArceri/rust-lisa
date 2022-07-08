@@ -39,7 +39,7 @@ public class RustTupleType implements RustType {
 	}
 
 	private final List<Type> types;
-	private boolean mutable;
+	private final boolean mutable;
 
 	/**
 	 * Construct the {@link RustTupleType} object.

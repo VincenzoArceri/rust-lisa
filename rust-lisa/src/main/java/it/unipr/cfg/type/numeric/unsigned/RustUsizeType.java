@@ -22,7 +22,7 @@ public class RustUsizeType implements NumericType, RustType {
 		return mutability? INSTANCE : MUTABLE_INSTANCE;
 	}
 	
-	private boolean mutable;
+	private final boolean mutable;
 
 	private RustUsizeType(boolean mutability) {
 		mutable = mutability;

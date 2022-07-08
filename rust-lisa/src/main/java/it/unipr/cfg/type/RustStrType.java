@@ -21,7 +21,7 @@ public class RustStrType implements StringType, RustType {
 		return mutability? INSTANCE : MUTABLE_INSTANCE;
 	}
 	
-	private boolean mutable;
+	private final boolean mutable;
 
 	private RustStrType(boolean mutability) {
 		mutable = mutability;

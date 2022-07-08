@@ -22,7 +22,7 @@ public class RustU32Type implements NumericType, RustType {
 		return mutability? INSTANCE : MUTABLE_INSTANCE;
 	}
 	
-	private boolean mutable;
+	private final boolean mutable;
 
 	private RustU32Type(boolean mutability) {
 		mutable = mutability;

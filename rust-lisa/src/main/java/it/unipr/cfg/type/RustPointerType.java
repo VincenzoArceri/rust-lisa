@@ -41,7 +41,7 @@ public class RustPointerType implements PointerType, RustType {
 	}
 	
 	private final Type innerType;
-	private boolean mutable;
+	private final boolean mutable;
 
 	public RustPointerType(Type innerType, boolean mutability) {
 		this.innerType = Objects.requireNonNull(innerType);

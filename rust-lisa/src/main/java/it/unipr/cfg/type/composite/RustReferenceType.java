@@ -1,9 +1,10 @@
-package it.unipr.cfg.type;
+package it.unipr.cfg.type.composite;
 
 import java.util.Collection;
 
 import org.apache.commons.lang3.StringUtils;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.type.PointerType;
 import it.unive.lisa.type.Type;
@@ -22,8 +23,8 @@ public class RustReferenceType implements PointerType, RustType {
 	// TODO the purpose of this field is to avoid using the cache
 	// when defining the descriptors of cfgs, we have to find another
 	// workaround to this problem
-	private Type innerType;
-	private boolean mutable;
+	private final Type innerType;
+	private final boolean mutable;
 
 	/**
 	 * Builds the type for a reference to a location containing values of types

@@ -3,11 +3,12 @@ package it.unipr.frontend;
 import it.unipr.cfg.type.RustBooleanType;
 import it.unipr.cfg.type.RustCharType;
 import it.unipr.cfg.type.RustPointerType;
-import it.unipr.cfg.type.RustReferenceType;
 import it.unipr.cfg.type.RustStrType;
 import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustArrayType;
+import it.unipr.cfg.type.composite.RustReferenceType;
+import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.cfg.type.composite.RustTupleType;
 import it.unipr.cfg.type.numeric.floating.RustF32Type;
 import it.unipr.cfg.type.numeric.floating.RustF64Type;
@@ -25,8 +26,12 @@ import it.unipr.cfg.type.numeric.unsigned.RustU8Type;
 import it.unipr.cfg.type.numeric.unsigned.RustUsizeType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.ExprContext;
+import it.unipr.rust.antlr.RustParser.Field_declContext;
+import it.unipr.rust.antlr.RustParser.Field_decl_listContext;
 import it.unipr.rust.antlr.RustParser.Fn_rtypeContext;
 import it.unipr.rust.antlr.RustParser.IdentContext;
+import it.unipr.rust.antlr.RustParser.Struct_declContext;
+import it.unipr.rust.antlr.RustParser.Struct_tailContext;
 import it.unipr.rust.antlr.RustParser.TyContext;
 import it.unipr.rust.antlr.RustParser.Ty_pathContext;
 import it.unipr.rust.antlr.RustParser.Ty_path_mainContext;
@@ -34,10 +39,19 @@ import it.unipr.rust.antlr.RustParser.Ty_path_segment_no_superContext;
 import it.unipr.rust.antlr.RustParser.Ty_path_tailContext;
 import it.unipr.rust.antlr.RustParser.Ty_sumContext;
 import it.unipr.rust.antlr.RustParser.Ty_sum_listContext;
+import it.unive.lisa.program.cfg.CFG;
+import it.unive.lisa.program.cfg.CFGDescriptor;
+import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.NoOp;
+import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Type visitor for Rust, managing the parsing of Rust types.
@@ -219,5 +233,34 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			return visitTy(ctx.ty());
 		
 		return RustUnitType.INSTANCE;
+	}
+	
+	@Override
+	public List<Expression> visitStruct_tail(Struct_tailContext ctx) {
+		// TODO skipping first and second
+		if (ctx.field_decl_list() != null) {
+			 return visitField_decl_list(ctx.field_decl_list());
+		}
+
+		//This is a struct with no types
+		return new ArrayList<Expression>();
+	}
+	
+	@Override
+	public Expression visitField_decl(Field_declContext ctx) {
+		// TODO skipping attr* and visibility?
+		Expression ident = codeVisitor.visitIdent(ctx.ident());
+		Type type = codeVisitor.visitTy_sum(ctx.ty_sum());
+		
+		return new VariableRef(codeVisitor.getCurrentCfg(), codeVisitor.locationOf(ctx), ident.toString(), type);
+	}
+
+	@Override
+	public List<Expression> visitField_decl_list(Field_decl_listContext ctx) {
+		List<Expression> declarations = new ArrayList<>();
+		for (Field_declContext fdCtx: ctx.field_decl())
+			declarations.add(visitField_decl(fdCtx));
+		
+		return declarations;
 	}
 }

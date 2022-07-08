@@ -22,7 +22,7 @@ public class RustI64Type implements NumericType, RustType {
 		return mutability? INSTANCE : MUTABLE_INSTANCE;
 	}
 	
-	private boolean mutable;
+	private final boolean mutable;
 
 	private RustI64Type(boolean mutability) {
 		mutable = mutability;
