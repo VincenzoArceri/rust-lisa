@@ -17,7 +17,7 @@ public class RustCharType implements RustType {
 	private static final RustCharType MUTABLE_INSTANCE = new RustCharType(true);
 
 	public static RustCharType getInstance(boolean mutability) {
-		return mutability? INSTANCE : MUTABLE_INSTANCE;
+		return mutability? MUTABLE_INSTANCE : INSTANCE;
 	}
 	
 	private final boolean mutable;

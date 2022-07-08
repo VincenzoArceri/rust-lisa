@@ -18,6 +18,8 @@ import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import it.unive.lisa.type.Type;
 import java.util.Arrays;
+import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.util.Strings;
 
 /**
@@ -42,7 +44,7 @@ public class RustTupleLiteral extends NaryExpression {
 
 	@Override
 	public String toString() {
-		return "(" + Strings.join(Arrays.asList(getSubExpressions()), ',') + ")";
+		return "(" + Arrays.asList(getSubExpressions()).stream().map(e -> e.toString()).collect(Collectors.joining(", ")) + ")";
 	}
 
 	@Override

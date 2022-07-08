@@ -33,8 +33,6 @@ public class RustRefExpression extends UnaryExpression {
 	 */
 	public RustRefExpression(CFG cfg, CodeLocation location,
 			Expression expr) {
-		// TODO: need to change type of this expression
-		// once we have modeled Rust types
 		super(cfg, location, "&", new ReferenceType(Untyped.INSTANCE), expr);
 	}
 

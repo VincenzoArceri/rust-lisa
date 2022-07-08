@@ -21,7 +21,7 @@ public class RustU128Type implements NumericType, RustType {
 	private static final RustU128Type MUTABLE_INSTANCE = new RustU128Type(true);
 
 	public static RustU128Type getInstance(boolean mutability) {
-		return mutability? INSTANCE : MUTABLE_INSTANCE;
+		return mutability? MUTABLE_INSTANCE : INSTANCE;
 	}
 	
 	private final boolean mutable;

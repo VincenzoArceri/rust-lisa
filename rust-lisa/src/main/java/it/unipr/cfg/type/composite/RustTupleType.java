@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.util.Strings;
 
 /**
@@ -115,7 +117,7 @@ public class RustTupleType implements RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + "(" + Strings.join(types, ',') + ")";
+		return (mutable? "mut " : "") + "(" + types.stream().map(t -> t.toString()).collect(Collectors.joining(", ")) + ")";
 	}
 
 	@Override

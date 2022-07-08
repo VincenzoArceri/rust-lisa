@@ -18,7 +18,7 @@ public class RustStrType implements StringType, RustType {
 	private static final RustStrType MUTABLE_INSTANCE = new RustStrType(true);
 
 	public static RustStrType getInstance(boolean mutability) {
-		return mutability? INSTANCE : MUTABLE_INSTANCE;
+		return mutability? MUTABLE_INSTANCE : INSTANCE;
 	}
 	
 	private final boolean mutable;

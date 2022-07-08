@@ -135,7 +135,7 @@ public class RustArrayType implements ArrayType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + "[" + contentType.toString() + ";" + length.toString() + "]";
+		return (mutable? "mut " : "") + "[" + contentType.toString() + "; " + length.toString() + "]";
 	}
 
 	@Override

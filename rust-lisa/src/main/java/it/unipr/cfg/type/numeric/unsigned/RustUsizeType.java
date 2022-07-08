@@ -19,7 +19,7 @@ public class RustUsizeType implements NumericType, RustType {
 	private static final RustUsizeType MUTABLE_INSTANCE = new RustUsizeType(true);
 
 	public static RustUsizeType getInstance(boolean mutability) {
-		return mutability? INSTANCE : MUTABLE_INSTANCE;
+		return mutability? MUTABLE_INSTANCE : INSTANCE;
 	}
 	
 	private final boolean mutable;

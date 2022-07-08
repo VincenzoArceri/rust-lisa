@@ -206,13 +206,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		String fnName = getFnName(ctx.fn_head());
 		
 		Type returnType = RustUnitType.INSTANCE;
-		if (ctx.fn_rtype() != null) {
+		if (ctx.fn_rtype() != null)
 			returnType = new RustTypeVisitor(this).visitFn_rtype(ctx.fn_rtype());
-		}
-		// TODO figure out what to do with return type
 		
-		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, fnName, new Parameter[0]);
+		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, fnName, returnType, new Parameter[0]);
 		currentCfg = new CFG(cfgDesc);
+		
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 		currentCfg.getEntrypoints().add(block.getLeft());
 
@@ -362,12 +361,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		String methodName = getFnName(ctx.fn_head());
 		
 		Type returnType = RustUnitType.INSTANCE;
-		if (ctx.fn_rtype() != null) {
+		if (ctx.fn_rtype() != null)
 			returnType = new RustTypeVisitor(this).visitFn_rtype(ctx.fn_rtype());
-		}
-		// TODO figure out what to do with return type
-		
-		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, methodName, new Parameter[0]);
+				
+		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, methodName, returnType, new Parameter[0]);
 		currentCfg = new CFG(cfgDesc);
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 		currentCfg.getEntrypoints().add(block.getLeft());
@@ -945,17 +942,23 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		case "[":
 			return visitPat_elt_list(ctx.pat_elt_list());
 		case "&":
-			if (ctx.getChild(1).getText().equals("mut")) {
-				return visitPat(ctx.pat());
-			}
+			if (ctx.getChild(1).getText().equals("mut"))
+				// TODO figure out what to do with mutable 
+				return new RustRefExpression(currentCfg, locationOf(ctx), visitPat(ctx.pat()));
+		
 			return visitPat_no_mut(ctx.pat_no_mut());
 		case "&&":
-			if (ctx.getChild(1).getText().equals("mut")) {
-				return visitPat(ctx.pat());
-			}
-			return visitPat_no_mut(ctx.pat_no_mut());
+			if (ctx.getChild(1).getText().equals("mut"))
+				// TODO figure out what to do with mutable 
+				return new RustRefExpression(currentCfg, locationOf(ctx),
+					new RustRefExpression(currentCfg, locationOf(ctx),
+						visitPat(ctx.pat())));
+
+			return new RustRefExpression(currentCfg, locationOf(ctx),
+				new RustRefExpression(currentCfg, locationOf(ctx),
+					visitPat_no_mut(ctx.pat_no_mut())));
 		case "box":
-			return visitPat(ctx.pat());
+			return new RustBoxExpression(currentCfg, locationOf(ctx), visitPat(ctx.pat()));
 		default:
 			// TODO need to implement the other cases:
 			// pat_no_mut:

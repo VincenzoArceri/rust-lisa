@@ -19,7 +19,7 @@ public class RustI16Type implements NumericType, RustType {
 	private static final RustI16Type MUTABLE_INSTANCE = new RustI16Type(true);
 
 	public static RustI16Type getInstance(boolean mutability) {
-		return mutability? INSTANCE : MUTABLE_INSTANCE;
+		return mutability? MUTABLE_INSTANCE : INSTANCE;
 	}
 	
 	private final boolean mutable;

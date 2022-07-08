@@ -19,7 +19,7 @@ public class RustU32Type implements NumericType, RustType {
 	private static final RustU32Type MUTABLE_INSTANCE = new RustU32Type(true);
 
 	public static RustU32Type getInstance(boolean mutability) {
-		return mutability? INSTANCE : MUTABLE_INSTANCE;
+		return mutability? MUTABLE_INSTANCE : INSTANCE;
 	}
 	
 	private final boolean mutable;

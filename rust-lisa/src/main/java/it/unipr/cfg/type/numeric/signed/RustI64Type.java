@@ -19,7 +19,7 @@ public class RustI64Type implements NumericType, RustType {
 	private static final RustI64Type MUTABLE_INSTANCE = new RustI64Type(true);
 
 	public static RustI64Type getInstance(boolean mutability) {
-		return mutability? INSTANCE : MUTABLE_INSTANCE;
+		return mutability? MUTABLE_INSTANCE : INSTANCE;
 	}
 	
 	private final boolean mutable;
