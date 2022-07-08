@@ -11,14 +11,19 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustCharType implements Type {
+public class RustCharType implements RustType {
 
-	/**
-	 * Unique instance of Rust char type.
-	 */
-	public static final RustCharType INSTANCE = new RustCharType();
+	private static final RustCharType INSTANCE = new RustCharType(false);
+	private static final RustCharType MUTABLE_INSTANCE = new RustCharType(true);
 
-	private RustCharType() {
+	public static RustCharType getInstance(boolean mutability) {
+		return mutability? INSTANCE : MUTABLE_INSTANCE;
+	}
+	
+	private boolean mutable;
+
+	private RustCharType(boolean mutability) {
+		mutable = mutability;
 	}
 
 	@Override
@@ -42,7 +47,7 @@ public class RustCharType implements Type {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustCharType;
+		return obj instanceof RustCharType && ((RustCharType)obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -52,7 +57,13 @@ public class RustCharType implements Type {
 
 	@Override
 	public String toString() {
-		return "char";
+		return (mutable? "mut ": "") + "char";
 	}
+	
+	@Override
+	public boolean isMutable() {
+		return mutable;
+	}
+
 
 }

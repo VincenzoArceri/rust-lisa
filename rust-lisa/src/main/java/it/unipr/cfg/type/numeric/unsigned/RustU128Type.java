@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.numeric.unsigned;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -12,16 +13,21 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustU128Type implements NumericType {
+public class RustU128Type implements NumericType, RustType {
 	// TODO LiSA does not support 128 bits type. So no method isXXBits will be
 	// true.
 
-	/**
-	 * Unique instance of Rust u128 type.
-	 */
-	public static final RustU128Type INSTANCE = new RustU128Type();
+	private static final RustU128Type INSTANCE = new RustU128Type(false);
+	private static final RustU128Type MUTABLE_INSTANCE = new RustU128Type(true);
 
-	private RustU128Type() {
+	public static RustU128Type getInstance(boolean mutability) {
+		return mutability? INSTANCE : MUTABLE_INSTANCE;
+	}
+	
+	private boolean mutable;
+
+	private RustU128Type(boolean mutability) {
+		mutable = mutability;
 	}
 
 	@Override
@@ -75,7 +81,7 @@ public class RustU128Type implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustU128Type;
+		return obj instanceof RustU128Type && ((RustU128Type)obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -85,7 +91,12 @@ public class RustU128Type implements NumericType {
 
 	@Override
 	public String toString() {
-		return "u128";
+		return (mutable? "mut " : "") + "u128";
+	}
+
+	@Override
+	public boolean isMutable() {
+		return mutable;
 	}
 
 }

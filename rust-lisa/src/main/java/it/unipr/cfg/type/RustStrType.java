@@ -7,19 +7,24 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Unique instance of the Rust char type.
+ * Unique instance of the Rust str type.
  *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustStrType implements StringType {
+public class RustStrType implements StringType, RustType {
 
-	/**
-	 * Unique instance of Rust char type.
-	 */
-	public static final RustStrType INSTANCE = new RustStrType();
+	private static final RustStrType INSTANCE = new RustStrType(false);
+	private static final RustStrType MUTABLE_INSTANCE = new RustStrType(true);
 
-	private RustStrType() {
+	public static RustStrType getInstance(boolean mutability) {
+		return mutability? INSTANCE : MUTABLE_INSTANCE;
+	}
+	
+	private boolean mutable;
+
+	private RustStrType(boolean mutability) {
+		mutable = mutability;
 	}
 
 	@Override
@@ -53,7 +58,12 @@ public class RustStrType implements StringType {
 
 	@Override
 	public String toString() {
-		return "&str";
+		return "&" + (mutable? "mut " : "") + "str";
+	}
+
+	@Override
+	public boolean isMutable() {
+		return mutable;
 	}
 
 }

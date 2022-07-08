@@ -23,7 +23,7 @@ public class RustChar extends Literal<Character> {
 	public RustChar(CFG cfg, CodeLocation location, Character value) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, value, RustCharType.INSTANCE);
+		super(cfg, location, value, RustCharType.getInstance(false));
 	}
 
 }

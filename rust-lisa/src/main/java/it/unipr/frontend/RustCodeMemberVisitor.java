@@ -34,6 +34,7 @@ import it.unipr.cfg.expression.numeric.RustMulExpression;
 import it.unipr.cfg.expression.numeric.RustSubExpression;
 import it.unipr.cfg.statement.RustAssignment;
 import it.unipr.cfg.statement.RustLetAssignment;
+import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
@@ -67,6 +68,7 @@ import org.apache.commons.lang3.tuple.Pair;
  * Code member visitor for Rust.
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
@@ -777,13 +779,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Type visitTy_sum(Ty_sumContext ctx) {
+	public RustType visitTy_sum(Ty_sumContext ctx) {
 		// TODO skipping ('+' bound)? grammar branch
 		return new RustTypeVisitor(this).visitTy(ctx.ty());
 	}
 
 	@Override
-	public List<Type> visitTy_sum_list(Ty_sum_listContext ctx) {
+	public List<RustType> visitTy_sum_list(Ty_sum_listContext ctx) {
 		return new RustTypeVisitor(this).visitTy_sum_list(ctx);
 	}
 

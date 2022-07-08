@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.numeric.signed;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -12,14 +13,19 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustI64Type implements NumericType {
+public class RustI64Type implements NumericType, RustType {
 
-	/**
-	 * Unique instance of Rust i64 type.
-	 */
-	public static final RustI64Type INSTANCE = new RustI64Type();
+	private static final RustI64Type INSTANCE = new RustI64Type(false);
+	private static final RustI64Type MUTABLE_INSTANCE = new RustI64Type(true);
 
-	private RustI64Type() {
+	public static RustI64Type getInstance(boolean mutability) {
+		return mutability? INSTANCE : MUTABLE_INSTANCE;
+	}
+	
+	private boolean mutable;
+
+	private RustI64Type(boolean mutability) {
+		mutable = mutability;
 	}
 
 	@Override
@@ -73,7 +79,7 @@ public class RustI64Type implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustI64Type;
+		return obj instanceof RustI64Type && ((RustI64Type)obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -83,7 +89,13 @@ public class RustI64Type implements NumericType {
 
 	@Override
 	public String toString() {
-		return "i64";
+		return (mutable? "mut " : "") + "i64";
 	}
+	
+	@Override
+	public boolean isMutable() {
+		return mutable;
+	}
+
 
 }

@@ -23,6 +23,6 @@ public class RustInteger extends Literal<Integer> {
 	public RustInteger(CFG cfg, CodeLocation location, Integer value) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, value, RustI32Type.INSTANCE);
+		super(cfg, location, value, RustI32Type.getInstance(false));
 	}
 }

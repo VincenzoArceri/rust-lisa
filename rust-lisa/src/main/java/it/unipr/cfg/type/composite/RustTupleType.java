@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.composite;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
@@ -15,7 +16,7 @@ import org.apache.logging.log4j.util.Strings;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustTupleType implements Type {
+public class RustTupleType implements RustType {
 
 	/**
 	 * Collection of all parse tuples.
@@ -38,14 +39,16 @@ public class RustTupleType implements Type {
 	}
 
 	private final List<Type> types;
+	private boolean mutable;
 
 	/**
 	 * Construct the {@link RustTupleType} object.
 	 * 
 	 * @param types an ordered list of types inside the tuple
 	 */
-	public RustTupleType(List<Type> types) {
+	public RustTupleType(List<Type> types, boolean mutability) {
 		this.types = Objects.requireNonNull(types);
+		this.mutable = mutability;
 	}
 
 	private boolean checkAssignment(Object other) {
@@ -103,13 +106,20 @@ public class RustTupleType implements Type {
 				return false;
 		} else if (!types.equals(other.types))
 			return false;
+		
+		if (mutable != other.mutable)
+			return false;
 
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "(" + Strings.join(types, ',') + ")";
+		return (mutable? "mut " : "") + "(" + Strings.join(types, ',') + ")";
 	}
 
+	@Override
+	public boolean isMutable() {
+		return mutable;
+	}
 }

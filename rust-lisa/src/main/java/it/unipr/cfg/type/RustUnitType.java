@@ -11,7 +11,7 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustUnitType implements Type {
+public class RustUnitType implements RustType {
 
 	/**
 	 * Unique instance of RustUnitType type.
@@ -52,4 +52,10 @@ public class RustUnitType implements Type {
 	public String toString() {
 		return "()";
 	}
+
+	@Override
+	public boolean isMutable() {
+		return false;
+	}
+
 }

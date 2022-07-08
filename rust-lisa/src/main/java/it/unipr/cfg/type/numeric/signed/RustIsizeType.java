@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.numeric.signed;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -12,14 +13,19 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustIsizeType implements NumericType {
+public class RustIsizeType implements NumericType, RustType {
 
-	/**
-	 * Unique instance of Rust isize type.
-	 */
-	public static final RustIsizeType INSTANCE = new RustIsizeType();
+	private static final RustIsizeType INSTANCE = new RustIsizeType(false);
+	private static final RustIsizeType MUTABLE_INSTANCE = new RustIsizeType(true);
 
-	private RustIsizeType() {
+	public static RustIsizeType getInstance(boolean mutability) {
+		return mutability? INSTANCE : MUTABLE_INSTANCE;
+	}
+	
+	private boolean mutable;
+
+	private RustIsizeType(boolean mutability) {
+		mutable = mutability;
 	}
 
 	@Override
@@ -73,7 +79,7 @@ public class RustIsizeType implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustIsizeType;
+		return obj instanceof RustIsizeType && ((RustIsizeType)obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -83,7 +89,12 @@ public class RustIsizeType implements NumericType {
 
 	@Override
 	public String toString() {
-		return "isize";
+		return (mutable? "mut " : "") + "isize";
+	}
+	
+	@Override
+	public boolean isMutable() {
+		return mutable;
 	}
 
 }

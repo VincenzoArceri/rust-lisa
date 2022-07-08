@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.numeric.floating;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -12,14 +13,19 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustF32Type implements NumericType {
+public class RustF32Type implements NumericType, RustType {
 
-	/**
-	 * Unique instance of Rust f32 type.
-	 */
-	public static final RustF32Type INSTANCE = new RustF32Type();
+	private static final RustF32Type INSTANCE = new RustF32Type(false);
+	private static final RustF32Type MUTABLE_INSTANCE = new RustF32Type(true);
 
-	private RustF32Type() {
+	public static RustF32Type getInstance(boolean mutability) {
+		return mutability? INSTANCE : MUTABLE_INSTANCE;
+	}
+	
+	private boolean mutable;
+
+	private RustF32Type(boolean mutability) {
+		mutable = mutability;
 	}
 
 	@Override
@@ -73,7 +79,7 @@ public class RustF32Type implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustF32Type;
+		return obj instanceof RustF32Type && ((RustF32Type)obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -83,7 +89,12 @@ public class RustF32Type implements NumericType {
 
 	@Override
 	public String toString() {
-		return "f32";
+		return (mutable? "mut " : "") + "f32";
+	}
+
+	@Override
+	public boolean isMutable() {
+		return mutable;
 	}
 
 }

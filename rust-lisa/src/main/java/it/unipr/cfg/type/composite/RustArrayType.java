@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.composite;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.ArrayType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -14,7 +15,7 @@ import java.util.Set;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustArrayType implements ArrayType {
+public class RustArrayType implements ArrayType, RustType {
 
 	/**
 	 * Collection of all arrays.
@@ -37,20 +38,23 @@ public class RustArrayType implements ArrayType {
 	}
 
 	/**
-	 * In Rust an array is characterized by type of its elements and length.
+	 * In Rust an array is characterized by type of its elements length, and its mutability.
 	 */
 	private final Type contentType;
 	private final Integer length;
+	private final boolean mutable;
 
 	/**
 	 * Construct the {@link RustArrayType} object.
 	 * 
 	 * @param contentType the type of the element in the array
 	 * @param length      the length of the array
+	 * @param mutability  the mutability of the array
 	 */
-	public RustArrayType(Type contentType, Integer length) {
+	public RustArrayType(Type contentType, Integer length, boolean mutability) {
 		this.contentType = Objects.requireNonNull(contentType);
 		this.length = Objects.requireNonNull(length);
+		this.mutable = mutability;
 	}
 
 	@Override
@@ -122,12 +126,21 @@ public class RustArrayType implements ArrayType {
 				return false;
 		} else if (!length.equals(other.length))
 			return false;
+		
+		if (mutable != other.mutable)
+			return false;
 
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "[" + contentType.toString() + ";" + length.toString() + "]";
+		return (mutable? "mut " : "") + "[" + contentType.toString() + ";" + length.toString() + "]";
 	}
+
+	@Override
+	public boolean isMutable() {
+		return mutable;
+	}
+	
 }

@@ -1,6 +1,5 @@
 package it.unipr.cfg.type;
 
-import it.unipr.cfg.type.composite.RustArrayType;
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.type.PointerType;
 import it.unive.lisa.type.Type;
@@ -10,6 +9,7 @@ import it.unive.lisa.util.collections.externalSet.ExternalSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -18,7 +18,7 @@ import java.util.Set;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustPointerType implements PointerType {
+public class RustPointerType implements PointerType, RustType {
 
 	/**
 	 * Collection of all pointer types.
@@ -41,9 +41,11 @@ public class RustPointerType implements PointerType {
 	}
 	
 	private final Type innerType;
+	private boolean mutable;
 
-	public RustPointerType(Type innerType) {
-		this.innerType = innerType;
+	public RustPointerType(Type innerType, boolean mutability) {
+		this.innerType = Objects.requireNonNull(innerType);
+		this.mutable = mutability;
 	}
 	
 	@Override
@@ -69,6 +71,7 @@ public class RustPointerType implements PointerType {
 
 		return instances;
 	}
+	
 	@Override
 	public int hashCode() {
 		return innerType.hashCode();
@@ -92,17 +95,26 @@ public class RustPointerType implements PointerType {
 				return false;
 		} else if (!innerType.equals(other.innerType))
 			return false;
+		
+		if (mutable != other.mutable)
+			return false;
 
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "*" + innerType.toString();
+		return "*" + (mutable? "mut " : "") + innerType.toString();
 	}
 
 	@Override
 	public ExternalSet<Type> getInnerTypes() {
 		return Caches.types().mkSingletonSet(innerType);
 	}
+
+	@Override
+	public boolean isMutable() {
+		return mutable;
+	}
+
 }

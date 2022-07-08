@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.numeric.unsigned;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -12,14 +13,19 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustU8Type implements NumericType {
+public class RustU8Type implements NumericType, RustType {
 
-	/**
-	 * Unique instance of Rust u8 type.
-	 */
-	public static final RustU8Type INSTANCE = new RustU8Type();
+	private static final RustU8Type INSTANCE = new RustU8Type(false);
+	private static final RustU8Type MUTABLE_INSTANCE = new RustU8Type(true);
 
-	private RustU8Type() {
+	public static RustU8Type getInstance(boolean mutability) {
+		return mutability? INSTANCE : MUTABLE_INSTANCE;
+	}
+	
+	private boolean mutable;
+
+	private RustU8Type(boolean mutability) {
+		mutable = mutability;
 	}
 
 	@Override
@@ -73,7 +79,7 @@ public class RustU8Type implements NumericType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustU8Type;
+		return obj instanceof RustU8Type && ((RustU8Type)obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -83,7 +89,12 @@ public class RustU8Type implements NumericType {
 
 	@Override
 	public String toString() {
-		return "u8";
+		return (mutable? "mut " : "") + "u8";
+	}
+	
+	@Override
+	public boolean isMutable() {
+		return mutable;
 	}
 
 }

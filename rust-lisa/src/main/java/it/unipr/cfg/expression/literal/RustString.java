@@ -1,5 +1,6 @@
 package it.unipr.cfg.expression.literal;
 
+import it.unipr.cfg.type.RustReferenceType;
 import it.unipr.cfg.type.RustStrType;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -24,6 +25,6 @@ public class RustString extends Literal<String> {
 	public RustString(CFG cfg, CodeLocation location, String value) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, value, new ReferenceType(RustStrType.INSTANCE));
+		super(cfg, location, value, new RustReferenceType(RustStrType.getInstance(false), false));
 	}
 }

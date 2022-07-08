@@ -10,17 +10,23 @@ import java.util.Collections;
  * Unique instance of the Rust boolean type.
  *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustBooleanType implements BooleanType {
+public class RustBooleanType implements BooleanType, RustType {
 
-	/**
-	 * Unique instance of RustBoolean type.
-	 */
-	public static final RustBooleanType INSTANCE = new RustBooleanType();
+	private static final RustBooleanType INSTANCE = new RustBooleanType(false);
+	private static final RustBooleanType MUTABLE_INSTANCE = new RustBooleanType(true);
 
-	private RustBooleanType() {
+	public static RustBooleanType getInstance(boolean mutability) {
+		return mutability? INSTANCE : MUTABLE_INSTANCE;
 	}
+	
+	private boolean mutable;
 
+	private RustBooleanType(boolean mutability) {
+		mutable = mutability;
+	}
+	
 	@Override
 	public boolean canBeAssignedTo(Type other) {
 		return other instanceof RustBooleanType || other instanceof Untyped;
@@ -40,7 +46,7 @@ public class RustBooleanType implements BooleanType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustBooleanType;
+		return obj instanceof RustBooleanType && ((RustBooleanType)obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -50,6 +56,12 @@ public class RustBooleanType implements BooleanType {
 
 	@Override
 	public String toString() {
-		return "bool";
+		return (mutable? "mut " : "") + "bool";
 	}
+	
+	@Override
+	public boolean isMutable() {
+		return mutable;
+	}
+
 }

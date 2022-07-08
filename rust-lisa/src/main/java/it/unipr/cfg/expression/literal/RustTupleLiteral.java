@@ -1,5 +1,6 @@
 package it.unipr.cfg.expression.literal;
 
+import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.composite.RustTupleType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
@@ -35,8 +36,8 @@ public class RustTupleLiteral extends NaryExpression {
 	 * @param types    the static types of the tuples elements
 	 * @param values   the values inside the literal
 	 */
-	protected RustTupleLiteral(CFG cfg, CodeLocation location, Type[] types, Expression[] values) {
-		super(cfg, location, "()", new RustTupleType(Arrays.asList(types)), values);
+	protected RustTupleLiteral(CFG cfg, CodeLocation location, RustType[] types, Expression[] values) {
+		super(cfg, location, "()", new RustTupleType(Arrays.asList(types), false), values);
 	}
 
 	@Override
