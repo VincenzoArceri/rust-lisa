@@ -202,7 +202,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public CFG visitFn_decl(Fn_declContext ctx) {
+	public List<CFG> visitFn_decl(Fn_declContext ctx) {
 		String fnName = getFnName(ctx.fn_head());
 		
 		Type returnType = RustUnitType.INSTANCE;
@@ -222,7 +222,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		}
 
 		currentCfg.simplify();
-		return currentCfg;
+		
+		List<CFG> result = new ArrayList<>();
+		result.add(currentCfg);
+		return result;
 	}
 
 	private String getFnName(Fn_headContext fnHead) {
@@ -240,13 +243,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public Object visitVisibility_restriction(Visibility_restrictionContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
-	}
-	
-	@Override
-	public CompilationUnit visitItem(ItemContext ctx) {
-		// TODO skipping all production but attr* impl_block
-		// TODO also skipping attr* for now
-		return visitImpl_block(ctx.impl_block());
 	}
 
 	@Override
@@ -370,7 +366,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Type returnType = RustUnitType.INSTANCE;
 		if (ctx.fn_rtype() != null)
 			returnType = new RustTypeVisitor(this).visitFn_rtype(ctx.fn_rtype());
-				
+						
 		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, methodName, returnType, new Parameter[0]);
 		currentCfg = new CFG(cfgDesc);
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
@@ -381,7 +377,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			currentCfg.addNode(ret);
 			currentCfg.addEdge(new SequentialEdge(block.getRight(), ret));
 		}
-
+		
 		currentCfg.simplify();
 		return currentCfg;
 	}
@@ -501,7 +497,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Type visitStruct_decl(Struct_declContext ctx) {
+	public RustStructType visitStruct_decl(Struct_declContext ctx) {
+		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, filePath, new Parameter[0]);
+		currentCfg = new CFG(cfgDesc);
+		
 		Expression name = visitIdent(ctx.ident());
 		
 		// TODO skipping ty_params? production
@@ -610,17 +609,18 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public CompilationUnit visitImpl_block(Impl_blockContext ctx) {
+	public List<CFG> visitImpl_block(Impl_blockContext ctx) {
 		// TODO Ignoring: 'unsafe'?, ty_params? where_clause?
 		Type struct = visitImpl_what(ctx.impl_what());
 		
-		CompilationUnit structUnit = program.getUnit(struct.toString());
+		List<CFG> impls = new ArrayList<>();
+		for (Impl_itemContext fdCtx: ctx.impl_item()) {
+			CFG visitedCfg = visitImpl_item(fdCtx);
+			impls.add(visitedCfg);
+			unit.addCFG(visitedCfg);
+		}
 		
-		for (Impl_itemContext fdCtx: ctx.impl_item())
-			structUnit.addCFG(visitImpl_item(fdCtx));		
-		
-		// TODO Figure out what to return here, if any
-		return structUnit;
+		return impls;
 	}
 
 	@Override
@@ -1140,7 +1140,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			Expression expr = visitExpr(ctx.expr());
 
 			Return ret = new Return(currentCfg, locationOf(ctx), expr);
-
+			
 			currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
 
 			lastStmt = ret;

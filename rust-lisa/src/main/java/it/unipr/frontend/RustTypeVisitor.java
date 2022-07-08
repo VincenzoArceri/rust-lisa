@@ -213,7 +213,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 		case "char":
 			return RustCharType.getInstance(false);
 		default:
-			// TODO User defined type here
+			// TODO as of now, more complex types than the simple ones are not parsed
 			return null;
 		}
 	}

@@ -1,5 +1,6 @@
 package it.unipr.frontend;
 
+import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustLexer;
 import it.unipr.rust.antlr.RustParser;
@@ -23,6 +24,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -31,6 +35,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
  * The Rust front-end for LiSA.
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustFrontend extends RustBaseVisitor<Object> {
 
@@ -123,29 +128,35 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	public Object visitMod_body(Mod_bodyContext ctx) {
 		// TODO: skipping for the moment inner_attr
 		for (ItemContext i : ctx.item())
-			program.addCFG(visitItem(i));
+			for (CFG cfg : visitItem(i))
+				program.addCFG(cfg);
 
 		return null;
 	}
 
 	@Override
-	public CFG visitItem(ItemContext ctx) {
+	public List<CFG> visitItem(ItemContext ctx) {
 		// TODO: skipping for the moment attr and visibility
-		// the casts below are completely wrong, they will be removed
+		// the casts below are completely wrong, they will be removed		
 		if (ctx.pub_item() != null)
 			return visitPub_item(ctx.pub_item());
 		else if (ctx.impl_block() != null)
-			return (CFG) visitImpl_block(ctx.impl_block());
-		else if (ctx.extern_mod() != null)
-			return (CFG) visitExtern_mod(ctx.extern_mod());
-		else
-			return (CFG) visitItem_macro_use(ctx.item_macro_use());
+			return new RustCodeMemberVisitor(filePath, program, currentUnit).visitImpl_block(ctx.impl_block());
+		
+		// TODO skipping attr* extern_mod and attr* item_macro_use productions
+		return new ArrayList<>();
 	}
 
 	@Override
-	public CFG visitPub_item(Pub_itemContext ctx) {
-		// TODO: for the moment we are just interested in function declaration
-		return new RustCodeMemberVisitor(filePath, program, currentUnit).visitFn_decl(ctx.fn_decl());
+	public List<CFG> visitPub_item(Pub_itemContext ctx) {
+		if (ctx.fn_decl() != null)
+			return new RustCodeMemberVisitor(filePath, program, currentUnit).visitFn_decl(ctx.fn_decl());
+		
+		else if (ctx.struct_decl() != null) {
+			new RustCodeMemberVisitor(filePath, program, currentUnit).visitStruct_decl(ctx.struct_decl());
+			return new ArrayList<>();
+		}
+		return null;
 	}
 
 }
