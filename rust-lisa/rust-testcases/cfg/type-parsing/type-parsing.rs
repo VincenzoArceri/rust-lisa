@@ -7,4 +7,6 @@ fn main() {
 	let z : [i32; 4] = [1, 2, 3, 4];
 	
 	let mut a : (i32, char, f64) = (42, 'A', 3.3);
+	
+	let ptr: *const i32 = &42; 
 }

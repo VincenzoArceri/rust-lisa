@@ -104,7 +104,7 @@ public class RustPointerType implements PointerType, RustType {
 
 	@Override
 	public String toString() {
-		return "*" + (mutable? "mut " : "") + innerType.toString();
+		return "*" + (mutable? "mut " : "const ") + innerType.toString();
 	}
 
 	@Override

@@ -241,6 +241,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	public CompilationUnit visitItem(ItemContext ctx) {
+		// TODO skipping all production but attr* impl_block
+		// TODO also skipping attr* for now
+		return visitImpl_block(ctx.impl_block());
+	}
 
 	@Override
 	public Object visitItem_macro_use(Item_macro_useContext ctx) {
@@ -604,7 +611,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public CompilationUnit visitImpl_block(Impl_blockContext ctx) {
-		// TODO Ignoring: 'unsafe'?, tye_params? where_clause?
+		// TODO Ignoring: 'unsafe'?, ty_params? where_clause?
 		Type struct = visitImpl_what(ctx.impl_what());
 		
 		CompilationUnit structUnit = program.getUnit(struct.toString());
@@ -612,13 +619,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		for (Impl_itemContext fdCtx: ctx.impl_item())
 			structUnit.addCFG(visitImpl_item(fdCtx));		
 		
-		// TODO Figure out what to return here
+		// TODO Figure out what to return here, if any
 		return structUnit;
 	}
 
 	@Override
 	public Type visitImpl_what(Impl_whatContext ctx) {
-		// TODO Skipping trait implementation and parsing only the last rule
+		// TODO Skipping trait implementation for now and parsing only the last rule
 		return visitTy_sum(ctx.ty_sum(0));
 	}
 
@@ -984,9 +991,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Expression visitPat_lit(Pat_litContext ctx) {
 		Expression lit = visitLit(ctx.lit());
-		if (ctx.getChild(0).getText().equals("-")) {
+		if (ctx.getChild(0).getText().equals("-"))
 			return new RustMinusExpression(currentCfg, locationOf(ctx), lit);
-		}
 
 		return lit;
 	}
@@ -1082,7 +1088,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		if (ctx.stmt() != null) {
 			for (StmtContext stmt : ctx.stmt()) {
-				Pair<Statement, Statement> currentStmt = visitStmt(stmt);
+				@SuppressWarnings("unchecked")
+				// Note: since we are not sure what to return from visitStmt, we are sure that this function returns a pair of Statement
+				Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
 
 				if (lastStmt != null)
 					currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
@@ -1115,7 +1123,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Statement entryNode = null;
 
 		for (StmtContext stmt : ctx.stmt()) {
-			Pair<Statement, Statement> currentStmt = visitStmt(stmt);
+			@SuppressWarnings("unchecked")
+			// Note: since we are not sure what to return from visitStmt, we are sure that this function returns a pair of Statement
+			Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
 
 			if (lastStmt != null)
 				currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
@@ -1140,7 +1150,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Pair<Statement, Statement> visitStmt(StmtContext ctx) {
+	public Object visitStmt(StmtContext ctx) {
+		// TODO I am not sure on what to return here exactly. So for now this is implemented as returning an Object and a (safe) cast as needed
+
 		if (ctx.getText().equals(";")) {
 			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
 
@@ -1150,8 +1162,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		}
 
 		if (ctx.item() != null)
-			// TODO: not considered for the moment
-			return null;
+			return visitItem(ctx.item());
 		else
 			return visitStmt_tail(ctx.stmt_tail());
 	}

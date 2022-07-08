@@ -87,8 +87,9 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 				if (ctx.ty_sum_list() != null) {
 					List<Type> remainingTypes = visitTy_sum_list(ctx.ty_sum_list());
 					remainingTypes.add(0, type);
-
-					return new RustTupleType(remainingTypes, false);
+					
+					RustTupleType tuple = new RustTupleType(remainingTypes, false);
+					return RustTupleType.lookup(tuple);
 				}
 
 				return type;
@@ -100,7 +101,8 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			Type arrayType = codeVisitor.visitTy_sum(ctx.ty_sum());
 
 			if (ctx.expr() != null) {
-				return new RustArrayType(arrayType, getConstantValue(ctx.expr()), false);
+				RustArrayType array = new RustArrayType(arrayType, getConstantValue(ctx.expr()), false);
+				return RustArrayType.lookup(array);
 			}
 
 		case "&":
@@ -118,12 +120,11 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			return new RustReferenceType(new RustReferenceType(visitTy(ctx.ty()), mutable), false);
 		
 		case "*":
-			// TODO Figure out what to do with mutable
-			// TODO The difference between a "*mut" and "*const" is about wheter dereferencing them yields a mutable or immutable expression.
 			if (codeVisitor.visitMut_or_const(ctx.mut_or_const()).equals("mut"))
 				mutable = true;
 			
-			return new RustPointerType(visitTy(ctx.ty()), mutable);
+			RustPointerType pointer = new RustPointerType(visitTy(ctx.ty()), mutable);
+			return RustPointerType.lookup(pointer);
 
 		default: // TODO skipping the other productions
 			return null;
@@ -242,7 +243,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			 return visitField_decl_list(ctx.field_decl_list());
 		}
 
-		//This is a struct with no types
+		//This is a struct with no declaration of types inside
 		return new ArrayList<Expression>();
 	}
 	
