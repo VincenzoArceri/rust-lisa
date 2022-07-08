@@ -21,11 +21,14 @@ import it.unipr.cfg.expression.comparison.RustLessEqualExpression;
 import it.unipr.cfg.expression.comparison.RustLessExpression;
 import it.unipr.cfg.expression.comparison.RustNotEqualExpression;
 import it.unipr.cfg.expression.comparison.RustOrExpression;
+import it.unipr.cfg.expression.literal.RustArrayLiteral;
 import it.unipr.cfg.expression.literal.RustBoolean;
 import it.unipr.cfg.expression.literal.RustChar;
 import it.unipr.cfg.expression.literal.RustFloat;
 import it.unipr.cfg.expression.literal.RustInteger;
 import it.unipr.cfg.expression.literal.RustString;
+import it.unipr.cfg.expression.literal.RustTupleLiteral;
+import it.unipr.cfg.expression.literal.RustUnitLiteral;
 import it.unipr.cfg.expression.numeric.RustAddExpression;
 import it.unipr.cfg.expression.numeric.RustDivExpression;
 import it.unipr.cfg.expression.numeric.RustMinusExpression;
@@ -36,6 +39,8 @@ import it.unipr.cfg.statement.RustAssignment;
 import it.unipr.cfg.statement.RustLetAssignment;
 import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.RustUnitType;
+import it.unipr.cfg.type.composite.RustArrayType;
+import it.unipr.cfg.type.composite.RustTupleType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
 import it.unive.lisa.program.CompilationUnit;
@@ -43,6 +48,7 @@ import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
+import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
@@ -59,7 +65,10 @@ import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -779,13 +788,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public RustType visitTy_sum(Ty_sumContext ctx) {
+	public Type visitTy_sum(Ty_sumContext ctx) {
 		// TODO skipping ('+' bound)? grammar branch
 		return new RustTypeVisitor(this).visitTy(ctx.ty());
 	}
 
 	@Override
-	public List<RustType> visitTy_sum_list(Ty_sum_listContext ctx) {
+	public List<Type> visitTy_sum_list(Ty_sum_listContext ctx) {
 		return new RustTypeVisitor(this).visitTy_sum_list(ctx);
 	}
 
@@ -995,9 +1004,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Statement visitExpr_list(Expr_listContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Expression> visitExpr_list(Expr_listContext ctx) {
+		List<Expression> exprs = new ArrayList<>();
+		for (ExprContext exprCtx : ctx.expr())
+			exprs.add(visitExpr(exprCtx));
+			
+		return exprs;
 	}
 
 	@Override
@@ -1342,16 +1354,75 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitPrim_expr_no_struct(Prim_expr_no_structContext ctx) {
-		// TODO: skipping every production but lit and path
-		if (ctx.lit() != null)
+		// TODO remaining production to parse:
+//		   | 'self'
+//		   | 'move'? closure_params closure_tail
+//		   | blocky_expr
+//		   | 'break' lifetime_or_expr?
+//		   | 'continue' Lifetime?
+//		   | 'return' expr?
+		
+		if (ctx.getChild(0).getText().equals("(")) {
+			// TODO Ignoring expr_inner_attrs? part
+			
+			if (ctx.expr().get(0) != null) {
+				Expression expr = visitExpr(ctx.expr(0));
+				
+				if (ctx.expr_list() != null) {
+					List<Expression> exprs = visitExpr_list(ctx.expr_list());
+					exprs.add(0, expr);
+					
+					return new RustTupleLiteral(
+						currentCfg,
+						locationOf(ctx),
+						exprs.stream()
+							.map(e -> e.getStaticType())
+							.collect(Collectors.toList())
+							.toArray(new RustType[0]),
+						exprs.toArray(new Expression[0]));
+				}
+				
+				return expr;
+			}
+				
+			return new RustUnitLiteral(currentCfg, locationOf(ctx));
+		} else if (ctx.getChild(0).getText().equals("[")) {
+			// TODO Ignoring expr_inner_attrs? part
+			
+			if (ctx.expr_list() != null) {
+				List<Expression> exprs = visitExpr_list(ctx.expr_list());
+				return new RustArrayLiteral(currentCfg, locationOf(ctx), Untyped.INSTANCE, exprs.toArray(new Expression[0]));
+			
+			} else if (ctx.expr() != null) {
+				Expression element = visitExpr(ctx.expr(0));
+				
+				// TODO considering only integer literal here
+				Integer length = null;
+				try {
+					length = Integer.parseInt(ctx.expr(1).getText());
+				} catch (NumberFormatException nfe) {
+					return null;
+				}
+				Expression[] exprs = new Expression[length];
+				Arrays.fill(exprs, element);
+				
+				return new RustArrayLiteral(currentCfg, locationOf(ctx), Untyped.INSTANCE, exprs);
+			}
+			
+			return new RustArrayLiteral(currentCfg, locationOf(ctx), Untyped.INSTANCE, new Expression[0]);
+		
+		} else if (ctx.blocky_expr() != null) {
+			// TODO watch out for expression and statements
+			//return visitBlocky_expr(ctx.blocky_expr());
+		} else if (ctx.lit() != null) {
 			return visitLit(ctx.lit());
-		// TODO watch out for expression and statements
-		// else if (ctx.blocky_expr() != null) {
-		// return visitBlocky_expr(ctx.blocky_expr());
-		// }
-		else
+		} else {
 			// TODO: skipping macro_tail
 			return visitPath(ctx.path());
+		}
+		
+		// Unreachable
+		return null;
 	}
 
 	@Override
@@ -1453,7 +1524,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitExpr(ctx.expr());
 		case "(":
 			if (ctx.expr_list() != null) {
-				return visitExpr_list(ctx.expr_list());
+				//return visitExpr_list(ctx.expr_list());
+				return null;
 			}
 
 			// TODO figure out what to return here

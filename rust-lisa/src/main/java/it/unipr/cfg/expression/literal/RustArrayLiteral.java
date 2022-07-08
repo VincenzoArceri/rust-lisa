@@ -33,7 +33,7 @@ public class RustArrayLiteral extends NaryExpression {
 	 * @param staticType the static type of the array
 	 * @param values     the values inside the literal
 	 */
-	protected RustArrayLiteral(CFG cfg, CodeLocation location, Type staticType, Expression... values) {
+	public RustArrayLiteral(CFG cfg, CodeLocation location, Type staticType, Expression... values) {
 		super(cfg, location, "[]", staticType, values);
 	}
 
