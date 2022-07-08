@@ -8,7 +8,7 @@ import org.junit.Test;
 public class RustCFGExpressionGuard extends RustLiSATestExecutor {
 
 	@Test
-	public void testExpressionGuards() throws AnalysisSetupException {
+	public void testExpressionGuard() throws AnalysisSetupException {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/expression-guard", "expression-guard.rs", conf);
 	}
