@@ -17,24 +17,18 @@ public class RustU128Type implements NumericType, RustType {
 	// TODO LiSA does not support 128 bits type. So no method isXXBits will be
 	// true.
 
-	private static final RustU128Type INSTANCE = new RustU128Type(false);
-	private static final RustU128Type MUTABLE_INSTANCE = new RustU128Type(true);
+	private static final RustU128Type INSTANCE = new RustU128Type();
 
 	/**
 	 * Yields the singleton instance based on mutability.
 	 * 
-	 * @param mutability the mutability of the type
-	 * 
 	 * @return the correct instance based on the type mutability
 	 */
-	public static RustU128Type getInstance(boolean mutability) {
-		return mutability ? MUTABLE_INSTANCE : INSTANCE;
+	public static RustU128Type getInstance() {
+		return INSTANCE;
 	}
 
-	private final boolean mutable;
-
-	private RustU128Type(boolean mutability) {
-		mutable = mutability;
+	private RustU128Type() {
 	}
 
 	@Override
@@ -88,7 +82,7 @@ public class RustU128Type implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustU128Type && ((RustU128Type) obj).mutable == this.mutable;
+		return obj instanceof RustU128Type;
 	}
 
 	@Override
@@ -98,12 +92,7 @@ public class RustU128Type implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable ? "mut " : "") + "u128";
-	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
+		return "u128";
 	}
 
 }

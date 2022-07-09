@@ -14,24 +14,18 @@ import java.util.Collections;
  */
 public class RustBooleanType implements BooleanType, RustType {
 
-	private static final RustBooleanType INSTANCE = new RustBooleanType(false);
-	private static final RustBooleanType MUTABLE_INSTANCE = new RustBooleanType(true);
+	private static final RustBooleanType INSTANCE = new RustBooleanType();
 
 	/**
 	 * Yields the singleton instance based on mutability.
 	 * 
-	 * @param mutability the mutability of the type
-	 * 
 	 * @return the correct instance based on the type mutability
 	 */
-	public static RustBooleanType getInstance(boolean mutability) {
-		return mutability ? MUTABLE_INSTANCE : INSTANCE;
+	public static RustBooleanType getInstance() {
+		return INSTANCE;
 	}
 
-	private final boolean mutable;
-
-	private RustBooleanType(boolean mutability) {
-		mutable = mutability;
+	private RustBooleanType() {
 	}
 
 	@Override
@@ -53,7 +47,7 @@ public class RustBooleanType implements BooleanType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustBooleanType && ((RustBooleanType) obj).mutable == this.mutable;
+		return obj instanceof RustBooleanType;
 	}
 
 	@Override
@@ -63,12 +57,7 @@ public class RustBooleanType implements BooleanType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable ? "mut " : "") + "bool";
-	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
+		return "bool";
 	}
 
 }

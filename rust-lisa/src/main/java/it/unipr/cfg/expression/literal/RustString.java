@@ -24,6 +24,6 @@ public class RustString extends Literal<String> {
 	public RustString(CFG cfg, CodeLocation location, String value) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, value, new RustReferenceType(RustStrType.getInstance(false), false));
+		super(cfg, location, value, new RustReferenceType(RustStrType.getInstance()));
 	}
 }

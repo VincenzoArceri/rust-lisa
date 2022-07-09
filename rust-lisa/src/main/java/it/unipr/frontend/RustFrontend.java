@@ -1,7 +1,29 @@
 package it.unipr.frontend;
 
+import it.unipr.cfg.type.RustBooleanType;
+import it.unipr.cfg.type.RustCharType;
+import it.unipr.cfg.type.RustPointerType;
+import it.unipr.cfg.type.RustStrType;
 import it.unipr.cfg.type.RustType;
+import it.unipr.cfg.type.RustUnitType;
+import it.unipr.cfg.type.composite.RustArrayType;
+import it.unipr.cfg.type.composite.RustReferenceType;
 import it.unipr.cfg.type.composite.RustStructType;
+import it.unipr.cfg.type.composite.RustTupleType;
+import it.unipr.cfg.type.numeric.floating.RustF32Type;
+import it.unipr.cfg.type.numeric.floating.RustF64Type;
+import it.unipr.cfg.type.numeric.signed.RustI128Type;
+import it.unipr.cfg.type.numeric.signed.RustI16Type;
+import it.unipr.cfg.type.numeric.signed.RustI32Type;
+import it.unipr.cfg.type.numeric.signed.RustI64Type;
+import it.unipr.cfg.type.numeric.signed.RustI8Type;
+import it.unipr.cfg.type.numeric.signed.RustIsizeType;
+import it.unipr.cfg.type.numeric.unsigned.RustU128Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU16Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU32Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU64Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU8Type;
+import it.unipr.cfg.type.numeric.unsigned.RustUsizeType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustLexer;
 import it.unipr.rust.antlr.RustParser;
@@ -91,14 +113,29 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 		this.program = new Program();
 	}
 	
-	private static void clearTypes() {
-		RustStructType.clearAll();
-	}
-	
 	private void registerTypes() {
-		//TODO REGISTER ALL TYPES
-		
+		program.registerType(RustF32Type.getInstance());
+		program.registerType(RustF64Type.getInstance());
+		program.registerType(RustI8Type.getInstance());
+		program.registerType(RustI16Type.getInstance());
+		program.registerType(RustI32Type.getInstance());
+		program.registerType(RustI64Type.getInstance());
+		program.registerType(RustI128Type.getInstance());
+		program.registerType(RustIsizeType.getInstance());
+		program.registerType(RustU8Type.getInstance());
+		program.registerType(RustU16Type.getInstance());
+		program.registerType(RustU32Type.getInstance());
+		program.registerType(RustU64Type.getInstance());
+		program.registerType(RustU128Type.getInstance());
+		program.registerType(RustUsizeType.getInstance());
+		program.registerType(RustBooleanType.getInstance());
+		program.registerType(RustCharType.getInstance());
+		program.registerType(RustStrType.getInstance());
+		program.registerType(RustUnitType.getInstance());
+		RustPointerType.all().forEach(program::registerType);
 		RustStructType.all().forEach(program::registerType);
+		RustArrayType.all().forEach(program::registerType);
+		RustTupleType.all().forEach(program::registerType);
 	}
 
 	/**
@@ -113,7 +150,6 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	 * @throws IOException if anything goes wrong during reading the file
 	 */
 	public static Program processFile(String filePath) throws IOException {
-		clearTypes();
 		return new RustFrontend(filePath).toLiSAProgram();
 	}
 

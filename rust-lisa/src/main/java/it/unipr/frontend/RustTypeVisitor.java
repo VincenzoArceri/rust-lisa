@@ -93,7 +93,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 				return type;
 			}
 
-			return RustUnitType.INSTANCE;
+			return RustUnitType.getInstance();
 
 		case "[":
 			Type arrayType = visitTy_sum(ctx.ty_sum());
@@ -108,20 +108,20 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			if (ctx.getChild(2).getText().equals("mut"))
 				mutable = true;
 
-			return new RustReferenceType(visitTy(ctx.ty()), mutable);
+			return new RustReferenceType(visitTy(ctx.ty()));
 
 		case "&&":
 			// TODO Ignoring lifetimes for now
 			if (ctx.getChild(2).getText().equals("mut"))
 				mutable = true;
 
-			return new RustReferenceType(new RustReferenceType(visitTy(ctx.ty()), mutable), false);
+			return new RustReferenceType(new RustReferenceType(visitTy(ctx.ty())));
 
 		case "*":
 			if (ctx.mut_or_const().getText().equals("mut"))
 				mutable = true;
 
-			RustPointerType pointer = new RustPointerType(visitTy(ctx.ty()), mutable);
+			RustPointerType pointer = new RustPointerType(visitTy(ctx.ty()));
 			return RustPointerType.lookup(pointer);
 
 		default: // TODO skipping the other productions
@@ -179,45 +179,48 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 		// Temporary returning a non mutable type, since we do not have
 		// visibility on mutability here
 		case "f32":
-			return RustF32Type.getInstance(false);
+			return RustF32Type.getInstance();
 		case "f64":
-			return RustF64Type.getInstance(false);
+			return RustF64Type.getInstance();
 		case "i8":
-			return RustI8Type.getInstance(false);
+			return RustI8Type.getInstance();
 		case "i16":
-			return RustI16Type.getInstance(false);
+			return RustI16Type.getInstance();
 		case "i32":
-			return RustI32Type.getInstance(false);
+			return RustI32Type.getInstance();
 		case "i64":
-			return RustI64Type.getInstance(false);
+			return RustI64Type.getInstance();
 		case "i128":
-			return RustI128Type.getInstance(false);
+			return RustI128Type.getInstance();
 		case "isize":
-			return RustIsizeType.getInstance(false);
+			return RustIsizeType.getInstance();
 		case "u8":
-			return RustU8Type.getInstance(false);
+			return RustU8Type.getInstance();
 		case "u16":
-			return RustU16Type.getInstance(false);
+			return RustU16Type.getInstance();
 		case "u32":
-			return RustU32Type.getInstance(false);
+			return RustU32Type.getInstance();
 		case "u64":
-			return RustU64Type.getInstance(false);
+			return RustU64Type.getInstance();
 		case "u128":
-			return RustU128Type.getInstance(false);
+			return RustU128Type.getInstance();
 		case "usize":
-			return RustUsizeType.getInstance(false);
+			return RustUsizeType.getInstance();
 		case "bool":
-			return RustBooleanType.getInstance(false);
+			return RustBooleanType.getInstance();
 		case "&str":
-			return RustStrType.getInstance(false);
+			return RustStrType.getInstance();
 		case "char":
-			return RustCharType.getInstance(false);
+			return RustCharType.getInstance();
 		default:
 			// TODO as of now, more complex types than the simple ones are not
 			// parsed
-			return null;
+			return null; 
 		}
 	}
+	
+	// AGGIUNGI UN METOO has che passa il nome del tipo tracciato e fa la lookup altrimento non è tracciato e se non lo è lancia una exception
+	
 	
 	@Override
 	public Type visitTy_sum(Ty_sumContext ctx) {
@@ -240,7 +243,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 		if (ctx.ty() != null)
 			return visitTy(ctx.ty());
 
-		return RustUnitType.INSTANCE;
+		return RustUnitType.getInstance();
 	}
 
 	@Override

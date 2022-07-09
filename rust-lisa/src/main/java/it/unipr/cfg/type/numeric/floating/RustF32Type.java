@@ -15,24 +15,27 @@ import java.util.Collections;
  */
 public class RustF32Type implements NumericType, RustType {
 
-	private static final RustF32Type INSTANCE = new RustF32Type(false);
-	private static final RustF32Type MUTABLE_INSTANCE = new RustF32Type(true);
+	private static final RustF32Type INSTANCE = new RustF32Type();
 
 	/**
 	 * Yields the singleton instance based on mutability.
 	 * 
-	 * @param mutability the mutability of the type
+	 * @return the correct instance based on the type mutability
+	 */
+	public static RustF32Type getInstance() {
+		return INSTANCE;
+	}
+	
+	/**
+	 * Yields all instances of this type.
 	 * 
 	 * @return the correct instance based on the type mutability
 	 */
-	public static RustF32Type getInstance(boolean mutability) {
-		return mutability ? MUTABLE_INSTANCE : INSTANCE;
+	public static RustF32Type all() {
+		return INSTANCE;
 	}
 
-	private final boolean mutable;
-
-	private RustF32Type(boolean mutability) {
-		mutable = mutability;
+	private RustF32Type() {
 	}
 
 	@Override
@@ -86,7 +89,7 @@ public class RustF32Type implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustF32Type && ((RustF32Type) obj).mutable == this.mutable;
+		return obj instanceof RustF32Type;
 	}
 
 	@Override
@@ -96,12 +99,7 @@ public class RustF32Type implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable ? "mut " : "") + "f32";
-	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
+		return "f32";
 	}
 
 }

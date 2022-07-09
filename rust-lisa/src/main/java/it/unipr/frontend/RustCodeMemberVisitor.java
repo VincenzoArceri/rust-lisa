@@ -149,7 +149,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public CFG visitFn_decl(Fn_declContext ctx) {
 		String fnName = getFnName(ctx.fn_head());
 
-		Type returnType = RustUnitType.INSTANCE;
+		Type returnType = RustUnitType.getInstance();
 		if (ctx.fn_rtype() != null)
 			returnType = new RustTypeVisitor(filePath).visitFn_rtype(ctx.fn_rtype());
 
@@ -304,7 +304,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public CFG visitMethod_decl(Method_declContext ctx) {
 		String methodName = getFnName(ctx.fn_head());
 
-		Type returnType = RustUnitType.INSTANCE;
+		Type returnType = RustUnitType.getInstance();
 		if (ctx.fn_rtype() != null)
 			returnType = new RustTypeVisitor(filePath).visitFn_rtype(ctx.fn_rtype());
 

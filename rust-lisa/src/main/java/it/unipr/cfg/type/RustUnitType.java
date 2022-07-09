@@ -1,5 +1,6 @@
 package it.unipr.cfg.type;
 
+import it.unipr.cfg.type.numeric.floating.RustF32Type;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
@@ -12,12 +13,18 @@ import java.util.Collections;
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustUnitType implements RustType {
+	
+	private static final RustUnitType INSTANCE = new RustUnitType();
 
 	/**
-	 * Unique instance of RustUnitType type.
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @return the correct instance based on the type mutability
 	 */
-	public static final RustUnitType INSTANCE = new RustUnitType();
-
+	public static RustUnitType getInstance() {
+		return INSTANCE;
+	}
+	
 	private RustUnitType() {
 	}
 
@@ -52,10 +59,5 @@ public class RustUnitType implements RustType {
 	public String toString() {
 		return "()";
 	}
-
-	@Override
-	public boolean isMutable() {
-		return false;
-	}
-
+	
 }

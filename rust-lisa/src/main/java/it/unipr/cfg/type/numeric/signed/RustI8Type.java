@@ -15,24 +15,18 @@ import java.util.Collections;
  */
 public class RustI8Type implements NumericType, RustType {
 
-	private static final RustI8Type INSTANCE = new RustI8Type(false);
-	private static final RustI8Type MUTABLE_INSTANCE = new RustI8Type(true);
+	private static final RustI8Type INSTANCE = new RustI8Type();
 
 	/**
 	 * Yields the singleton instance based on mutability.
 	 * 
-	 * @param mutability the mutability of the type
-	 * 
 	 * @return the correct instance based on the type mutability
 	 */
-	public static RustI8Type getInstance(boolean mutability) {
-		return mutability ? MUTABLE_INSTANCE : INSTANCE;
+	public static RustI8Type getInstance() {
+		return INSTANCE;
 	}
 
-	private final boolean mutable;
-
-	private RustI8Type(boolean mutability) {
-		mutable = mutability;
+	private RustI8Type() {
 	}
 
 	@Override
@@ -86,7 +80,7 @@ public class RustI8Type implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustI8Type && ((RustI8Type) obj).mutable == this.mutable;
+		return obj instanceof RustI8Type;
 	}
 
 	@Override
@@ -96,12 +90,7 @@ public class RustI8Type implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable ? "mut " : "") + "i8";
-	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
+		return "i8";
 	}
 
 }

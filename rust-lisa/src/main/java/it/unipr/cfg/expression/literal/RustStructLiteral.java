@@ -36,12 +36,12 @@ public class RustStructLiteral extends NaryExpression {
 	 * @param values   the values inside the literal
 	 */
 	public RustStructLiteral(CFG cfg, CodeLocation location, RustStructType struct, Expression[] values) {
-		super(cfg, location, struct.toString(), Untyped.INSTANCE, values);
+		super(cfg, location, struct.toString(), struct, values);
 	}
 
 	@Override
 	public String toString() {
-		return getConstructName() + "{"
+		return getStaticType() + "{"
 				+ Arrays.asList(getSubExpressions()).stream().map(e -> e.toString()).collect(Collectors.joining(", "))
 				+ "}";
 	}

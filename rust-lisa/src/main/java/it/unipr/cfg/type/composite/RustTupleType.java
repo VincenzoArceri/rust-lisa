@@ -37,6 +37,28 @@ public class RustTupleType implements RustType {
 
 		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
 	}
+	
+	/**
+	 * Remove all instances of Rust tuple types.
+	 * 
+	 * @return all instances of a Rust tuple types
+	 */
+	public static void clearAll() {
+		INSTANCES.clear();
+	}
+	
+	/**
+	 * Yields all instances of Rust tuple types.
+	 * 
+	 * @return all instances of a Rust tuple types
+	 */
+	public static Collection<Type> all() {
+		Collection<Type> result = new HashSet<>();
+		for (Type t : INSTANCES.toArray(new RustTupleType[0])) {
+			result.add(t);
+		}
+		return result;
+	}
 
 	private final List<Type> types;
 	private final boolean mutable;
@@ -119,9 +141,5 @@ public class RustTupleType implements RustType {
 		return (mutable ? "mut " : "") + "(" + types.stream().map(t -> t.toString()).collect(Collectors.joining(", "))
 				+ ")";
 	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
-	}
+	
 }

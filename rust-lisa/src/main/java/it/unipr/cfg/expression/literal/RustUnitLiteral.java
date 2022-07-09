@@ -20,7 +20,7 @@ public class RustUnitLiteral extends Literal<Void> {
 	 * @param location the location where this literal is defined
 	 */
 	public RustUnitLiteral(CFG cfg, CodeLocation location) {
-		super(cfg, location, null, RustUnitType.INSTANCE);
+		super(cfg, location, null, RustUnitType.getInstance());
 	}
 
 }

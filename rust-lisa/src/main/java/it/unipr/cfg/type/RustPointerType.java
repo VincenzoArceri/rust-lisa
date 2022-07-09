@@ -1,5 +1,6 @@
 package it.unipr.cfg.type;
 
+import it.unipr.cfg.type.composite.RustTupleType;
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.type.PointerType;
 import it.unive.lisa.type.Type;
@@ -37,19 +38,39 @@ public class RustPointerType implements PointerType, RustType {
 
 		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
 	}
+	
+	/**
+	 * Remove all instances of Rust pointer types.
+	 * 
+	 * @return all instances of a Rust pointer types
+	 */
+	public static void clearAll() {
+		INSTANCES.clear();
+	}
+	
+	/**
+	 * Yields all instances of Rust pointer types.
+	 * 
+	 * @return all instances of a Rust pointer types
+	 */
+	public static Collection<Type> all() {
+		Collection<Type> result = new HashSet<>();
+		for (Type t : INSTANCES.toArray(new RustPointerType[0])) {
+			result.add(t);
+		}
+		return result;
+	}
 
 	private final Type innerType;
-	private final boolean mutable;
-
+	
 	/**
 	 * Constructor for {@link RustPointerType}.
 	 * 
 	 * @param innerType  inner type on which this pointer points
 	 * @param mutability type mutability
 	 */
-	public RustPointerType(Type innerType, boolean mutability) {
+	public RustPointerType(Type innerType) {
 		this.innerType = Objects.requireNonNull(innerType);
-		this.mutable = mutability;
 	}
 
 	@Override
@@ -100,25 +121,17 @@ public class RustPointerType implements PointerType, RustType {
 		} else if (!innerType.equals(other.innerType))
 			return false;
 
-		if (mutable != other.mutable)
-			return false;
-
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "*" + (mutable ? "mut " : "const ") + innerType.toString();
+		return "*" + innerType.toString();
 	}
 
 	@Override
 	public ExternalSet<Type> getInnerTypes() {
 		return Caches.types().mkSingletonSet(innerType);
-	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
 	}
 
 }

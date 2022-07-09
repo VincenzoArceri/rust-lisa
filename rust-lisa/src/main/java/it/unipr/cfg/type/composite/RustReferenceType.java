@@ -1,13 +1,17 @@
 package it.unipr.cfg.type.composite;
 
+import java.util.Collection;
+import java.util.HashSet;
+
+import org.apache.commons.lang3.StringUtils;
+
 import it.unipr.cfg.type.RustType;
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.type.PointerType;
+import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-import java.util.Collection;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Builds the Rust reference type.
@@ -16,14 +20,13 @@ import org.apache.commons.lang3.StringUtils;
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustReferenceType implements PointerType, RustType {
-
+	
 	private ExternalSet<Type> innerTypes;
 
 	// TODO the purpose of this field is to avoid using the cache
 	// when defining the descriptors of cfgs, we have to find another
 	// workaround to this problem
 	private final Type innerType;
-	private final boolean mutable;
 
 	/**
 	 * Builds the type for a reference to a location containing values of types
@@ -32,9 +35,8 @@ public class RustReferenceType implements PointerType, RustType {
 	 * @param innerType  the type of the referenced location
 	 * @param mutability the mutability of the reference
 	 */
-	public RustReferenceType(Type innerType, boolean mutability) {
+	public RustReferenceType(Type innerType) {
 		this.innerType = innerType;
-		this.mutable = mutability;
 	}
 
 	@Override
@@ -86,9 +88,6 @@ public class RustReferenceType implements PointerType, RustType {
 		} else if (!innerType.equals(other.innerType))
 			return false;
 
-		if (mutable != other.mutable)
-			return false;
-
 		return true;
 	}
 
@@ -102,8 +101,4 @@ public class RustReferenceType implements PointerType, RustType {
 		return innerType + "*";
 	}
 
-	@Override
-	public boolean isMutable() {
-		return mutable;
-	}
 }

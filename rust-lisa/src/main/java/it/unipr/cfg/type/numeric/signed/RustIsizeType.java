@@ -15,24 +15,18 @@ import java.util.Collections;
  */
 public class RustIsizeType implements NumericType, RustType {
 
-	private static final RustIsizeType INSTANCE = new RustIsizeType(false);
-	private static final RustIsizeType MUTABLE_INSTANCE = new RustIsizeType(true);
+	private static final RustIsizeType INSTANCE = new RustIsizeType();
 
 	/**
 	 * Yields the singleton instance based on mutability.
 	 * 
-	 * @param mutability the mutability of the type
-	 * 
 	 * @return the correct instance based on the type mutability
 	 */
-	public static RustIsizeType getInstance(boolean mutability) {
-		return mutability ? MUTABLE_INSTANCE : INSTANCE;
+	public static RustIsizeType getInstance() {
+		return INSTANCE;
 	}
 
-	private final boolean mutable;
-
-	private RustIsizeType(boolean mutability) {
-		mutable = mutability;
+	private RustIsizeType() {
 	}
 
 	@Override
@@ -86,7 +80,7 @@ public class RustIsizeType implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustIsizeType && ((RustIsizeType) obj).mutable == this.mutable;
+		return obj instanceof RustIsizeType;
 	}
 
 	@Override
@@ -96,12 +90,7 @@ public class RustIsizeType implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable ? "mut " : "") + "isize";
-	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
+		return "isize";
 	}
 
 }

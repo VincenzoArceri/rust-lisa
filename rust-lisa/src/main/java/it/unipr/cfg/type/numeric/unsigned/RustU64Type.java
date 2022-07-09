@@ -15,24 +15,18 @@ import java.util.Collections;
  */
 public class RustU64Type implements NumericType, RustType {
 
-	private static final RustU64Type INSTANCE = new RustU64Type(false);
-	private static final RustU64Type MUTABLE_INSTANCE = new RustU64Type(true);
+	private static final RustU64Type INSTANCE = new RustU64Type();
 
 	/**
 	 * Yields the singleton instance based on mutability.
 	 * 
-	 * @param mutability the mutability of the type
-	 * 
 	 * @return the correct instance based on the type mutability
 	 */
-	public static RustU64Type getInstance(boolean mutability) {
-		return mutability ? MUTABLE_INSTANCE : INSTANCE;
+	public static RustU64Type getInstance() {
+		return INSTANCE;
 	}
 
-	private final boolean mutable;
-
-	private RustU64Type(boolean mutability) {
-		mutable = mutability;
+	private RustU64Type() {
 	}
 
 	@Override
@@ -86,7 +80,7 @@ public class RustU64Type implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustU64Type && ((RustU64Type) obj).mutable == this.mutable;
+		return obj instanceof RustU64Type;
 	}
 
 	@Override
@@ -96,12 +90,7 @@ public class RustU64Type implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable ? "mut " : "") + "u64";
-	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
+		return "u64";
 	}
 
 }

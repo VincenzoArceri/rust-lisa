@@ -15,8 +15,7 @@ import java.util.Collections;
  */
 public class RustU16Type implements NumericType, RustType {
 
-	private static final RustU16Type INSTANCE = new RustU16Type(false);
-	private static final RustU16Type MUTABLE_INSTANCE = new RustU16Type(true);
+	private static final RustU16Type INSTANCE = new RustU16Type();
 
 	/**
 	 * Yields the singleton instance based on mutability.
@@ -25,14 +24,11 @@ public class RustU16Type implements NumericType, RustType {
 	 * 
 	 * @return the correct instance based on the type mutability
 	 */
-	public static RustU16Type getInstance(boolean mutability) {
-		return mutability ? MUTABLE_INSTANCE : INSTANCE;
+	public static RustU16Type getInstance() {
+		return INSTANCE;
 	}
 
-	private final boolean mutable;
-
-	private RustU16Type(boolean mutability) {
-		mutable = mutability;
+	private RustU16Type() {
 	}
 
 	@Override
@@ -86,7 +82,7 @@ public class RustU16Type implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustU16Type && ((RustU16Type) obj).mutable == this.mutable;
+		return obj instanceof RustU16Type;
 	}
 
 	@Override
@@ -96,12 +92,7 @@ public class RustU16Type implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable ? "mut " : "") + "u16";
-	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
+		return "u16";
 	}
 
 }

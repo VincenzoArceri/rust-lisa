@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class RustStructType implements UnitType, RustType {
 
-	private static final Map<String, RustStructType> structTypes = new HashMap<>();
+	private static final Map<String, RustStructType> INSTANCES = new HashMap<>();
 
 	/**
 	 * Yields a unique instance (either an existing one or a fresh one) of
@@ -35,20 +35,37 @@ public class RustStructType implements UnitType, RustType {
 	 *             struct type with the given name
 	 */
 	public static RustStructType lookup(String name, CompilationUnit unit, boolean mutability) {
-		return structTypes.computeIfAbsent(name, x -> new RustStructType(name, unit, mutability));
+		return INSTANCES.computeIfAbsent(name, x -> new RustStructType(name, unit, mutability));
 	}
 	
+	/**
+	 * Retrieve a single instance of a Rust struct types.
+	 * 
+	 * @param name	the name of the struct
+	 * 
+	 * @return all instances of a Rust struct types
+	 */
 	public static RustStructType get(String name) {
-		return structTypes.get(name);
+		return INSTANCES.get(name);
 	}
 	
+	/**
+	 * Remove all instances of Rust struct types.
+	 * 
+	 * @return all instances of a Rust struct types
+	 */
 	public static void clearAll() {
-		structTypes.clear();
+		INSTANCES.clear();
 	}
 	
+	/**
+	 * Yields all instances of Rust struct types.
+	 * 
+	 * @return all instances of a Rust struct types
+	 */
 	public static Collection<Type> all() {
 		Collection<Type> result = new HashSet<>();
-		for (Type t : structTypes.values()) {
+		for (Type t : INSTANCES.values()) {
 			result.add(t);
 		}
 		return result;
@@ -94,14 +111,9 @@ public class RustStructType implements UnitType, RustType {
 	@Override
 	public Collection<Type> allInstances() {
 		Collection<Type> instances = new HashSet<>();
-		for (RustStructType in : structTypes.values())
+		for (RustStructType in : INSTANCES.values())
 			instances.add(in);
 		return instances;
-	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
 	}
 
 	@Override

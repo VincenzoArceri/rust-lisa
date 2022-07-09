@@ -36,6 +36,28 @@ public class RustArrayType implements ArrayType, RustType {
 
 		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
 	}
+	
+	/**
+	 * Remove all instances of Rust tuple types.
+	 * 
+	 * @return all instances of a Rust tuple types
+	 */
+	public static void clearAll() {
+		INSTANCES.clear();
+	}
+	
+	/**
+	 * Yields all instances of Rust tuple types.
+	 * 
+	 * @return all instances of a Rust tuple types
+	 */
+	public static Collection<Type> all() {
+		Collection<Type> result = new HashSet<>();
+		for (Type t : INSTANCES.toArray(new RustArrayType[0])) {
+			result.add(t);
+		}
+		return result;
+	}
 
 	/**
 	 * In Rust an array is characterized by type of its elements length, and its
@@ -137,11 +159,6 @@ public class RustArrayType implements ArrayType, RustType {
 	@Override
 	public String toString() {
 		return (mutable ? "mut " : "") + "[" + contentType.toString() + "; " + length.toString() + "]";
-	}
-
-	@Override
-	public boolean isMutable() {
-		return mutable;
 	}
 
 }
