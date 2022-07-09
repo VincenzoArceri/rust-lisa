@@ -27,6 +27,7 @@ import it.unipr.cfg.expression.literal.RustChar;
 import it.unipr.cfg.expression.literal.RustFloat;
 import it.unipr.cfg.expression.literal.RustInteger;
 import it.unipr.cfg.expression.literal.RustString;
+import it.unipr.cfg.expression.literal.RustStructLiteral;
 import it.unipr.cfg.expression.literal.RustTupleLiteral;
 import it.unipr.cfg.expression.literal.RustUnitLiteral;
 import it.unipr.cfg.expression.numeric.RustAddExpression;
@@ -938,6 +939,30 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitIdent(ctx.ident());
 		}
 
+		if (ctx.pat() != null) {
+			if (ctx.pat_fields() != null) {
+				Expression name = visitPath(ctx.path());
+				List<Expression> values = visitPat_fields(ctx.pat_fields());
+
+				Type[] types = values
+						.stream()
+						.map(p -> p.getStaticType())
+						.collect(Collectors.toList())
+						.toArray(new Type[0]);
+
+				RustStructType struct = RustStructType.lookup(name.toString(), unit, false, types);
+
+				return new RustStructLiteral(
+						currentCfg,
+						locationOf(ctx),
+						struct,
+						values.toArray(new Expression[0]));
+			}
+
+			// TODO The grammar says there is a bug here, skipping
+			return null;
+		}
+
 		switch (ctx.getChild(0).getText()) {
 		case "_":
 			return new VariableRef(currentCfg, locationOf(ctx), "_");
@@ -1048,15 +1073,37 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPat_fields(Pat_fieldsContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Expression> visitPat_fields(Pat_fieldsContext ctx) {
+		// TODO Skipping ".." first production
+		// TODO Skipping all the terminal symbols in the second production
+
+		List<Expression> result = new ArrayList<>();
+		for (Pat_fieldContext pfCtx : ctx.pat_field()) {
+			result.add(visitPat_field(pfCtx));
+		}
+
+		return result;
 	}
 
 	@Override
-	public Object visitPat_field(Pat_fieldContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPat_field(Pat_fieldContext ctx) {
+		// TODO Skipping the first production
+		Expression ident = visitIdent(ctx.ident());
+		Expression value = null;
+
+		if (ctx.pat() != null)
+			value = visitPat(ctx.pat());
+
+		else {
+			value = ident;
+
+			// TODO skipping all the remaining combinations of productions
+			// TODO figure out what to do with mutability
+			if (ctx.getChild(0).getText().equals("box"))
+				value = new RustBoxExpression(currentCfg, locationOf(ctx), ident);
+		}
+
+		return value;
 	}
 
 	@Override

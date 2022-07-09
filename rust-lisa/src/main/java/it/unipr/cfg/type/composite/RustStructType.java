@@ -24,7 +24,7 @@ public class RustStructType implements UnitType, RustType {
 
 	/**
 	 * Yields a unique instance (either an existing one or a fresh one) of
-	 * {@link GoStructType} representing a struct type with the given
+	 * {@link RustStructType} representing a struct type with the given
 	 * {@code name}, representing the given {@code unit}.
 	 * 
 	 * @param name       the name of the struct type
@@ -32,7 +32,7 @@ public class RustStructType implements UnitType, RustType {
 	 * @param mutability the mutability of the struct type
 	 * @param types      an ordered list of types inside the struct
 	 * 
-	 * @return the unique instance of {@link GoStructType} representing the
+	 * @return the unique instance of {@link RustStructType} representing the
 	 *             struct type with the given name
 	 */
 	public static RustStructType lookup(String name, CompilationUnit unit, boolean mutability, Type... types) {
