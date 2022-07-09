@@ -3,16 +3,11 @@ struct Number {
 }
 
 impl Number {
-	pub fn zero() -> i32 {
-        ;
-    }
-    
-    pub fn one() -> i32 {
-        ;
+	pub fn zero() {
+        let x = 2;
     }
 }
 
 fn main() {
-	;
+	let x = 2;
 }
-
