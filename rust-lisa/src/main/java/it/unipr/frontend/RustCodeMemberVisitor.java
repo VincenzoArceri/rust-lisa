@@ -1469,7 +1469,31 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitPrim_expr(Prim_exprContext ctx) {
-		// TODO: skipping the production path '{' expr_inner_attrs? fields? '}'
+		if (ctx.prim_expr_no_struct() == null) {
+			// TODO skipping expr_inner_attrs? part
+			Expression path = visitPath(ctx.path());
+			if (ctx.fields() != null) {
+				List<Pair<Expression, Expression>> fields = visitFields(ctx.fields());
+
+				RustStructType structType = RustStructType.lookup(
+						path.toString(),
+						unit,
+						false,
+						fields.stream()
+								.map(e -> e.getRight().getStaticType())
+								.collect(Collectors.toList())
+								.toArray(new Type[0]));
+
+				return new RustStructLiteral(
+						currentCfg,
+						locationOf(ctx),
+						structType,
+						fields.stream()
+								.map(e -> e.getRight())
+								.collect(Collectors.toList())
+								.toArray(new Expression[0]));
+			}
+		}
 		return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
 	}
 
@@ -1600,9 +1624,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitFields(FieldsContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Pair<Expression, Expression>> visitFields(FieldsContext ctx) {
+		// TODO Skipping the first production and struct_update_base
+		List<Pair<Expression, Expression>> fields = new ArrayList<>();
+		for (FieldContext fctx : ctx.field())
+			fields.add(visitField(fctx));
+
+		return fields;
 	}
 
 	@Override
@@ -1612,15 +1640,21 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitField(FieldContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Pair<Expression, Expression> visitField(FieldContext ctx) {
+		if (ctx.field_name() != null) {
+			return Pair.of(visitField_name(ctx.field_name()), visitExpr(ctx.expr()));
+		} else {
+			Expression expr = visitIdent(ctx.ident());
+			return Pair.of(expr, expr);
+		}
 	}
 
 	@Override
-	public Object visitField_name(Field_nameContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitField_name(Field_nameContext ctx) {
+		if (ctx.ident() != null)
+			return visitIdent(ctx.ident());
+		else
+			return new RustInteger(currentCfg, locationOf(ctx), Integer.parseInt(ctx.getText()));
 	}
 
 	@Override
