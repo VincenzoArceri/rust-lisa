@@ -1,6 +1,5 @@
 package it.unipr.frontend;
 
-import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustLexer;
 import it.unipr.rust.antlr.RustParser;
@@ -26,7 +25,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -137,12 +135,12 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	@Override
 	public List<CFG> visitItem(ItemContext ctx) {
 		// TODO: skipping for the moment attr and visibility
-		// the casts below are completely wrong, they will be removed		
+		// the casts below are completely wrong, they will be removed
 		if (ctx.pub_item() != null)
 			return visitPub_item(ctx.pub_item());
 		else if (ctx.impl_block() != null)
 			return new RustCodeMemberVisitor(filePath, program, currentUnit).visitImpl_block(ctx.impl_block());
-		
+
 		// TODO skipping attr* extern_mod and attr* item_macro_use productions
 		return new ArrayList<>();
 	}
@@ -151,7 +149,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	public List<CFG> visitPub_item(Pub_itemContext ctx) {
 		if (ctx.fn_decl() != null)
 			return new RustCodeMemberVisitor(filePath, program, currentUnit).visitFn_decl(ctx.fn_decl());
-		
+
 		else if (ctx.struct_decl() != null) {
 			new RustCodeMemberVisitor(filePath, program, currentUnit).visitStruct_decl(ctx.struct_decl());
 			return new ArrayList<>();

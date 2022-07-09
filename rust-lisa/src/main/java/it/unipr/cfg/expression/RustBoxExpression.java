@@ -37,7 +37,7 @@ public class RustBoxExpression extends UnaryExpression {
 		// once we have modeled Rust types
 		super(cfg, location, "box", new ReferenceType(Untyped.INSTANCE), expr);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "box " + getSubExpression();

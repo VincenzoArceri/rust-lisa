@@ -18,10 +18,17 @@ public class RustU32Type implements NumericType, RustType {
 	private static final RustU32Type INSTANCE = new RustU32Type(false);
 	private static final RustU32Type MUTABLE_INSTANCE = new RustU32Type(true);
 
+	/**
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @param mutability the mutability of the type
+	 * 
+	 * @return the correct instance based on the type mutability
+	 */
 	public static RustU32Type getInstance(boolean mutability) {
-		return mutability? MUTABLE_INSTANCE : INSTANCE;
+		return mutability ? MUTABLE_INSTANCE : INSTANCE;
 	}
-	
+
 	private final boolean mutable;
 
 	private RustU32Type(boolean mutability) {
@@ -79,7 +86,7 @@ public class RustU32Type implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustU32Type && ((RustU32Type)obj).mutable == this.mutable;
+		return obj instanceof RustU32Type && ((RustU32Type) obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -89,9 +96,9 @@ public class RustU32Type implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + "u32";
+		return (mutable ? "mut " : "") + "u32";
 	}
-	
+
 	@Override
 	public boolean isMutable() {
 		return mutable;

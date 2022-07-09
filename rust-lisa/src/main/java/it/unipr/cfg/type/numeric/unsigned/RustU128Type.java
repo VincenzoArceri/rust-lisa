@@ -20,10 +20,17 @@ public class RustU128Type implements NumericType, RustType {
 	private static final RustU128Type INSTANCE = new RustU128Type(false);
 	private static final RustU128Type MUTABLE_INSTANCE = new RustU128Type(true);
 
+	/**
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @param mutability the mutability of the type
+	 * 
+	 * @return the correct instance based on the type mutability
+	 */
 	public static RustU128Type getInstance(boolean mutability) {
-		return mutability? MUTABLE_INSTANCE : INSTANCE;
+		return mutability ? MUTABLE_INSTANCE : INSTANCE;
 	}
-	
+
 	private final boolean mutable;
 
 	private RustU128Type(boolean mutability) {
@@ -81,7 +88,7 @@ public class RustU128Type implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustU128Type && ((RustU128Type)obj).mutable == this.mutable;
+		return obj instanceof RustU128Type && ((RustU128Type) obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -91,7 +98,7 @@ public class RustU128Type implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + "u128";
+		return (mutable ? "mut " : "") + "u128";
 	}
 
 	@Override

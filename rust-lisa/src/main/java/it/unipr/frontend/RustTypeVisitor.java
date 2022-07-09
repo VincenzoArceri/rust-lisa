@@ -8,7 +8,6 @@ import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustArrayType;
 import it.unipr.cfg.type.composite.RustReferenceType;
-import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.cfg.type.composite.RustTupleType;
 import it.unipr.cfg.type.numeric.floating.RustF32Type;
 import it.unipr.cfg.type.numeric.floating.RustF64Type;
@@ -30,7 +29,6 @@ import it.unipr.rust.antlr.RustParser.Field_declContext;
 import it.unipr.rust.antlr.RustParser.Field_decl_listContext;
 import it.unipr.rust.antlr.RustParser.Fn_rtypeContext;
 import it.unipr.rust.antlr.RustParser.IdentContext;
-import it.unipr.rust.antlr.RustParser.Struct_declContext;
 import it.unipr.rust.antlr.RustParser.Struct_tailContext;
 import it.unipr.rust.antlr.RustParser.TyContext;
 import it.unipr.rust.antlr.RustParser.Ty_pathContext;
@@ -39,19 +37,13 @@ import it.unipr.rust.antlr.RustParser.Ty_path_segment_no_superContext;
 import it.unipr.rust.antlr.RustParser.Ty_path_tailContext;
 import it.unipr.rust.antlr.RustParser.Ty_sumContext;
 import it.unipr.rust.antlr.RustParser.Ty_sum_listContext;
-import it.unive.lisa.program.cfg.CFG;
-import it.unive.lisa.program.cfg.CFGDescriptor;
-import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.NoOp;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Type visitor for Rust, managing the parsing of Rust types.
@@ -60,9 +52,14 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustTypeVisitor extends RustBaseVisitor<Object> {
-	
+
 	private final RustCodeMemberVisitor codeVisitor;
-	
+
+	/**
+	 * Constructs a {@link RustTypeVisitor} instance.
+	 * 
+	 * @param codeVisitor the {@link RustCodeMemberVisitor} of reference
+	 */
 	public RustTypeVisitor(RustCodeMemberVisitor codeVisitor) {
 		this.codeVisitor = codeVisitor;
 	}
@@ -73,21 +70,21 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			// TODO Skipping macro_tail? part
 			return visitTy_path(ctx.ty_path());
 		}
-		
+
 		boolean mutable = false;
-		
+
 		switch (ctx.getChild(0).getText()) {
 		case "_":
 			return Untyped.INSTANCE;
 		case "(":
 			if (ctx.ty_sum() != null) {
-				
+
 				Type type = codeVisitor.visitTy_sum(ctx.ty_sum());
 
 				if (ctx.ty_sum_list() != null) {
 					List<Type> remainingTypes = visitTy_sum_list(ctx.ty_sum_list());
 					remainingTypes.add(0, type);
-					
+
 					RustTupleType tuple = new RustTupleType(remainingTypes, false);
 					return RustTupleType.lookup(tuple);
 				}
@@ -96,7 +93,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			}
 
 			return RustUnitType.INSTANCE;
-			
+
 		case "[":
 			Type arrayType = codeVisitor.visitTy_sum(ctx.ty_sum());
 
@@ -109,20 +106,20 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			// TODO Ignoring lifetimes for now
 			if (ctx.getChild(2).getText().equals("mut"))
 				mutable = true;
-						
+
 			return new RustReferenceType(visitTy(ctx.ty()), mutable);
-		
+
 		case "&&":
 			// TODO Ignoring lifetimes for now
 			if (ctx.getChild(2).getText().equals("mut"))
 				mutable = true;
-			
+
 			return new RustReferenceType(new RustReferenceType(visitTy(ctx.ty()), mutable), false);
-		
+
 		case "*":
 			if (codeVisitor.visitMut_or_const(ctx.mut_or_const()).equals("mut"))
 				mutable = true;
-			
+
 			RustPointerType pointer = new RustPointerType(visitTy(ctx.ty()), mutable);
 			return RustPointerType.lookup(pointer);
 
@@ -130,7 +127,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			return null;
 		}
 	}
-	
+
 	private boolean isInteger(String s) {
 		try {
 			Integer.parseInt(s);
@@ -141,10 +138,11 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 	}
 
 	private Integer getConstantValue(ExprContext expr) {
-		// TODO We are just parsing the simple literal integers, the rest for now is out of our scope
+		// TODO We are just parsing the simple literal integers, the rest for
+		// now is out of our scope
 		if (isInteger(expr.getText()))
 			return Integer.parseInt(expr.getText());
-		
+
 		return null;
 	}
 
@@ -177,7 +175,8 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 	public RustType visitIdent(IdentContext ctx) {
 		// TODO skipping "auto", "default" and "union"
 		switch (ctx.Ident().getText()) {
-		// Temporary returning a non mutable type, since we do not have visibility on mutability here
+		// Temporary returning a non mutable type, since we do not have
+		// visibility on mutability here
 		case "f32":
 			return RustF32Type.getInstance(false);
 		case "f64":
@@ -213,7 +212,8 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 		case "char":
 			return RustCharType.getInstance(false);
 		default:
-			// TODO as of now, more complex types than the simple ones are not parsed
+			// TODO as of now, more complex types than the simple ones are not
+			// parsed
 			return null;
 		}
 	}
@@ -226,42 +226,42 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 		}
 		return types;
 	}
-	
+
 	@Override
 	public Type visitFn_rtype(Fn_rtypeContext ctx) {
 		// TODO Ignoring "impl" and "!" types
 		if (ctx.ty() != null)
 			return visitTy(ctx.ty());
-		
+
 		return RustUnitType.INSTANCE;
 	}
-	
+
 	@Override
 	public List<Expression> visitStruct_tail(Struct_tailContext ctx) {
 		// TODO skipping first and second
 		if (ctx.field_decl_list() != null) {
-			 return visitField_decl_list(ctx.field_decl_list());
+			return visitField_decl_list(ctx.field_decl_list());
 		}
 
-		//This is a struct with no declaration of types inside
+		// This is a struct with no declaration of types inside
 		return new ArrayList<Expression>();
 	}
-	
+
 	@Override
 	public Expression visitField_decl(Field_declContext ctx) {
 		// TODO skipping attr* and visibility?
 		Expression ident = codeVisitor.visitIdent(ctx.ident());
 		Type type = codeVisitor.visitTy_sum(ctx.ty_sum());
-		
+
 		return new VariableRef(codeVisitor.getCurrentCfg(), codeVisitor.locationOf(ctx), ident.toString(), type);
 	}
 
 	@Override
 	public List<Expression> visitField_decl_list(Field_decl_listContext ctx) {
 		List<Expression> declarations = new ArrayList<>();
-		for (Field_declContext fdCtx: ctx.field_decl())
+		for (Field_declContext fdCtx : ctx.field_decl())
 			declarations.add(visitField_decl(fdCtx));
-		
+
 		return declarations;
 	}
 }

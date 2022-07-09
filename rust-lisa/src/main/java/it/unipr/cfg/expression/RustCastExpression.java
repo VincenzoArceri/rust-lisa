@@ -42,7 +42,7 @@ public class RustCastExpression extends UnaryExpression {
 	public String toString() {
 		return getSubExpression() + " as " + getStaticType();
 	}
-	
+
 	@Override
 	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,

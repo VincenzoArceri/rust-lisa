@@ -12,7 +12,7 @@ public class RustCFGTypes extends RustLiSATestExecutor {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/type-parsing", "type-parsing.rs", conf);
 	}
-	
+
 	@Test
 	public void testStructParsing() throws AnalysisSetupException {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);

@@ -18,10 +18,17 @@ public class RustF64Type implements NumericType, RustType {
 	private static final RustF64Type INSTANCE = new RustF64Type(false);
 	private static final RustF64Type MUTABLE_INSTANCE = new RustF64Type(true);
 
+	/**
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @param mutability the mutability of the type
+	 * 
+	 * @return the correct instance based on the type mutability
+	 */
 	public static RustF64Type getInstance(boolean mutability) {
-		return mutability? MUTABLE_INSTANCE : INSTANCE;
+		return mutability ? MUTABLE_INSTANCE : INSTANCE;
 	}
-	
+
 	private final boolean mutable;
 
 	private RustF64Type(boolean mutability) {
@@ -79,7 +86,7 @@ public class RustF64Type implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustF64Type && ((RustF64Type)obj).mutable == this.mutable;
+		return obj instanceof RustF64Type && ((RustF64Type) obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -89,13 +96,12 @@ public class RustF64Type implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + "f64";
+		return (mutable ? "mut " : "") + "f64";
 	}
 
 	@Override
 	public boolean isMutable() {
 		return mutable;
 	}
-
 
 }

@@ -39,9 +39,7 @@ import it.unipr.cfg.statement.RustAssignment;
 import it.unipr.cfg.statement.RustLetAssignment;
 import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.RustUnitType;
-import it.unipr.cfg.type.composite.RustArrayType;
 import it.unipr.cfg.type.composite.RustStructType;
-import it.unipr.cfg.type.composite.RustTupleType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
 import it.unive.lisa.program.CompilationUnit;
@@ -49,7 +47,6 @@ import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
-import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.Parameter;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
@@ -69,7 +66,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -116,7 +112,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		this.program = program;
 		this.unit = unit;
 	}
-	
+
 	/**
 	 * Yields the current control flow graph.
 	 * 
@@ -125,7 +121,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public CFG getCurrentCfg() {
 		return currentCfg;
 	}
-	
+
 	/**
 	 * Yields the current compilation unit.
 	 * 
@@ -204,14 +200,14 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public List<CFG> visitFn_decl(Fn_declContext ctx) {
 		String fnName = getFnName(ctx.fn_head());
-		
+
 		Type returnType = RustUnitType.INSTANCE;
 		if (ctx.fn_rtype() != null)
 			returnType = new RustTypeVisitor(this).visitFn_rtype(ctx.fn_rtype());
-		
+
 		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, fnName, returnType, new Parameter[0]);
 		currentCfg = new CFG(cfgDesc);
-		
+
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 		currentCfg.getEntrypoints().add(block.getLeft());
 
@@ -222,7 +218,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		}
 
 		currentCfg.simplify();
-		
+
 		List<CFG> result = new ArrayList<>();
 		result.add(currentCfg);
 		return result;
@@ -362,12 +358,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public CFG visitMethod_decl(Method_declContext ctx) {
 		String methodName = getFnName(ctx.fn_head());
-		
+
 		Type returnType = RustUnitType.INSTANCE;
 		if (ctx.fn_rtype() != null)
 			returnType = new RustTypeVisitor(this).visitFn_rtype(ctx.fn_rtype());
-						
-		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, methodName, returnType, new Parameter[0]);
+
+		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, methodName, returnType,
+				new Parameter[0]);
 		currentCfg = new CFG(cfgDesc);
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 		currentCfg.getEntrypoints().add(block.getLeft());
@@ -377,7 +374,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			currentCfg.addNode(ret);
 			currentCfg.addEdge(new SequentialEdge(block.getRight(), ret));
 		}
-		
+
 		currentCfg.simplify();
 		return currentCfg;
 	}
@@ -404,7 +401,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public Parameter visitParam(ParamContext ctx) {
 		Expression expression = visitPat(ctx.pat());
 		Type type = visitParam_ty(ctx.param_ty());
-		
+
 		return new Parameter(locationOf(ctx), expression.toString(), type);
 	}
 
@@ -435,28 +432,28 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Parameter visitSelf_param(Self_paramContext ctx) {
 		// TODO Skipping second production
-		
+
 		// TODO as of now, mutability in params requires more infrastructure
 		boolean mutability = false;
 		if (ctx.getChild(0).getText().equals("mut"))
 			mutability = true;
-		
+
 		Type type = visitTy_sum(ctx.ty_sum());
-		
+
 		return new Parameter(locationOf(ctx), "self", type);
 	}
 
 	@Override
 	public List<Parameter> visitMethod_param_list(Method_param_listContext ctx) {
 		List<Parameter> parameters = new ArrayList<>();
-		
+
 		if (ctx.self_param() != null) {
 			parameters.add(visitSelf_param(ctx.self_param()));
 		}
-		
+
 		for (ParamContext pCtx : ctx.param())
 			parameters.add(visitParam(pCtx));
-			
+
 		return parameters;
 	}
 
@@ -500,22 +497,21 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public RustStructType visitStruct_decl(Struct_declContext ctx) {
 		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx), unit, false, filePath, new Parameter[0]);
 		currentCfg = new CFG(cfgDesc);
-		
+
 		Expression name = visitIdent(ctx.ident());
-		
+
 		// TODO skipping ty_params? production
 		List<Expression> declarations = new RustTypeVisitor(this).visitStruct_tail(ctx.struct_tail());
-		
+
 		return RustStructType.lookup(
-			name.toString(),
-			unit, 
-			false, 
-			declarations
-				.stream()
-				.map(x -> x.getStaticType())
-				.collect(Collectors.toList())
-				.toArray(new RustType[0])
-			);
+				name.toString(),
+				unit,
+				false,
+				declarations
+						.stream()
+						.map(x -> x.getStaticType())
+						.collect(Collectors.toList())
+						.toArray(new RustType[0]));
 	}
 
 	@Override
@@ -612,20 +608,21 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public List<CFG> visitImpl_block(Impl_blockContext ctx) {
 		// TODO Ignoring: 'unsafe'?, ty_params? where_clause?
 		Type struct = visitImpl_what(ctx.impl_what());
-		
+
 		List<CFG> impls = new ArrayList<>();
-		for (Impl_itemContext fdCtx: ctx.impl_item()) {
+		for (Impl_itemContext fdCtx : ctx.impl_item()) {
 			CFG visitedCfg = visitImpl_item(fdCtx);
 			impls.add(visitedCfg);
 			unit.addCFG(visitedCfg);
 		}
-		
+
 		return impls;
 	}
 
 	@Override
 	public Type visitImpl_what(Impl_whatContext ctx) {
-		// TODO Skipping trait implementation for now and parsing only the last rule
+		// TODO Skipping trait implementation for now and parsing only the last
+		// rule
 		return visitTy_sum(ctx.ty_sum(0));
 	}
 
@@ -950,20 +947,20 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitPat_elt_list(ctx.pat_elt_list());
 		case "&":
 			if (ctx.getChild(1).getText().equals("mut"))
-				// TODO figure out what to do with mutable 
+				// TODO figure out what to do with mutable
 				return new RustRefExpression(currentCfg, locationOf(ctx), visitPat(ctx.pat()));
-		
+
 			return visitPat_no_mut(ctx.pat_no_mut());
 		case "&&":
 			if (ctx.getChild(1).getText().equals("mut"))
-				// TODO figure out what to do with mutable 
+				// TODO figure out what to do with mutable
 				return new RustRefExpression(currentCfg, locationOf(ctx),
-					new RustRefExpression(currentCfg, locationOf(ctx),
-						visitPat(ctx.pat())));
+						new RustRefExpression(currentCfg, locationOf(ctx),
+								visitPat(ctx.pat())));
 
 			return new RustRefExpression(currentCfg, locationOf(ctx),
-				new RustRefExpression(currentCfg, locationOf(ctx),
-					visitPat_no_mut(ctx.pat_no_mut())));
+					new RustRefExpression(currentCfg, locationOf(ctx),
+							visitPat_no_mut(ctx.pat_no_mut())));
 		case "box":
 			return new RustBoxExpression(currentCfg, locationOf(ctx), visitPat(ctx.pat()));
 		default:
@@ -1077,7 +1074,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		List<Expression> exprs = new ArrayList<>();
 		for (ExprContext exprCtx : ctx.expr())
 			exprs.add(visitExpr(exprCtx));
-			
+
 		return exprs;
 	}
 
@@ -1089,7 +1086,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (ctx.stmt() != null) {
 			for (StmtContext stmt : ctx.stmt()) {
 				@SuppressWarnings("unchecked")
-				// Note: since we are not sure what to return from visitStmt, we are sure that this function returns a pair of Statement
+				// Note: since we are not sure what to return from visitStmt, we
+				// are sure that this function returns a pair of Statement
 				Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
 
 				if (lastStmt != null)
@@ -1124,7 +1122,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		for (StmtContext stmt : ctx.stmt()) {
 			@SuppressWarnings("unchecked")
-			// Note: since we are not sure what to return from visitStmt, we are sure that this function returns a pair of Statement
+			// Note: since we are not sure what to return from visitStmt, we are
+			// sure that this function returns a pair of Statement
 			Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
 
 			if (lastStmt != null)
@@ -1140,7 +1139,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			Expression expr = visitExpr(ctx.expr());
 
 			Return ret = new Return(currentCfg, locationOf(ctx), expr);
-			
+
 			currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
 
 			lastStmt = ret;
@@ -1151,7 +1150,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Object visitStmt(StmtContext ctx) {
-		// TODO I am not sure on what to return here exactly. So for now this is implemented as returning an Object and a (safe) cast as needed
+		// TODO I am not sure on what to return here exactly. So for now this is
+		// implemented as returning an Object and a (safe) cast as needed
 
 		if (ctx.getText().equals(";")) {
 			NoOp noOp = new NoOp(currentCfg, locationOf(ctx));
@@ -1435,41 +1435,42 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 //		   | 'break' lifetime_or_expr?
 //		   | 'continue' Lifetime?
 //		   | 'return' expr?
-		
+
 		if (ctx.getChild(0).getText().equals("(")) {
 			// TODO Ignoring expr_inner_attrs? part
-			
+
 			if (ctx.expr().get(0) != null) {
 				Expression expr = visitExpr(ctx.expr(0));
-				
+
 				if (ctx.expr_list() != null) {
 					List<Expression> exprs = visitExpr_list(ctx.expr_list());
 					exprs.add(0, expr);
-					
+
 					return new RustTupleLiteral(
-						currentCfg,
-						locationOf(ctx),
-						exprs.stream()
-							.map(e -> e.getStaticType())
-							.collect(Collectors.toList())
-							.toArray(new RustType[0]),
-						exprs.toArray(new Expression[0]));
+							currentCfg,
+							locationOf(ctx),
+							exprs.stream()
+									.map(e -> e.getStaticType())
+									.collect(Collectors.toList())
+									.toArray(new RustType[0]),
+							exprs.toArray(new Expression[0]));
 				}
-				
+
 				return expr;
 			}
-				
+
 			return new RustUnitLiteral(currentCfg, locationOf(ctx));
 		} else if (ctx.getChild(0).getText().equals("[")) {
 			// TODO Ignoring expr_inner_attrs? part
-			
+
 			if (ctx.expr_list() != null) {
 				List<Expression> exprs = visitExpr_list(ctx.expr_list());
-				return new RustArrayLiteral(currentCfg, locationOf(ctx), Untyped.INSTANCE, exprs.toArray(new Expression[0]));
-			
+				return new RustArrayLiteral(currentCfg, locationOf(ctx), Untyped.INSTANCE,
+						exprs.toArray(new Expression[0]));
+
 			} else if (ctx.expr() != null) {
 				Expression element = visitExpr(ctx.expr(0));
-				
+
 				// TODO considering only integer literal here
 				Integer length = null;
 				try {
@@ -1479,22 +1480,22 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				}
 				Expression[] exprs = new Expression[length];
 				Arrays.fill(exprs, element);
-				
+
 				return new RustArrayLiteral(currentCfg, locationOf(ctx), Untyped.INSTANCE, exprs);
 			}
-			
+
 			return new RustArrayLiteral(currentCfg, locationOf(ctx), Untyped.INSTANCE, new Expression[0]);
-		
+
 		} else if (ctx.blocky_expr() != null) {
 			// TODO watch out for expression and statements
-			//return visitBlocky_expr(ctx.blocky_expr());
+			// return visitBlocky_expr(ctx.blocky_expr());
 		} else if (ctx.lit() != null) {
 			return visitLit(ctx.lit());
 		} else {
 			// TODO: skipping macro_tail
 			return visitPath(ctx.path());
 		}
-		
+
 		// Unreachable
 		return null;
 	}
@@ -1598,7 +1599,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitExpr(ctx.expr());
 		case "(":
 			if (ctx.expr_list() != null) {
-				//return visitExpr_list(ctx.expr_list());
+				// return visitExpr_list(ctx.expr_list());
 				return null;
 			}
 

@@ -17,16 +17,23 @@ public class RustBooleanType implements BooleanType, RustType {
 	private static final RustBooleanType INSTANCE = new RustBooleanType(false);
 	private static final RustBooleanType MUTABLE_INSTANCE = new RustBooleanType(true);
 
+	/**
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @param mutability the mutability of the type
+	 * 
+	 * @return the correct instance based on the type mutability
+	 */
 	public static RustBooleanType getInstance(boolean mutability) {
-		return mutability? MUTABLE_INSTANCE : INSTANCE;
+		return mutability ? MUTABLE_INSTANCE : INSTANCE;
 	}
-	
+
 	private final boolean mutable;
 
 	private RustBooleanType(boolean mutability) {
 		mutable = mutability;
 	}
-	
+
 	@Override
 	public boolean canBeAssignedTo(Type other) {
 		return other instanceof RustBooleanType || other instanceof Untyped;
@@ -46,7 +53,7 @@ public class RustBooleanType implements BooleanType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustBooleanType && ((RustBooleanType)obj).mutable == this.mutable;
+		return obj instanceof RustBooleanType && ((RustBooleanType) obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -56,9 +63,9 @@ public class RustBooleanType implements BooleanType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + "bool";
+		return (mutable ? "mut " : "") + "bool";
 	}
-	
+
 	@Override
 	public boolean isMutable() {
 		return mutable;

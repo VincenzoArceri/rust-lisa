@@ -18,10 +18,17 @@ public class RustUsizeType implements NumericType, RustType {
 	private static final RustUsizeType INSTANCE = new RustUsizeType(false);
 	private static final RustUsizeType MUTABLE_INSTANCE = new RustUsizeType(true);
 
+	/**
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @param mutability the mutability of the type
+	 * 
+	 * @return the correct instance based on the type mutability
+	 */
 	public static RustUsizeType getInstance(boolean mutability) {
-		return mutability? MUTABLE_INSTANCE : INSTANCE;
+		return mutability ? MUTABLE_INSTANCE : INSTANCE;
 	}
-	
+
 	private final boolean mutable;
 
 	private RustUsizeType(boolean mutability) {
@@ -79,7 +86,7 @@ public class RustUsizeType implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustUsizeType && ((RustUsizeType)obj).mutable == this.mutable;
+		return obj instanceof RustUsizeType && ((RustUsizeType) obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -89,9 +96,9 @@ public class RustUsizeType implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + "usize";
+		return (mutable ? "mut " : "") + "usize";
 	}
-	
+
 	@Override
 	public boolean isMutable() {
 		return mutable;

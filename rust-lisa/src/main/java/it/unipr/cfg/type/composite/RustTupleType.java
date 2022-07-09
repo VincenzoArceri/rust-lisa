@@ -10,8 +10,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.util.Strings;
-
 /**
  * Instance of the Rust tuple type.
  *
@@ -46,7 +44,8 @@ public class RustTupleType implements RustType {
 	/**
 	 * Construct the {@link RustTupleType} object.
 	 * 
-	 * @param types an ordered list of types inside the tuple
+	 * @param types      an ordered list of types inside the tuple
+	 * @param mutability the mutability of the tuple
 	 */
 	public RustTupleType(List<Type> types, boolean mutability) {
 		this.types = Objects.requireNonNull(types);
@@ -108,7 +107,7 @@ public class RustTupleType implements RustType {
 				return false;
 		} else if (!types.equals(other.types))
 			return false;
-		
+
 		if (mutable != other.mutable)
 			return false;
 
@@ -117,7 +116,8 @@ public class RustTupleType implements RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + "(" + types.stream().map(t -> t.toString()).collect(Collectors.joining(", ")) + ")";
+		return (mutable ? "mut " : "") + "(" + types.stream().map(t -> t.toString()).collect(Collectors.joining(", "))
+				+ ")";
 	}
 
 	@Override

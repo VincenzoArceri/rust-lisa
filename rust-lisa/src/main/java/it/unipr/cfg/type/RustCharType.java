@@ -16,10 +16,17 @@ public class RustCharType implements RustType {
 	private static final RustCharType INSTANCE = new RustCharType(false);
 	private static final RustCharType MUTABLE_INSTANCE = new RustCharType(true);
 
+	/**
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @param mutability the mutability of the type
+	 * 
+	 * @return the correct instance based on the type mutability
+	 */
 	public static RustCharType getInstance(boolean mutability) {
-		return mutability? MUTABLE_INSTANCE : INSTANCE;
+		return mutability ? MUTABLE_INSTANCE : INSTANCE;
 	}
-	
+
 	private final boolean mutable;
 
 	private RustCharType(boolean mutability) {
@@ -47,7 +54,7 @@ public class RustCharType implements RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustCharType && ((RustCharType)obj).mutable == this.mutable;
+		return obj instanceof RustCharType && ((RustCharType) obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -57,13 +64,12 @@ public class RustCharType implements RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut ": "") + "char";
+		return (mutable ? "mut " : "") + "char";
 	}
-	
+
 	@Override
 	public boolean isMutable() {
 		return mutable;
 	}
-
 
 }

@@ -5,9 +5,7 @@ import it.unive.lisa.type.PointerType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
-
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -24,10 +22,10 @@ public class RustPointerType implements PointerType, RustType {
 	 * Collection of all pointer types.
 	 */
 	private static final Set<RustPointerType> INSTANCES = new HashSet<>();
-	
+
 	/**
-	 * Yields the first instance that matches pointer type requested or adds it if
-	 * not present.
+	 * Yields the first instance that matches pointer type requested or adds it
+	 * if not present.
 	 * 
 	 * @param type the {@link RustPointerType} to look for
 	 * 
@@ -39,22 +37,28 @@ public class RustPointerType implements PointerType, RustType {
 
 		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
 	}
-	
+
 	private final Type innerType;
 	private final boolean mutable;
 
+	/**
+	 * Constructor for {@link RustPointerType}.
+	 * 
+	 * @param innerType  inner type on which this pointer points
+	 * @param mutability type mutability
+	 */
 	public RustPointerType(Type innerType, boolean mutability) {
 		this.innerType = Objects.requireNonNull(innerType);
 		this.mutable = mutability;
 	}
-	
+
 	@Override
 	public boolean canBeAssignedTo(Type other) {
 		if (other instanceof RustPointerType)
 			return innerType.canBeAssignedTo(((RustPointerType) other).innerType);
 		return other instanceof Untyped;
 	}
-	
+
 	@Override
 	public Type commonSupertype(Type other) {
 		if (other instanceof RustPointerType)
@@ -71,7 +75,7 @@ public class RustPointerType implements PointerType, RustType {
 
 		return instances;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return innerType.hashCode();
@@ -95,7 +99,7 @@ public class RustPointerType implements PointerType, RustType {
 				return false;
 		} else if (!innerType.equals(other.innerType))
 			return false;
-		
+
 		if (mutable != other.mutable)
 			return false;
 
@@ -104,7 +108,7 @@ public class RustPointerType implements PointerType, RustType {
 
 	@Override
 	public String toString() {
-		return "*" + (mutable? "mut " : "const ") + innerType.toString();
+		return "*" + (mutable ? "mut " : "const ") + innerType.toString();
 	}
 
 	@Override

@@ -38,7 +38,8 @@ public class RustArrayType implements ArrayType, RustType {
 	}
 
 	/**
-	 * In Rust an array is characterized by type of its elements length, and its mutability.
+	 * In Rust an array is characterized by type of its elements length, and its
+	 * mutability.
 	 */
 	private final Type contentType;
 	private final Integer length;
@@ -126,7 +127,7 @@ public class RustArrayType implements ArrayType, RustType {
 				return false;
 		} else if (!length.equals(other.length))
 			return false;
-		
+
 		if (mutable != other.mutable)
 			return false;
 
@@ -135,12 +136,12 @@ public class RustArrayType implements ArrayType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + "[" + contentType.toString() + "; " + length.toString() + "]";
+		return (mutable ? "mut " : "") + "[" + contentType.toString() + "; " + length.toString() + "]";
 	}
 
 	@Override
 	public boolean isMutable() {
 		return mutable;
 	}
-	
+
 }

@@ -18,10 +18,17 @@ public class RustF32Type implements NumericType, RustType {
 	private static final RustF32Type INSTANCE = new RustF32Type(false);
 	private static final RustF32Type MUTABLE_INSTANCE = new RustF32Type(true);
 
+	/**
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @param mutability the mutability of the type
+	 * 
+	 * @return the correct instance based on the type mutability
+	 */
 	public static RustF32Type getInstance(boolean mutability) {
-		return mutability? MUTABLE_INSTANCE : INSTANCE;
+		return mutability ? MUTABLE_INSTANCE : INSTANCE;
 	}
-	
+
 	private final boolean mutable;
 
 	private RustF32Type(boolean mutability) {
@@ -79,7 +86,7 @@ public class RustF32Type implements NumericType, RustType {
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof RustF32Type && ((RustF32Type)obj).mutable == this.mutable;
+		return obj instanceof RustF32Type && ((RustF32Type) obj).mutable == this.mutable;
 	}
 
 	@Override
@@ -89,7 +96,7 @@ public class RustF32Type implements NumericType, RustType {
 
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + "f32";
+		return (mutable ? "mut " : "") + "f32";
 	}
 
 	@Override

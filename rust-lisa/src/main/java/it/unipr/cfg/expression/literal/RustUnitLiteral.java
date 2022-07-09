@@ -18,7 +18,6 @@ public class RustUnitLiteral extends Literal<Void> {
 	 * 
 	 * @param cfg      the {@link CFG} where this literal lies
 	 * @param location the location where this literal is defined
-	 * @param value    the char value
 	 */
 	public RustUnitLiteral(CFG cfg, CodeLocation location) {
 		super(cfg, location, null, RustUnitType.INSTANCE);

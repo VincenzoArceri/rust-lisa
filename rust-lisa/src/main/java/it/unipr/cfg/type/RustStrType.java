@@ -17,10 +17,17 @@ public class RustStrType implements StringType, RustType {
 	private static final RustStrType INSTANCE = new RustStrType(false);
 	private static final RustStrType MUTABLE_INSTANCE = new RustStrType(true);
 
+	/**
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @param mutability the mutability of the type
+	 * 
+	 * @return the correct instance based on the type mutability
+	 */
 	public static RustStrType getInstance(boolean mutability) {
-		return mutability? MUTABLE_INSTANCE : INSTANCE;
+		return mutability ? MUTABLE_INSTANCE : INSTANCE;
 	}
-	
+
 	private final boolean mutable;
 
 	private RustStrType(boolean mutability) {
@@ -58,7 +65,7 @@ public class RustStrType implements StringType, RustType {
 
 	@Override
 	public String toString() {
-		return "&" + (mutable? "mut " : "") + "str";
+		return "&" + (mutable ? "mut " : "") + "str";
 	}
 
 	@Override

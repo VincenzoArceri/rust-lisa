@@ -1,23 +1,22 @@
 package it.unipr.cfg.type.composite;
 
-import java.util.Collection;
-
-import org.apache.commons.lang3.StringUtils;
-
 import it.unipr.cfg.type.RustType;
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.type.PointerType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.collections.externalSet.ExternalSet;
+import java.util.Collection;
+import org.apache.commons.lang3.StringUtils;
 
 /**
- * Builds the Rust reference type
- * 
- * @author <a href="mailto:luca.negrini@unive.it">Luca Negrini</a>
+ * Builds the Rust reference type.
+ *
+ * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustReferenceType implements PointerType, RustType {
-	
+
 	private ExternalSet<Type> innerTypes;
 
 	// TODO the purpose of this field is to avoid using the cache
@@ -28,13 +27,14 @@ public class RustReferenceType implements PointerType, RustType {
 
 	/**
 	 * Builds the type for a reference to a location containing values of types
-	 * {@code t}.
+	 * {@code innerType}.
 	 * 
-	 * @param t the type of the referenced location
+	 * @param innerType  the type of the referenced location
+	 * @param mutability the mutability of the reference
 	 */
-	public RustReferenceType(Type t, boolean mutablility) {
-		this.innerType = t;
-		this.mutable = mutablility;
+	public RustReferenceType(Type innerType, boolean mutability) {
+		this.innerType = innerType;
+		this.mutable = mutability;
 	}
 
 	@Override
@@ -61,7 +61,7 @@ public class RustReferenceType implements PointerType, RustType {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		
+
 		if (innerTypes != null)
 			if (innerTypes.size() == 1)
 				result = prime * result + innerTypes.first().hashCode();
@@ -85,7 +85,7 @@ public class RustReferenceType implements PointerType, RustType {
 				return false;
 		} else if (!innerType.equals(other.innerType))
 			return false;
-		
+
 		if (mutable != other.mutable)
 			return false;
 
