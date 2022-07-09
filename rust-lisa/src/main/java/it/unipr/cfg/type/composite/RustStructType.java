@@ -30,19 +30,33 @@ public class RustStructType implements UnitType, RustType {
 	 * @param name       the name of the struct type
 	 * @param unit       the unit underlying this type
 	 * @param mutability the mutability of the struct type
-	 * @param types      an ordered list of types inside the struct
 	 * 
 	 * @return the unique instance of {@link RustStructType} representing the
 	 *             struct type with the given name
 	 */
-	public static RustStructType lookup(String name, CompilationUnit unit, boolean mutability, Type... types) {
-		return structTypes.computeIfAbsent(name, x -> new RustStructType(name, unit, mutability, types));
+	public static RustStructType lookup(String name, CompilationUnit unit, boolean mutability) {
+		return structTypes.computeIfAbsent(name, x -> new RustStructType(name, unit, mutability));
+	}
+	
+	public static RustStructType get(String name) {
+		return structTypes.get(name);
+	}
+	
+	public static void clearAll() {
+		structTypes.clear();
+	}
+	
+	public static Collection<Type> all() {
+		Collection<Type> result = new HashSet<>();
+		for (Type t : structTypes.values()) {
+			result.add(t);
+		}
+		return result;
 	}
 
 	private final String name;
 	private final CompilationUnit unit;
 	private final boolean mutable;
-	private final List<Type> types;
 
 	/**
 	 * Builds the struct type.
@@ -56,14 +70,13 @@ public class RustStructType implements UnitType, RustType {
 		this.name = name;
 		this.unit = unit;
 		this.mutable = true;
-		this.types = Arrays.asList(types);
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
 		if (other instanceof RustArrayType) {
 			RustStructType o = (RustStructType) other;
-			return (name.equals(o.name) && unit.equals(o.unit) && types.equals(o.types));
+			return (name.equals(o.name) && unit.equals(o.unit));
 		}
 		return other instanceof Untyped;
 	}
@@ -72,7 +85,7 @@ public class RustStructType implements UnitType, RustType {
 	public Type commonSupertype(Type other) {
 		if (other instanceof RustStructType) {
 			RustStructType o = (RustStructType) other;
-			if (name.equals(o.name) && unit.equals(o.unit) && types.equals(o.types))
+			if (name.equals(o.name) && unit.equals(o.unit))
 				return o;
 		}
 		return Untyped.INSTANCE;

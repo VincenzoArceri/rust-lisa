@@ -1,4 +1,4 @@
 {
   "warnings" : [ ],
-  "files" : [ "()_rust-testcases_cfg_struct-parsing_struct-parsing.rs.main().dot", "()_rust-testcases_cfg_struct-parsing_struct-parsing.rs.zero().dot" ]
+  "files" : [ "()_Number.zero().dot", "()_rust-testcases_cfg_struct-parsing_struct-parsing.rs.main().dot" ]
 }

@@ -4,6 +4,7 @@ import static it.unive.lisa.outputs.compare.JsonReportComparer.compare;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import it.unipr.cfg.type.composite.RustStructType;
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
@@ -21,6 +22,10 @@ public abstract class RustLiSATestExecutor {
 
 	protected static final String EXPECTED_RESULTS_DIR = "rust-testcases";
 	protected static final String ACTUAL_RESULTS_DIR = "rust-outputs";
+	
+	private static void clearTypes() {
+		RustStructType.clearAll();
+	}
 
 	/**
 	 * Performs a test, running an analysis. The test will fail if:

@@ -37,6 +37,7 @@ import it.unipr.rust.antlr.RustParser.Ty_path_segment_no_superContext;
 import it.unipr.rust.antlr.RustParser.Ty_path_tailContext;
 import it.unipr.rust.antlr.RustParser.Ty_sumContext;
 import it.unipr.rust.antlr.RustParser.Ty_sum_listContext;
+import it.unive.lisa.program.Global;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.type.Type;
@@ -52,16 +53,16 @@ import java.util.List;
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustTypeVisitor extends RustBaseVisitor<Object> {
-
-	private final RustCodeMemberVisitor codeVisitor;
-
+	
+	private final String filePath;
+	
 	/**
 	 * Constructs a {@link RustTypeVisitor} instance.
 	 * 
-	 * @param codeVisitor the {@link RustCodeMemberVisitor} of reference
+	 * @param filePath the filePath String of reference
 	 */
-	public RustTypeVisitor(RustCodeMemberVisitor codeVisitor) {
-		this.codeVisitor = codeVisitor;
+	public RustTypeVisitor(String filePath) {
+		this.filePath = filePath;
 	}
 
 	@Override
@@ -79,7 +80,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 		case "(":
 			if (ctx.ty_sum() != null) {
 
-				Type type = codeVisitor.visitTy_sum(ctx.ty_sum());
+				Type type = visitTy_sum(ctx.ty_sum());
 
 				if (ctx.ty_sum_list() != null) {
 					List<Type> remainingTypes = visitTy_sum_list(ctx.ty_sum_list());
@@ -95,7 +96,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			return RustUnitType.INSTANCE;
 
 		case "[":
-			Type arrayType = codeVisitor.visitTy_sum(ctx.ty_sum());
+			Type arrayType = visitTy_sum(ctx.ty_sum());
 
 			if (ctx.expr() != null) {
 				RustArrayType array = new RustArrayType(arrayType, getConstantValue(ctx.expr()), false);
@@ -117,7 +118,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			return new RustReferenceType(new RustReferenceType(visitTy(ctx.ty()), mutable), false);
 
 		case "*":
-			if (codeVisitor.visitMut_or_const(ctx.mut_or_const()).equals("mut"))
+			if (ctx.mut_or_const().getText().equals("mut"))
 				mutable = true;
 
 			RustPointerType pointer = new RustPointerType(visitTy(ctx.ty()), mutable);
@@ -217,12 +218,18 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			return null;
 		}
 	}
+	
+	@Override
+	public Type visitTy_sum(Ty_sumContext ctx) {
+		// TODO skipping ('+' bound)? grammar branch
+		return visitTy(ctx.ty());
+	}
 
 	@Override
 	public List<Type> visitTy_sum_list(Ty_sum_listContext ctx) {
 		List<Type> types = new LinkedList<>();
 		for (Ty_sumContext tyCtx : ctx.ty_sum()) {
-			types.add(codeVisitor.visitTy_sum(tyCtx));
+			types.add(visitTy_sum(tyCtx));
 		}
 		return types;
 	}
@@ -237,31 +244,32 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public List<Expression> visitStruct_tail(Struct_tailContext ctx) {
+	public List<Global> visitStruct_tail(Struct_tailContext ctx) {
 		// TODO skipping first and second
 		if (ctx.field_decl_list() != null) {
 			return visitField_decl_list(ctx.field_decl_list());
 		}
 
 		// This is a struct with no declaration of types inside
-		return new ArrayList<Expression>();
+		return new ArrayList<Global>();
 	}
 
 	@Override
-	public Expression visitField_decl(Field_declContext ctx) {
+	public Global visitField_decl(Field_declContext ctx) {
 		// TODO skipping attr* and visibility?
-		Expression ident = codeVisitor.visitIdent(ctx.ident());
-		Type type = codeVisitor.visitTy_sum(ctx.ty_sum());
+		String name = ctx.ident().getText();
+		Type type = visitTy_sum(ctx.ty_sum());
 
-		return new VariableRef(codeVisitor.getCurrentCfg(), codeVisitor.locationOf(ctx), ident.toString(), type);
+		return new Global(RustFrontendUtilities.locationOf(ctx, filePath), name, type);
 	}
 
 	@Override
-	public List<Expression> visitField_decl_list(Field_decl_listContext ctx) {
-		List<Expression> declarations = new ArrayList<>();
+	public List<Global> visitField_decl_list(Field_decl_listContext ctx) {
+		List<Global> declarations = new ArrayList<>();
 		for (Field_declContext fdCtx : ctx.field_decl())
 			declarations.add(visitField_decl(fdCtx));
 
 		return declarations;
 	}
+
 }

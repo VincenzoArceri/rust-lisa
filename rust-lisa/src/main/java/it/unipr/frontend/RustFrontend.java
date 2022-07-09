@@ -1,5 +1,7 @@
 package it.unipr.frontend;
 
+import it.unipr.cfg.type.RustType;
+import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustLexer;
 import it.unipr.rust.antlr.RustParser;
@@ -7,7 +9,9 @@ import it.unipr.rust.antlr.RustParser.CrateContext;
 import it.unipr.rust.antlr.RustParser.ItemContext;
 import it.unipr.rust.antlr.RustParser.Mod_bodyContext;
 import it.unipr.rust.antlr.RustParser.Pub_itemContext;
+import it.unipr.rust.antlr.RustParser.Struct_declContext;
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
@@ -19,15 +23,23 @@ import it.unive.lisa.program.cfg.statement.call.traversal.HierarcyTraversalStrat
 import it.unive.lisa.program.cfg.statement.call.traversal.SingleInheritanceTraversalStrategy;
 import it.unive.lisa.program.cfg.statement.evaluation.EvaluationOrder;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
+import it.unive.lisa.type.Type;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
+
+import static it.unipr.frontend.RustFrontendUtilities.locationOf;
 
 /**
  * The Rust front-end for LiSA.
@@ -78,6 +90,16 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 		this.filePath = filePath;
 		this.program = new Program();
 	}
+	
+	private static void clearTypes() {
+		RustStructType.clearAll();
+	}
+	
+	private void registerTypes() {
+		//TODO REGISTER ALL TYPES
+		
+		RustStructType.all().forEach(program::registerType);
+	}
 
 	/**
 	 * Yields the {@link Program} corresponding to the Rust program located at
@@ -91,6 +113,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	 * @throws IOException if anything goes wrong during reading the file
 	 */
 	public static Program processFile(String filePath) throws IOException {
+		clearTypes();
 		return new RustFrontend(filePath).toLiSAProgram();
 	}
 
@@ -123,38 +146,56 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitMod_body(Mod_bodyContext ctx) {
+	public Void visitMod_body(Mod_bodyContext ctx) {
 		// TODO: skipping for the moment inner_attr
+		for (ItemContext i : ctx.item()) {
+			if (i.pub_item() != null && i.pub_item().struct_decl() != null)
+				visitPub_item(i.pub_item());
+		}
+		
 		for (ItemContext i : ctx.item())
-			for (CFG cfg : visitItem(i))
-				program.addCFG(cfg);
-
+			if (i.impl_block() != null) {
+				RustStructType struct = RustStructType.get(i.impl_block().impl_what().getText());
+				CompilationUnit u = struct.getUnit();
+				
+				List<CFG> implCfg = new RustCodeMemberVisitor(filePath, program, u).visitImpl_block(i.impl_block());
+				
+				for (CFG cfg : implCfg)
+					u.addInstanceCFG(cfg);
+			}
+		
+		for (Type t : RustStructType.all())
+			program.addCompilationUnit(((RustStructType) t).getUnit());
+		
+		
+		for (ItemContext i : ctx.item())
+			if (i.pub_item() != null && i.pub_item().fn_decl() != null)
+				program.addCFG(new RustCodeMemberVisitor(filePath, program, currentUnit).visitFn_decl(i.pub_item().fn_decl()));	
+			
+		registerTypes();
 		return null;
 	}
 
 	@Override
-	public List<CFG> visitItem(ItemContext ctx) {
-		// TODO: skipping for the moment attr and visibility
-		// the casts below are completely wrong, they will be removed
-		if (ctx.pub_item() != null)
-			return visitPub_item(ctx.pub_item());
-		else if (ctx.impl_block() != null)
-			return new RustCodeMemberVisitor(filePath, program, currentUnit).visitImpl_block(ctx.impl_block());
-
-		// TODO skipping attr* extern_mod and attr* item_macro_use productions
-		return new ArrayList<>();
-	}
-
-	@Override
-	public List<CFG> visitPub_item(Pub_itemContext ctx) {
-		if (ctx.fn_decl() != null)
-			return new RustCodeMemberVisitor(filePath, program, currentUnit).visitFn_decl(ctx.fn_decl());
-
-		else if (ctx.struct_decl() != null) {
-			new RustCodeMemberVisitor(filePath, program, currentUnit).visitStruct_decl(ctx.struct_decl());
-			return new ArrayList<>();
+	public Void visitPub_item(Pub_itemContext ctx) {
+		if (ctx.struct_decl() != null) {
+			String name = ctx.struct_decl().ident().getText();
+			CompilationUnit structUnit = new CompilationUnit(locationOf(ctx, filePath), name, true);
+			
+			RustStructType rst = RustStructType.lookup(name, structUnit, false);
+			
+			List<Global> fields = visitStruct_decl(ctx.struct_decl());
+			
+			for (Global f : fields)
+				structUnit.addInstanceGlobal(f);
 		}
 		return null;
+	}
+	
+	@Override
+	public List<Global> visitStruct_decl(Struct_declContext ctx) {		
+		// TODO skipping ty_params? production
+		return new RustTypeVisitor(filePath).visitStruct_tail(ctx.struct_tail());
 	}
 
 }
