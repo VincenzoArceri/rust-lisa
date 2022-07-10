@@ -1,5 +1,6 @@
 package it.unipr.frontend;
 
+import it.unipr.cfg.expression.RustDoubleRefExpression;
 import it.unipr.cfg.type.RustBooleanType;
 import it.unipr.cfg.type.RustCharType;
 import it.unipr.cfg.type.RustPointerType;
@@ -38,8 +39,6 @@ import it.unipr.rust.antlr.RustParser.Ty_path_tailContext;
 import it.unipr.rust.antlr.RustParser.Ty_sumContext;
 import it.unipr.rust.antlr.RustParser.Ty_sum_listContext;
 import it.unive.lisa.program.Global;
-import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.ArrayList;
@@ -53,9 +52,9 @@ import java.util.List;
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustTypeVisitor extends RustBaseVisitor<Object> {
-	
+
 	private final String filePath;
-	
+
 	/**
 	 * Constructs a {@link RustTypeVisitor} instance.
 	 * 
@@ -108,20 +107,20 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			if (ctx.getChild(2).getText().equals("mut"))
 				mutable = true;
 
-			return new RustReferenceType(visitTy(ctx.ty()));
+			return new RustReferenceType(visitTy(ctx.ty()), mutable);
 
 		case "&&":
 			// TODO Ignoring lifetimes for now
 			if (ctx.getChild(2).getText().equals("mut"))
 				mutable = true;
-
-			return new RustReferenceType(new RustReferenceType(visitTy(ctx.ty())));
+			
+			return new RustReferenceType(new RustReferenceType(visitTy(ctx.ty()), mutable), false);
 
 		case "*":
 			if (ctx.mut_or_const().getText().equals("mut"))
 				mutable = true;
 
-			RustPointerType pointer = new RustPointerType(visitTy(ctx.ty()));
+			RustPointerType pointer = new RustPointerType(visitTy(ctx.ty()), mutable);
 			return RustPointerType.lookup(pointer);
 
 		default: // TODO skipping the other productions
@@ -176,8 +175,6 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 	public RustType visitIdent(IdentContext ctx) {
 		// TODO skipping "auto", "default" and "union"
 		switch (ctx.Ident().getText()) {
-		// Temporary returning a non mutable type, since we do not have
-		// visibility on mutability here
 		case "f32":
 			return RustF32Type.getInstance();
 		case "f64":
@@ -215,13 +212,13 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 		default:
 			// TODO as of now, more complex types than the simple ones are not
 			// parsed
-			return null; 
+			return null;
 		}
 	}
-	
-	// AGGIUNGI UN METOO has che passa il nome del tipo tracciato e fa la lookup altrimento non è tracciato e se non lo è lancia una exception
-	
-	
+
+	// AGGIUNGI UN METOO has che passa il nome del tipo tracciato e fa la lookup
+	// altrimento non è tracciato e se non lo è lancia una exception
+
 	@Override
 	public Type visitTy_sum(Ty_sumContext ctx) {
 		// TODO skipping ('+' bound)? grammar branch
@@ -249,9 +246,8 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public List<Global> visitStruct_tail(Struct_tailContext ctx) {
 		// TODO skipping first and second
-		if (ctx.field_decl_list() != null) {
+		if (ctx.field_decl_list() != null)
 			return visitField_decl_list(ctx.field_decl_list());
-		}
 
 		// This is a struct with no declaration of types inside
 		return new ArrayList<Global>();

@@ -10,4 +10,10 @@ impl Number {
 
 fn main() {
 	let x = 2;
+	
+	let num = 3;
+	
+	Number {
+		num,
+	};
 }

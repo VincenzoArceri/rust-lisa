@@ -36,7 +36,7 @@ public class RustArrayType implements ArrayType, RustType {
 
 		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
 	}
-	
+
 	/**
 	 * Remove all instances of Rust tuple types.
 	 * 
@@ -45,7 +45,7 @@ public class RustArrayType implements ArrayType, RustType {
 	public static void clearAll() {
 		INSTANCES.clear();
 	}
-	
+
 	/**
 	 * Yields all instances of Rust tuple types.
 	 * 

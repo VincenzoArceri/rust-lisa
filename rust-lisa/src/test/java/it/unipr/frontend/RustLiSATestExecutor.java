@@ -26,14 +26,15 @@ public abstract class RustLiSATestExecutor {
 	protected static final String ACTUAL_RESULTS_DIR = "rust-outputs";
 
 	/**
-	 * Deregister all types with static attributes, so that every test can be performed in isolation
+	 * Deregister all types with static attributes, so that every test can be
+	 * performed in isolation
 	 */
 	public static void clearTypes() {
 		RustStructType.clearAll();
 		RustArrayType.clearAll();
 		RustTupleType.clearAll();
 	}
-	
+
 	/**
 	 * Performs a test, running an analysis. The test will fail if:
 	 * <ul>

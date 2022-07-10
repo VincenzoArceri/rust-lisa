@@ -5,11 +5,9 @@ import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,18 +35,18 @@ public class RustStructType implements UnitType, RustType {
 	public static RustStructType lookup(String name, CompilationUnit unit, boolean mutability) {
 		return INSTANCES.computeIfAbsent(name, x -> new RustStructType(name, unit, mutability));
 	}
-	
+
 	/**
 	 * Retrieve a single instance of a Rust struct types.
 	 * 
-	 * @param name	the name of the struct
+	 * @param name the name of the struct
 	 * 
 	 * @return all instances of a Rust struct types
 	 */
 	public static RustStructType get(String name) {
 		return INSTANCES.get(name);
 	}
-	
+
 	/**
 	 * Remove all instances of Rust struct types.
 	 * 
@@ -57,7 +55,7 @@ public class RustStructType implements UnitType, RustType {
 	public static void clearAll() {
 		INSTANCES.clear();
 	}
-	
+
 	/**
 	 * Yields all instances of Rust struct types.
 	 * 

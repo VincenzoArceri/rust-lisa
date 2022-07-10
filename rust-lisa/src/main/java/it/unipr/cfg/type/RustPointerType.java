@@ -1,6 +1,5 @@
 package it.unipr.cfg.type;
 
-import it.unipr.cfg.type.composite.RustTupleType;
 import it.unive.lisa.caches.Caches;
 import it.unive.lisa.type.PointerType;
 import it.unive.lisa.type.Type;
@@ -38,16 +37,14 @@ public class RustPointerType implements PointerType, RustType {
 
 		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
 	}
-	
+
 	/**
-	 * Remove all instances of Rust pointer types.
-	 * 
-	 * @return all instances of a Rust pointer types
+	 * Clear all instances of Rust pointer types.
 	 */
 	public static void clearAll() {
 		INSTANCES.clear();
 	}
-	
+
 	/**
 	 * Yields all instances of Rust pointer types.
 	 * 
@@ -62,28 +59,30 @@ public class RustPointerType implements PointerType, RustType {
 	}
 
 	private final Type innerType;
-	
+	private final boolean mutable;
+
 	/**
 	 * Constructor for {@link RustPointerType}.
 	 * 
 	 * @param innerType  inner type on which this pointer points
-	 * @param mutability type mutability
+	 * @param mutable 	 true if this is an instance of *mut pointer, false if this is an instance of *const
 	 */
-	public RustPointerType(Type innerType) {
+	public RustPointerType(Type innerType, boolean mutable) {
 		this.innerType = Objects.requireNonNull(innerType);
+		this.mutable = mutable;
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
 		if (other instanceof RustPointerType)
-			return innerType.canBeAssignedTo(((RustPointerType) other).innerType);
+			return innerType.canBeAssignedTo(((RustPointerType) other).innerType) && ((RustPointerType) other).mutable == this.mutable;
 		return other instanceof Untyped;
 	}
 
 	@Override
 	public Type commonSupertype(Type other) {
 		if (other instanceof RustPointerType)
-			if (innerType.canBeAssignedTo(((RustPointerType) other).innerType))
+			if (innerType.canBeAssignedTo(((RustPointerType) other).innerType) && ((RustPointerType) other).mutable == this.mutable)
 				return other;
 		return Untyped.INSTANCE;
 	}
@@ -120,13 +119,16 @@ public class RustPointerType implements PointerType, RustType {
 				return false;
 		} else if (!innerType.equals(other.innerType))
 			return false;
+		
+		if (other.mutable != this.mutable)
+			return false;
 
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "*" + innerType.toString();
+		return "*" + (mutable? "mut " : "const ") + innerType.toString();
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package it.unipr.cfg.statement;
 
+import it.unipr.cfg.expression.RustVariableRef;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;

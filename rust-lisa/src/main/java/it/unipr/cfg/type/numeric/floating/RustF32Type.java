@@ -25,7 +25,7 @@ public class RustF32Type implements NumericType, RustType {
 	public static RustF32Type getInstance() {
 		return INSTANCE;
 	}
-	
+
 	/**
 	 * Yields all instances of this type.
 	 * 

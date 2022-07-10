@@ -1,6 +1,5 @@
 package it.unipr.cfg.type;
 
-import it.unipr.cfg.type.numeric.floating.RustF32Type;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
@@ -13,7 +12,7 @@ import java.util.Collections;
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustUnitType implements RustType {
-	
+
 	private static final RustUnitType INSTANCE = new RustUnitType();
 
 	/**
@@ -24,7 +23,7 @@ public class RustUnitType implements RustType {
 	public static RustUnitType getInstance() {
 		return INSTANCE;
 	}
-	
+
 	private RustUnitType() {
 	}
 
@@ -59,5 +58,5 @@ public class RustUnitType implements RustType {
 	public String toString() {
 		return "()";
 	}
-	
+
 }

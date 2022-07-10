@@ -37,7 +37,7 @@ public class RustTupleType implements RustType {
 
 		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
 	}
-	
+
 	/**
 	 * Remove all instances of Rust tuple types.
 	 * 
@@ -46,7 +46,7 @@ public class RustTupleType implements RustType {
 	public static void clearAll() {
 		INSTANCES.clear();
 	}
-	
+
 	/**
 	 * Yields all instances of Rust tuple types.
 	 * 
@@ -141,5 +141,5 @@ public class RustTupleType implements RustType {
 		return (mutable ? "mut " : "") + "(" + types.stream().map(t -> t.toString()).collect(Collectors.joining(", "))
 				+ ")";
 	}
-	
+
 }
