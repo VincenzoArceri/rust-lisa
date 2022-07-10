@@ -20,8 +20,6 @@ public class RustU8Type implements NumericType, RustType {
 	/**
 	 * Yields the singleton instance based on mutability.
 	 * 
-	 * @param mutability the mutability of the type
-	 * 
 	 * @return the correct instance based on the type mutability
 	 */
 	public static RustU8Type getInstance() {

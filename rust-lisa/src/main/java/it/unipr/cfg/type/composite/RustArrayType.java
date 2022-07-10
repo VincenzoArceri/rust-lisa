@@ -39,8 +39,6 @@ public class RustArrayType implements ArrayType, RustType {
 
 	/**
 	 * Remove all instances of Rust tuple types.
-	 * 
-	 * @return all instances of a Rust tuple types
 	 */
 	public static void clearAll() {
 		INSTANCES.clear();
@@ -65,19 +63,16 @@ public class RustArrayType implements ArrayType, RustType {
 	 */
 	private final Type contentType;
 	private final Integer length;
-	private final boolean mutable;
 
 	/**
 	 * Construct the {@link RustArrayType} object.
 	 * 
 	 * @param contentType the type of the element in the array
 	 * @param length      the length of the array
-	 * @param mutability  the mutability of the array
 	 */
-	public RustArrayType(Type contentType, Integer length, boolean mutability) {
+	public RustArrayType(Type contentType, Integer length) {
 		this.contentType = Objects.requireNonNull(contentType);
 		this.length = Objects.requireNonNull(length);
-		this.mutable = mutability;
 	}
 
 	@Override
@@ -150,15 +145,12 @@ public class RustArrayType implements ArrayType, RustType {
 		} else if (!length.equals(other.length))
 			return false;
 
-		if (mutable != other.mutable)
-			return false;
-
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return (mutable ? "mut " : "") + "[" + contentType.toString() + "; " + length.toString() + "]";
+		return "[" + contentType.toString() + "; " + length.toString() + "]";
 	}
 
 }

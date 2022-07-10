@@ -14,7 +14,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.type.ReferenceType;
 import it.unive.lisa.type.Untyped;
 
 /**
@@ -35,7 +34,8 @@ public class RustDoubleRefExpression extends UnaryExpression {
 	 */
 	public RustDoubleRefExpression(CFG cfg, CodeLocation location,
 			Expression expr, boolean mutable) {
-		super(cfg, location, "&&", new RustReferenceType(new RustReferenceType(Untyped.INSTANCE, mutable), false), expr);
+		super(cfg, location, "&&", new RustReferenceType(new RustReferenceType(Untyped.INSTANCE, mutable), false),
+				expr);
 	}
 
 	@Override

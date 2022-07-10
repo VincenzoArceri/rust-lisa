@@ -4,6 +4,9 @@ import it.unive.lisa.program.SourceCodeLocation;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+/**
+ * Utility class useful in multiple {@link RustBaseVisitor}.
+ */
 public class RustFrontendUtilities {
 
 	/**
@@ -53,7 +56,8 @@ public class RustFrontendUtilities {
 	/**
 	 * Yields the source code location of a parse rule.
 	 * 
-	 * @param ctx the parse rule
+	 * @param ctx      the parsing rule context
+	 * @param filePath the parsing file name
 	 * 
 	 * @return yields the source code location of a parse rule
 	 */

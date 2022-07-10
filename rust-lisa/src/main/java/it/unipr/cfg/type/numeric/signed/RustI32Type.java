@@ -15,12 +15,10 @@ import java.util.Collections;
  */
 public class RustI32Type implements NumericType, RustType {
 
-	private static final RustI32Type INSTANCE = new RustI32Type(false);
+	private static final RustI32Type INSTANCE = new RustI32Type();
 
 	/**
 	 * Yields the singleton instance based on mutability.
-	 * 
-	 * @param mutability the mutability of the type
 	 * 
 	 * @return the correct instance based on the type mutability
 	 */
@@ -28,7 +26,7 @@ public class RustI32Type implements NumericType, RustType {
 		return INSTANCE;
 	}
 
-	private RustI32Type(boolean mutability) {
+	private RustI32Type() {
 	}
 
 	@Override

@@ -40,8 +40,6 @@ public class RustTupleType implements RustType {
 
 	/**
 	 * Remove all instances of Rust tuple types.
-	 * 
-	 * @return all instances of a Rust tuple types
 	 */
 	public static void clearAll() {
 		INSTANCES.clear();
@@ -61,17 +59,14 @@ public class RustTupleType implements RustType {
 	}
 
 	private final List<Type> types;
-	private final boolean mutable;
 
 	/**
 	 * Construct the {@link RustTupleType} object.
 	 * 
-	 * @param types      an ordered list of types inside the tuple
-	 * @param mutability the mutability of the tuple
+	 * @param types an ordered list of types inside the tuple
 	 */
-	public RustTupleType(List<Type> types, boolean mutability) {
+	public RustTupleType(List<Type> types) {
 		this.types = Objects.requireNonNull(types);
-		this.mutable = mutability;
 	}
 
 	private boolean checkAssignment(Object other) {
@@ -130,16 +125,12 @@ public class RustTupleType implements RustType {
 		} else if (!types.equals(other.types))
 			return false;
 
-		if (mutable != other.mutable)
-			return false;
-
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return (mutable ? "mut " : "") + "(" + types.stream().map(t -> t.toString()).collect(Collectors.joining(", "))
-				+ ")";
+		return "(" + types.stream().map(t -> t.toString()).collect(Collectors.joining(", ")) + ")";
 	}
 
 }

@@ -26,8 +26,8 @@ public class RustReferenceType implements PointerType, RustType {
 	 * Builds the type for a reference to a location containing values of types
 	 * {@code innerType}.
 	 * 
-	 * @param innerType  the type of the referenced location
-	 * @param mutability the mutability of the reference
+	 * @param innerType the type of the referenced location
+	 * @param mutable   the mutability of the reference
 	 */
 	public RustReferenceType(Type innerType, boolean mutable) {
 		this.innerType = Objects.requireNonNull(innerType);

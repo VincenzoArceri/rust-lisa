@@ -25,15 +25,14 @@ public class RustStructType implements UnitType, RustType {
 	 * {@link RustStructType} representing a struct type with the given
 	 * {@code name}, representing the given {@code unit}.
 	 * 
-	 * @param name       the name of the struct type
-	 * @param unit       the unit underlying this type
-	 * @param mutability the mutability of the struct type
+	 * @param name the name of the struct type
+	 * @param unit the unit underlying this type
 	 * 
 	 * @return the unique instance of {@link RustStructType} representing the
 	 *             struct type with the given name
 	 */
-	public static RustStructType lookup(String name, CompilationUnit unit, boolean mutability) {
-		return INSTANCES.computeIfAbsent(name, x -> new RustStructType(name, unit, mutability));
+	public static RustStructType lookup(String name, CompilationUnit unit) {
+		return INSTANCES.computeIfAbsent(name, x -> new RustStructType(name, unit));
 	}
 
 	/**
@@ -49,8 +48,6 @@ public class RustStructType implements UnitType, RustType {
 
 	/**
 	 * Remove all instances of Rust struct types.
-	 * 
-	 * @return all instances of a Rust struct types
 	 */
 	public static void clearAll() {
 		INSTANCES.clear();
@@ -81,7 +78,7 @@ public class RustStructType implements UnitType, RustType {
 	 * @param mutable the mutability of the struct type
 	 * @param types   an ordered list of types inside the struct
 	 */
-	private RustStructType(String name, CompilationUnit unit, boolean mutable, Type... types) {
+	private RustStructType(String name, CompilationUnit unit, Type... types) {
 		this.name = name;
 		this.unit = unit;
 		this.mutable = true;

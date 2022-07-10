@@ -210,7 +210,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 			String name = ctx.struct_decl().ident().getText();
 			CompilationUnit structUnit = new CompilationUnit(locationOf(ctx, filePath), name, true);
 
-			RustStructType rst = RustStructType.lookup(name, structUnit, false);
+			RustStructType.lookup(name, structUnit);
 
 			List<Global> fields = visitStruct_decl(ctx.struct_decl());
 

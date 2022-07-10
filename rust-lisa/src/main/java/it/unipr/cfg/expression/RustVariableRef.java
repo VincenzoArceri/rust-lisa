@@ -35,7 +35,8 @@ public class RustVariableRef extends VariableRef {
 	 * given location in the program.
 	 * 
 	 * @param cfg      the cfg that this expression belongs to
-	 * @param location the location where the expression is defined within the program
+	 * @param location the location where the expression is defined within the
+	 *                     program
 	 * @param name     the name of this variable
 	 * @param mutable  the mutability of this variable reference
 	 * @param type     the type of this variable
@@ -45,12 +46,12 @@ public class RustVariableRef extends VariableRef {
 		this.name = name;
 		this.mutable = mutable;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((name == null) ? 0 : name.hashCode()) + ((mutable? 1 : 0));
+		result = prime * result + ((name == null) ? 0 : name.hashCode()) + ((mutable ? 1 : 0));
 		return result;
 	}
 
@@ -58,27 +59,27 @@ public class RustVariableRef extends VariableRef {
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-		
+
 		if (!super.equals(obj))
 			return false;
-		
+
 		if (getClass() != obj.getClass())
 			return false;
-		
+
 		RustVariableRef other = (RustVariableRef) obj;
-		
+
 		if (name == null) {
 			if (other.name != null)
 				return false;
 		} else if (!name.equals(other.name))
 			return false;
-		
+
 		if (other.mutable != this.mutable)
 			return false;
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Yields true if this variable is mutable.
 	 * 
@@ -87,10 +88,10 @@ public class RustVariableRef extends VariableRef {
 	public boolean isMutable() {
 		return mutable;
 	}
-	
+
 	@Override
 	public String toString() {
-		return (mutable? "mut " : "") + name;
+		return (mutable ? "mut " : "") + name;
 	}
-	
+
 }

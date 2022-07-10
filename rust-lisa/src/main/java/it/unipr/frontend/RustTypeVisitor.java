@@ -1,6 +1,5 @@
 package it.unipr.frontend;
 
-import it.unipr.cfg.expression.RustDoubleRefExpression;
 import it.unipr.cfg.type.RustBooleanType;
 import it.unipr.cfg.type.RustCharType;
 import it.unipr.cfg.type.RustPointerType;
@@ -85,7 +84,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 					List<Type> remainingTypes = visitTy_sum_list(ctx.ty_sum_list());
 					remainingTypes.add(0, type);
 
-					RustTupleType tuple = new RustTupleType(remainingTypes, false);
+					RustTupleType tuple = new RustTupleType(remainingTypes);
 					return RustTupleType.lookup(tuple);
 				}
 
@@ -98,7 +97,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			Type arrayType = visitTy_sum(ctx.ty_sum());
 
 			if (ctx.expr() != null) {
-				RustArrayType array = new RustArrayType(arrayType, getConstantValue(ctx.expr()), false);
+				RustArrayType array = new RustArrayType(arrayType, getConstantValue(ctx.expr()));
 				return RustArrayType.lookup(array);
 			}
 
@@ -113,7 +112,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			// TODO Ignoring lifetimes for now
 			if (ctx.getChild(2).getText().equals("mut"))
 				mutable = true;
-			
+
 			return new RustReferenceType(new RustReferenceType(visitTy(ctx.ty()), mutable), false);
 
 		case "*":
@@ -215,9 +214,6 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			return null;
 		}
 	}
-
-	// AGGIUNGI UN METOO has che passa il nome del tipo tracciato e fa la lookup
-	// altrimento non è tracciato e se non lo è lancia una exception
 
 	@Override
 	public Type visitTy_sum(Ty_sumContext ctx) {

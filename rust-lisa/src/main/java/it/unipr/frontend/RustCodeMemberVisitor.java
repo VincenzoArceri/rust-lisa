@@ -833,27 +833,27 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (ctx.ident() != null) {
 			String name = ctx.ident().getText();
 			Expression var = new RustVariableRef(currentCfg, locationOf(ctx, filePath), name, false);
-			
+
 			if (ctx.pat() != null) {
 				// TODO skipping the meaning of ('@' pat)?
 				Expression pat = visitPat(ctx.pat());
-			}			
-			
+			}
+
 			if (ctx.getChild(0) != null && ctx.getChild(0).getText().equals("ref"))
 				if (ctx.getChild(1) != null && ctx.getChild(1).getText().equals("mut"))
 					return new RustRefExpression(
-						currentCfg, 
-						locationOf(ctx, filePath), 
-						new RustVariableRef(currentCfg, locationOf(ctx, filePath), name, true),
-						false
-					);
-				else return new RustRefExpression(
-						currentCfg, 
-						locationOf(ctx, filePath), 
-						new RustVariableRef(currentCfg, locationOf(ctx, filePath), name, false),
-						false
-					);
-			else return var;
+							currentCfg,
+							locationOf(ctx, filePath),
+							new RustVariableRef(currentCfg, locationOf(ctx, filePath), name, true),
+							false);
+				else
+					return new RustRefExpression(
+							currentCfg,
+							locationOf(ctx, filePath),
+							new RustVariableRef(currentCfg, locationOf(ctx, filePath), name, false),
+							false);
+			else
+				return var;
 		}
 
 		if (ctx.pat() != null) {
@@ -867,7 +867,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 						.collect(Collectors.toList())
 						.toArray(new Type[0]);
 
-				RustStructType struct = RustStructType.lookup(name.toString(), unit, false);
+				RustStructType struct = RustStructType.lookup(name.toString(), unit);
 
 				return new RustStructLiteral(
 						currentCfg,
@@ -895,10 +895,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		case "&&":
 			if (ctx.getChild(1).getText().equals("mut"))
 				return new RustDoubleRefExpression(currentCfg, locationOf(ctx, filePath),
-								visitPat(ctx.pat()), true);
+						visitPat(ctx.pat()), true);
 
 			return new RustDoubleRefExpression(currentCfg, locationOf(ctx, filePath),
-							visitPat_no_mut(ctx.pat_no_mut()), false);
+					visitPat_no_mut(ctx.pat_no_mut()), false);
 		case "box":
 			return new RustBoxExpression(currentCfg, locationOf(ctx, filePath), visitPat(ctx.pat()));
 		default:
@@ -999,20 +999,21 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		if (ctx.pat() != null)
 			value = visitPat(ctx.pat());
-		
+
 		if (ctx.getChild(3) != null && ctx.getChild(3).getText().equals("mut"))
 			value = new RustVariableRef(currentCfg, locationOf(ctx, filePath), name, true);
 		else
 			value = new RustVariableRef(currentCfg, locationOf(ctx, filePath), name, false);
-		
-		// The "ref" on the lhs of an expression is equivalent to a "&" on the rhs
+
+		// The "ref" on the lhs of an expression is equivalent to a "&" on the
+		// rhs
 		// https://doc.rust-lang.org/rust-by-example/scope/borrow/ref.html
 		if (ctx.getChild(2) != null && ctx.getChild(2).getText().equals("ref"))
 			value = new RustRefExpression(currentCfg, locationOf(ctx, filePath), value, false);
-		
+
 		if (ctx.getChild(1) != null && ctx.getChild(1).getText().equals("box"))
 			value = new RustBoxExpression(currentCfg, locationOf(ctx, filePath), value);
-		
+
 		return value;
 	}
 
@@ -1145,9 +1146,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			// TODO do not take into account the attr part for now
 			if (ctx.expr() != null) {
 				Expression rhs = visitExpr(ctx.expr());
-				
+
 				VariableRef var = new VariableRef(currentCfg, locationOf(ctx, filePath), lhs.toString(), type);
-				
+
 				RustLetAssignment assigment = new RustLetAssignment(currentCfg, locationOf(ctx, filePath), type, var,
 						rhs);
 				currentCfg.addNode(assigment);
@@ -1251,7 +1252,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		} else if ((loop_label == null && ctx.children.get(0).getText().equals("for"))
 				|| ctx.children.get(1).getText().equals("for")) {
 
-			// Note that this is enforced by the semantics to be a (list of) identifiers.
+			// Note that this is enforced by the semantics to be a (list of)
+			// identifiers.
 			// TODO For now we can assume this is just a single identifier.
 			String name = visitPat(ctx.pat()).toString();
 			VariableRef forVariable = new RustVariableRef(currentCfg, locationOf(ctx, filePath), name, true);
@@ -1391,7 +1393,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			if (ctx.fields() != null) {
 				List<Pair<Expression, Expression>> fields = visitFields(ctx.fields());
 
-				RustStructType structType = RustStructType.lookup(path.toString(), unit, false);
+				RustStructType structType = RustStructType.lookup(path.toString(), unit);
 
 				return new RustStructLiteral(
 						currentCfg,
@@ -1607,7 +1609,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		// TODO Skipping every production: "in" etc. and expr_attrs pre_expr
 		if (ctx.post_expr() != null)
 			return visitPost_expr(ctx.post_expr());
-		
+
 		boolean mutable = false;
 		if (ctx.getChild(1) != null && ctx.getChild(1).getText().equals("mut"))
 			mutable = true;
@@ -1620,7 +1622,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		case "&":
 			return new RustRefExpression(currentCfg, locationOf(ctx, filePath), visitPre_expr(ctx.pre_expr()), mutable);
 		case "&&":
-			return new RustDoubleRefExpression(currentCfg, locationOf(ctx, filePath), visitPre_expr(ctx.pre_expr()), mutable);
+			return new RustDoubleRefExpression(currentCfg, locationOf(ctx, filePath), visitPre_expr(ctx.pre_expr()),
+					mutable);
 		case "*":
 			return new RustDerefExpression(currentCfg, locationOf(ctx, filePath), visitPre_expr(ctx.pre_expr()));
 		case "box":

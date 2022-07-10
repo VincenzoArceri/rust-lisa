@@ -64,8 +64,9 @@ public class RustPointerType implements PointerType, RustType {
 	/**
 	 * Constructor for {@link RustPointerType}.
 	 * 
-	 * @param innerType  inner type on which this pointer points
-	 * @param mutable 	 true if this is an instance of *mut pointer, false if this is an instance of *const
+	 * @param innerType inner type on which this pointer points
+	 * @param mutable   true if this is an instance of *mut pointer, false if
+	 *                      this is an instance of *const
 	 */
 	public RustPointerType(Type innerType, boolean mutable) {
 		this.innerType = Objects.requireNonNull(innerType);
@@ -75,14 +76,16 @@ public class RustPointerType implements PointerType, RustType {
 	@Override
 	public boolean canBeAssignedTo(Type other) {
 		if (other instanceof RustPointerType)
-			return innerType.canBeAssignedTo(((RustPointerType) other).innerType) && ((RustPointerType) other).mutable == this.mutable;
+			return innerType.canBeAssignedTo(((RustPointerType) other).innerType)
+					&& ((RustPointerType) other).mutable == this.mutable;
 		return other instanceof Untyped;
 	}
 
 	@Override
 	public Type commonSupertype(Type other) {
 		if (other instanceof RustPointerType)
-			if (innerType.canBeAssignedTo(((RustPointerType) other).innerType) && ((RustPointerType) other).mutable == this.mutable)
+			if (innerType.canBeAssignedTo(((RustPointerType) other).innerType)
+					&& ((RustPointerType) other).mutable == this.mutable)
 				return other;
 		return Untyped.INSTANCE;
 	}
@@ -119,7 +122,7 @@ public class RustPointerType implements PointerType, RustType {
 				return false;
 		} else if (!innerType.equals(other.innerType))
 			return false;
-		
+
 		if (other.mutable != this.mutable)
 			return false;
 
@@ -128,7 +131,7 @@ public class RustPointerType implements PointerType, RustType {
 
 	@Override
 	public String toString() {
-		return "*" + (mutable? "mut " : "const ") + innerType.toString();
+		return "*" + (mutable ? "mut " : "const ") + innerType.toString();
 	}
 
 	@Override

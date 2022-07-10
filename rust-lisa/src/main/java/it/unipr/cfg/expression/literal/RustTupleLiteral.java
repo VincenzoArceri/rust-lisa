@@ -36,7 +36,7 @@ public class RustTupleLiteral extends NaryExpression {
 	 * @param values   the values inside the literal
 	 */
 	public RustTupleLiteral(CFG cfg, CodeLocation location, RustType[] types, Expression[] values) {
-		super(cfg, location, "()", new RustTupleType(Arrays.asList(types), false), values);
+		super(cfg, location, "()", new RustTupleType(Arrays.asList(types)), values);
 	}
 
 	@Override
