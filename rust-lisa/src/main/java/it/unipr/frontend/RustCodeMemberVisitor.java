@@ -1108,7 +1108,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 			Return ret = new Return(currentCfg, locationOf(ctx, filePath), expr);
 
-			currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
+			if (lastStmt != null)
+				currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
+			
+			if (entryNode == null)
+				entryNode = ret;
 
 			lastStmt = ret;
 		}
