@@ -4,16 +4,15 @@ import java.util.List;
 
 import it.unive.lisa.program.cfg.statement.Expression;
 
-public class RustArrayAccessKeeper implements RustAccessResolver {
+public class RustAttributeAccessKeeper implements RustAccessResolver {
+	private Expression expr;
 	
-	private final Expression expr;
-	
-	public RustArrayAccessKeeper(Expression expr) {
+	public RustAttributeAccessKeeper(Expression expr) {
 		this.expr = expr;
 	}
 	
 	public Expression getExpr() {
 		return expr;
 	}
-
+	
 }

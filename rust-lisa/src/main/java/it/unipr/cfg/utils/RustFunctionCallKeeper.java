@@ -6,10 +6,13 @@ import it.unive.lisa.program.cfg.statement.Expression;
 
 public class RustFunctionCallKeeper implements RustAccessResolver {
 	
-	private final List<Expression> accessParameter;
+	private final List<Expression> parameters;
 	
 	public RustFunctionCallKeeper(List<Expression> parameters) {
-		this.accessParameter = parameters;
+		this.parameters = parameters;
 	}
 	
+	public List<Expression> getParameters() {
+		return parameters;
+	}
 }

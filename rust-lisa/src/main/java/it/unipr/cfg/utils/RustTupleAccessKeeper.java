@@ -8,4 +8,8 @@ public class RustTupleAccessKeeper implements RustAccessResolver {
 	public RustTupleAccessKeeper(Expression expr) {
 		this.expr = expr;
 	}
+	
+	public Expression getExpr() {
+		return expr;
+	}
 }
