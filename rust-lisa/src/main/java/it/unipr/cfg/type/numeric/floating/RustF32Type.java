@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.numeric.floating;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -12,12 +13,27 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustF32Type implements NumericType {
+public class RustF32Type implements NumericType, RustType {
+
+	private static final RustF32Type INSTANCE = new RustF32Type();
 
 	/**
-	 * Unique instance of Rust f32 type.
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @return the correct instance based on the type mutability
 	 */
-	public static final RustF32Type INSTANCE = new RustF32Type();
+	public static RustF32Type getInstance() {
+		return INSTANCE;
+	}
+
+	/**
+	 * Yields all instances of this type.
+	 * 
+	 * @return the correct instance based on the type mutability
+	 */
+	public static RustF32Type all() {
+		return INSTANCE;
+	}
 
 	private RustF32Type() {
 	}
@@ -79,6 +95,11 @@ public class RustF32Type implements NumericType {
 	@Override
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
+	}
+
+	@Override
+	public String toString() {
+		return "f32";
 	}
 
 }

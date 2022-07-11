@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.numeric.signed;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -12,12 +13,18 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustI64Type implements NumericType {
+public class RustI64Type implements NumericType, RustType {
+
+	private static final RustI64Type INSTANCE = new RustI64Type();
 
 	/**
-	 * Unique instance of Rust i64 type.
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @return the correct instance based on the type mutability
 	 */
-	public static final RustI64Type INSTANCE = new RustI64Type();
+	public static RustI64Type getInstance() {
+		return INSTANCE;
+	}
 
 	private RustI64Type() {
 	}
@@ -79,6 +86,11 @@ public class RustI64Type implements NumericType {
 	@Override
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
+	}
+
+	@Override
+	public String toString() {
+		return "i64";
 	}
 
 }

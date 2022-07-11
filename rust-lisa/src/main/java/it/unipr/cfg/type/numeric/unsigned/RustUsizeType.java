@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.numeric.unsigned;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -12,12 +13,18 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustUsizeType implements NumericType {
+public class RustUsizeType implements NumericType, RustType {
+
+	private static final RustUsizeType INSTANCE = new RustUsizeType();
 
 	/**
-	 * Unique instance of Rust usize type.
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @return the correct instance based on the type mutability
 	 */
-	public static final RustUsizeType INSTANCE = new RustUsizeType();
+	public static RustUsizeType getInstance() {
+		return INSTANCE;
+	}
 
 	private RustUsizeType() {
 	}
@@ -79,6 +86,11 @@ public class RustUsizeType implements NumericType {
 	@Override
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
+	}
+
+	@Override
+	public String toString() {
+		return "usize";
 	}
 
 }

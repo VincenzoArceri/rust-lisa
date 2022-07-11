@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.composite;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
@@ -7,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Instance of the Rust tuple type.
@@ -14,7 +16,7 @@ import java.util.Set;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustTupleType implements Type {
+public class RustTupleType implements RustType {
 
 	/**
 	 * Collection of all parse tuples.
@@ -34,6 +36,26 @@ public class RustTupleType implements Type {
 			INSTANCES.add(type);
 
 		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
+	}
+
+	/**
+	 * Remove all instances of Rust tuple types.
+	 */
+	public static void clearAll() {
+		INSTANCES.clear();
+	}
+
+	/**
+	 * Yields all instances of Rust tuple types.
+	 * 
+	 * @return all instances of a Rust tuple types
+	 */
+	public static Collection<Type> all() {
+		Collection<Type> result = new HashSet<>();
+		for (Type t : INSTANCES.toArray(new RustTupleType[0])) {
+			result.add(t);
+		}
+		return result;
 	}
 
 	private final List<Type> types;
@@ -104,6 +126,11 @@ public class RustTupleType implements Type {
 			return false;
 
 		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "(" + types.stream().map(t -> t.toString()).collect(Collectors.joining(", ")) + ")";
 	}
 
 }

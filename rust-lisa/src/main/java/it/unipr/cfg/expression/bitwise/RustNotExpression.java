@@ -1,5 +1,6 @@
 package it.unipr.cfg.expression.bitwise;
 
+import it.unipr.cfg.RustTyper;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -13,7 +14,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.UnaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.type.Untyped;
 
 /**
  * Rust unary not expression (e.g., !x).
@@ -34,7 +34,7 @@ public class RustNotExpression extends UnaryExpression {
 			Expression expr) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types
-		super(cfg, location, "!", Untyped.INSTANCE, expr);
+		super(cfg, location, "!", RustTyper.resultType(expr), expr);
 	}
 
 	@Override

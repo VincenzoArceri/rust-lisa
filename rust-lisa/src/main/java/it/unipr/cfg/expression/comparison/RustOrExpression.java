@@ -19,6 +19,7 @@ import it.unive.lisa.symbolic.SymbolicExpression;
  * Rust or expression (e.g., x || y).
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustOrExpression extends BinaryExpression {
 
@@ -32,9 +33,7 @@ public class RustOrExpression extends BinaryExpression {
 	 */
 	public RustOrExpression(CFG cfg, CodeLocation location,
 			Expression left, Expression right) {
-		// TODO: need to change type of this expression
-		// once we have modeled Rust types
-		super(cfg, location, "||", RustBooleanType.INSTANCE, left, right);
+		super(cfg, location, "||", RustBooleanType.getInstance(), left, right);
 	}
 
 	@Override

@@ -4,6 +4,9 @@ import static it.unive.lisa.outputs.compare.JsonReportComparer.compare;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import it.unipr.cfg.type.composite.RustArrayType;
+import it.unipr.cfg.type.composite.RustStructType;
+import it.unipr.cfg.type.composite.RustTupleType;
 import it.unive.lisa.AnalysisException;
 import it.unive.lisa.LiSA;
 import it.unive.lisa.LiSAConfiguration;
@@ -21,6 +24,16 @@ public abstract class RustLiSATestExecutor {
 
 	protected static final String EXPECTED_RESULTS_DIR = "rust-testcases";
 	protected static final String ACTUAL_RESULTS_DIR = "rust-outputs";
+
+	/**
+	 * Deregister all types with static attributes, so that every test can be
+	 * performed in isolation
+	 */
+	public static void clearTypes() {
+		RustStructType.clearAll();
+		RustArrayType.clearAll();
+		RustTupleType.clearAll();
+	}
 
 	/**
 	 * Performs a test, running an analysis. The test will fail if:
@@ -124,6 +137,7 @@ public abstract class RustLiSATestExecutor {
 
 		LiSA lisa = new LiSA(configuration);
 		try {
+			clearTypes();
 			lisa.run(program);
 		} catch (AnalysisException e) {
 			e.printStackTrace(System.err);

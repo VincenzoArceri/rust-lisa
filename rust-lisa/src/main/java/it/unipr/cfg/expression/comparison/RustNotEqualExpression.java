@@ -1,5 +1,6 @@
 package it.unipr.cfg.expression.comparison;
 
+import it.unipr.cfg.type.RustBooleanType;
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -13,7 +14,6 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.type.Untyped;
 
 /**
  * Rust different expression (e.g., x != y).
@@ -33,9 +33,7 @@ public class RustNotEqualExpression extends BinaryExpression {
 	 */
 	public RustNotEqualExpression(CFG cfg, CodeLocation location,
 			Expression left, Expression right) {
-		// TODO: need to change type of this expression
-		// once we have modeled Rust types
-		super(cfg, location, "!=", Untyped.INSTANCE, left, right);
+		super(cfg, location, "!=", RustBooleanType.getInstance(), left, right);
 	}
 
 	@Override

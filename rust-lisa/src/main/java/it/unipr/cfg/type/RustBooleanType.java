@@ -10,13 +10,20 @@ import java.util.Collections;
  * Unique instance of the Rust boolean type.
  *
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustBooleanType implements BooleanType {
+public class RustBooleanType implements BooleanType, RustType {
+
+	private static final RustBooleanType INSTANCE = new RustBooleanType();
 
 	/**
-	 * Unique instance of RustBoolean type.
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @return the correct instance based on the type mutability
 	 */
-	public static final RustBooleanType INSTANCE = new RustBooleanType();
+	public static RustBooleanType getInstance() {
+		return INSTANCE;
+	}
 
 	private RustBooleanType() {
 	}
@@ -47,4 +54,10 @@ public class RustBooleanType implements BooleanType {
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
 	}
+
+	@Override
+	public String toString() {
+		return "bool";
+	}
+
 }

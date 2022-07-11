@@ -1,5 +1,29 @@
 package it.unipr.frontend;
 
+import static it.unipr.frontend.RustFrontendUtilities.locationOf;
+
+import it.unipr.cfg.type.RustBooleanType;
+import it.unipr.cfg.type.RustCharType;
+import it.unipr.cfg.type.RustPointerType;
+import it.unipr.cfg.type.RustStrType;
+import it.unipr.cfg.type.RustUnitType;
+import it.unipr.cfg.type.composite.RustArrayType;
+import it.unipr.cfg.type.composite.RustStructType;
+import it.unipr.cfg.type.composite.RustTupleType;
+import it.unipr.cfg.type.numeric.floating.RustF32Type;
+import it.unipr.cfg.type.numeric.floating.RustF64Type;
+import it.unipr.cfg.type.numeric.signed.RustI128Type;
+import it.unipr.cfg.type.numeric.signed.RustI16Type;
+import it.unipr.cfg.type.numeric.signed.RustI32Type;
+import it.unipr.cfg.type.numeric.signed.RustI64Type;
+import it.unipr.cfg.type.numeric.signed.RustI8Type;
+import it.unipr.cfg.type.numeric.signed.RustIsizeType;
+import it.unipr.cfg.type.numeric.unsigned.RustU128Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU16Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU32Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU64Type;
+import it.unipr.cfg.type.numeric.unsigned.RustU8Type;
+import it.unipr.cfg.type.numeric.unsigned.RustUsizeType;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustLexer;
 import it.unipr.rust.antlr.RustParser;
@@ -7,7 +31,9 @@ import it.unipr.rust.antlr.RustParser.CrateContext;
 import it.unipr.rust.antlr.RustParser.ItemContext;
 import it.unipr.rust.antlr.RustParser.Mod_bodyContext;
 import it.unipr.rust.antlr.RustParser.Pub_itemContext;
+import it.unipr.rust.antlr.RustParser.Struct_declContext;
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
 import it.unive.lisa.program.SourceCodeLocation;
 import it.unive.lisa.program.cfg.CFG;
@@ -19,10 +45,12 @@ import it.unive.lisa.program.cfg.statement.call.traversal.HierarcyTraversalStrat
 import it.unive.lisa.program.cfg.statement.call.traversal.SingleInheritanceTraversalStrategy;
 import it.unive.lisa.program.cfg.statement.evaluation.EvaluationOrder;
 import it.unive.lisa.program.cfg.statement.evaluation.LeftToRightEvaluation;
+import it.unive.lisa.type.Type;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -31,6 +59,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
  * The Rust front-end for LiSA.
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
+ * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
 public class RustFrontend extends RustBaseVisitor<Object> {
 
@@ -74,6 +103,31 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	private RustFrontend(String filePath) {
 		this.filePath = filePath;
 		this.program = new Program();
+	}
+
+	private void registerTypes() {
+		program.registerType(RustF32Type.getInstance());
+		program.registerType(RustF64Type.getInstance());
+		program.registerType(RustI8Type.getInstance());
+		program.registerType(RustI16Type.getInstance());
+		program.registerType(RustI32Type.getInstance());
+		program.registerType(RustI64Type.getInstance());
+		program.registerType(RustI128Type.getInstance());
+		program.registerType(RustIsizeType.getInstance());
+		program.registerType(RustU8Type.getInstance());
+		program.registerType(RustU16Type.getInstance());
+		program.registerType(RustU32Type.getInstance());
+		program.registerType(RustU64Type.getInstance());
+		program.registerType(RustU128Type.getInstance());
+		program.registerType(RustUsizeType.getInstance());
+		program.registerType(RustBooleanType.getInstance());
+		program.registerType(RustCharType.getInstance());
+		program.registerType(RustStrType.getInstance());
+		program.registerType(RustUnitType.getInstance());
+		RustPointerType.all().forEach(program::registerType);
+		RustStructType.all().forEach(program::registerType);
+		RustArrayType.all().forEach(program::registerType);
+		RustTupleType.all().forEach(program::registerType);
 	}
 
 	/**
@@ -120,32 +174,56 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitMod_body(Mod_bodyContext ctx) {
+	public Void visitMod_body(Mod_bodyContext ctx) {
 		// TODO: skipping for the moment inner_attr
-		for (ItemContext i : ctx.item())
-			program.addCFG(visitItem(i));
+		for (ItemContext i : ctx.item()) {
+			if (i.pub_item() != null && i.pub_item().struct_decl() != null)
+				visitPub_item(i.pub_item());
+		}
 
+		for (ItemContext i : ctx.item())
+			if (i.impl_block() != null) {
+				RustStructType struct = RustStructType.get(i.impl_block().impl_what().getText());
+				CompilationUnit u = struct.getUnit();
+
+				List<CFG> implCfg = new RustCodeMemberVisitor(filePath, program, u).visitImpl_block(i.impl_block());
+
+				for (CFG cfg : implCfg)
+					u.addInstanceCFG(cfg);
+			}
+
+		for (Type t : RustStructType.all())
+			program.addCompilationUnit(((RustStructType) t).getUnit());
+
+		for (ItemContext i : ctx.item())
+			if (i.pub_item() != null && i.pub_item().fn_decl() != null)
+				program.addCFG(
+						new RustCodeMemberVisitor(filePath, program, currentUnit).visitFn_decl(i.pub_item().fn_decl()));
+
+		registerTypes();
 		return null;
 	}
 
 	@Override
-	public CFG visitItem(ItemContext ctx) {
-		// TODO: skipping for the moment attr and visibility
-		// the casts below are completely wrong, they will be removed
-		if (ctx.pub_item() != null)
-			return visitPub_item(ctx.pub_item());
-		else if (ctx.impl_block() != null)
-			return (CFG) visitImpl_block(ctx.impl_block());
-		else if (ctx.extern_mod() != null)
-			return (CFG) visitExtern_mod(ctx.extern_mod());
-		else
-			return (CFG) visitItem_macro_use(ctx.item_macro_use());
+	public Void visitPub_item(Pub_itemContext ctx) {
+		if (ctx.struct_decl() != null) {
+			String name = ctx.struct_decl().ident().getText();
+			CompilationUnit structUnit = new CompilationUnit(locationOf(ctx, filePath), name, true);
+
+			RustStructType.lookup(name, structUnit);
+
+			List<Global> fields = visitStruct_decl(ctx.struct_decl());
+
+			for (Global f : fields)
+				structUnit.addInstanceGlobal(f);
+		}
+		return null;
 	}
 
 	@Override
-	public CFG visitPub_item(Pub_itemContext ctx) {
-		// TODO: for the moment we are just interested in function declaration
-		return new RustCodeMemberVisitor(filePath, program, currentUnit).visitFn_decl(ctx.fn_decl());
+	public List<Global> visitStruct_decl(Struct_declContext ctx) {
+		// TODO skipping ty_params? production
+		return new RustTypeVisitor(filePath).visitStruct_tail(ctx.struct_tail());
 	}
 
 }

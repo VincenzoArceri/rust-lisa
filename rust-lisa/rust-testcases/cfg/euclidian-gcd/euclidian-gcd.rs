@@ -10,4 +10,3 @@ fn main() {
 
     let _result = a;
 }
-

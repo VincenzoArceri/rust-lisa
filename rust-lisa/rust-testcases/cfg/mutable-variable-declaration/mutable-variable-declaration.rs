@@ -1,4 +1,3 @@
 fn main() {
-    let mut x = 42;
+    let mut _x = 42;
 }
-

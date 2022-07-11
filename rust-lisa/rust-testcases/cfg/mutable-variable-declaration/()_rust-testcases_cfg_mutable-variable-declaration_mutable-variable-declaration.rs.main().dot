@@ -1,5 +1,5 @@
 digraph {
-	"node0" [shape="rect",color="black",label=<x = 42>];
+	"node0" [shape="rect",color="black",label=<let mut _x : untyped = 42>];
 	"node1" [shape="rect",color="black",peripheries="2",label=<ret>];
 	"node0" -> "node1" [color="black"];
 subgraph cluster_legend {

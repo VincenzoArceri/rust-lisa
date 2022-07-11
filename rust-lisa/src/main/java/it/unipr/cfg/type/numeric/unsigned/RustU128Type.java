@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.numeric.unsigned;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -12,14 +13,20 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustU128Type implements NumericType {
+public class RustU128Type implements NumericType, RustType {
 	// TODO LiSA does not support 128 bits type. So no method isXXBits will be
 	// true.
 
+	private static final RustU128Type INSTANCE = new RustU128Type();
+
 	/**
-	 * Unique instance of Rust u128 type.
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @return the correct instance based on the type mutability
 	 */
-	public static final RustU128Type INSTANCE = new RustU128Type();
+	public static RustU128Type getInstance() {
+		return INSTANCE;
+	}
 
 	private RustU128Type() {
 	}
@@ -81,6 +88,11 @@ public class RustU128Type implements NumericType {
 	@Override
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
+	}
+
+	@Override
+	public String toString() {
+		return "u128";
 	}
 
 }

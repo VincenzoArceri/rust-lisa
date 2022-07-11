@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.composite;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.ArrayType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -14,7 +15,7 @@ import java.util.Set;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustArrayType implements ArrayType {
+public class RustArrayType implements ArrayType, RustType {
 
 	/**
 	 * Collection of all arrays.
@@ -37,7 +38,28 @@ public class RustArrayType implements ArrayType {
 	}
 
 	/**
-	 * In rust an array is characterized by type of its elements and length.
+	 * Remove all instances of Rust tuple types.
+	 */
+	public static void clearAll() {
+		INSTANCES.clear();
+	}
+
+	/**
+	 * Yields all instances of Rust tuple types.
+	 * 
+	 * @return all instances of a Rust tuple types
+	 */
+	public static Collection<Type> all() {
+		Collection<Type> result = new HashSet<>();
+		for (Type t : INSTANCES.toArray(new RustArrayType[0])) {
+			result.add(t);
+		}
+		return result;
+	}
+
+	/**
+	 * In Rust an array is characterized by type of its elements length, and its
+	 * mutability.
 	 */
 	private final Type contentType;
 	private final Integer length;
@@ -125,4 +147,10 @@ public class RustArrayType implements ArrayType {
 
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return "[" + contentType.toString() + "; " + length.toString() + "]";
+	}
+
 }

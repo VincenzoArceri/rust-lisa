@@ -1,5 +1,6 @@
 package it.unipr.cfg.type.numeric.unsigned;
 
+import it.unipr.cfg.type.RustType;
 import it.unive.lisa.type.NumericType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -12,12 +13,18 @@ import java.util.Collections;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustU8Type implements NumericType {
+public class RustU8Type implements NumericType, RustType {
+
+	private static final RustU8Type INSTANCE = new RustU8Type();
 
 	/**
-	 * Unique instance of Rust u8 type.
+	 * Yields the singleton instance based on mutability.
+	 * 
+	 * @return the correct instance based on the type mutability
 	 */
-	public static final RustU8Type INSTANCE = new RustU8Type();
+	public static RustU8Type getInstance() {
+		return INSTANCE;
+	}
 
 	private RustU8Type() {
 	}
@@ -79,6 +86,11 @@ public class RustU8Type implements NumericType {
 	@Override
 	public int hashCode() {
 		return System.identityHashCode(INSTANCE);
+	}
+
+	@Override
+	public String toString() {
+		return "u8";
 	}
 
 }
