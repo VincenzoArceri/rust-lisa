@@ -59,7 +59,7 @@ public class RustStrType implements StringType, RustType {
 
 	@Override
 	public String toString() {
-		return "&str";
+		return "str";
 	}
 
 }
