@@ -54,6 +54,17 @@ public class RustStructType implements UnitType, RustType {
 	}
 
 	/**
+	 * Checks whether a struct type named {@code name} has been already built.
+	 * 
+	 * @param name the name of the struct type
+	 * 
+	 * @return whether a struct type named {@code name} has been already built.
+	 */
+	public static boolean has(String name) {
+		return INSTANCES.containsKey(name);
+	}
+
+	/**
 	 * Yields all instances of Rust struct types.
 	 * 
 	 * @return all instances of a Rust struct types

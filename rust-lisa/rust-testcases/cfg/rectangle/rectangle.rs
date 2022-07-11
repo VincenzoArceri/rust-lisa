@@ -24,5 +24,5 @@ fn main() {
     let r = Rect::new(10, 5);
     let a = r.area();
     let b = r.perim();
+    let c = double(5);
 }
-

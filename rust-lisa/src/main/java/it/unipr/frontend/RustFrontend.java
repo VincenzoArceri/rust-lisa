@@ -223,7 +223,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	@Override
 	public List<Global> visitStruct_decl(Struct_declContext ctx) {
 		// TODO skipping ty_params? production
-		return new RustTypeVisitor(filePath).visitStruct_tail(ctx.struct_tail());
+		return new RustTypeVisitor(filePath, currentUnit).visitStruct_tail(ctx.struct_tail());
 	}
 
 }

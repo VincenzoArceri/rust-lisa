@@ -12,5 +12,5 @@ public class RustCFGComplex extends RustLiSATestExecutor {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/rectangle", "rectangle.rs", conf);
 	}
-	
+
 }

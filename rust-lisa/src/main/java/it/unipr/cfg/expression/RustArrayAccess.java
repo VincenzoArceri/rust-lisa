@@ -1,7 +1,5 @@
 package it.unipr.cfg.expression;
 
-import java.util.Collection;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -12,12 +10,9 @@ import it.unive.lisa.analysis.value.ValueDomain;
 import it.unive.lisa.interprocedural.InterproceduralAnalysis;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
-import it.unive.lisa.program.cfg.NativeCFG;
 import it.unive.lisa.program.cfg.statement.BinaryExpression;
 import it.unive.lisa.program.cfg.statement.Expression;
-import it.unive.lisa.program.cfg.statement.call.NativeCall;
 import it.unive.lisa.symbolic.SymbolicExpression;
-import it.unive.lisa.type.Type;
 
 /**
  * Rust array access expression (e.g., x[y]).
@@ -30,10 +25,10 @@ public class RustArrayAccess extends BinaryExpression {
 	/**
 	 * Builds the array access expression.
 	 * 
-	 * @param cfg      		the {@link CFG} where this expression lies
-	 * @param location 		the location where this expression is defined
-	 * @param identifier    the identifier of the array
-	 * @param access     	the expression that lead to the integer position
+	 * @param cfg        the {@link CFG} where this expression lies
+	 * @param location   the location where this expression is defined
+	 * @param identifier the identifier of the array
+	 * @param access     the expression that lead to the integer position
 	 */
 	public RustArrayAccess(CFG cfg, CodeLocation location, Expression identifier,
 			Expression access) {
@@ -58,5 +53,5 @@ public class RustArrayAccess extends BinaryExpression {
 		// TODO too coarse
 		return state.top();
 	}
-	
+
 }
