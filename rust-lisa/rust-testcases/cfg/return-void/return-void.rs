@@ -1,4 +1,8 @@
 fn main() {
+	;
+}
+
+fn func0() {
 	let _x = 2;
 }
 

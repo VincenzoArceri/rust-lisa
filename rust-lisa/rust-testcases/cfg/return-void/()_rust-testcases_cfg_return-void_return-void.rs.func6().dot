@@ -1,10 +1,10 @@
 digraph {
 	"node0" [shape="rect",color="gray",label=<let _x : untyped = 4>];
-	"node1" [shape="rect",color="black",peripheries="2",label=<ret>];
-	"node2" [shape="rect",color="gray",label=<let _x : untyped = 6>];
-	"node0" -> "node2" [color="black"];
-	"node2" -> "node0" [color="black"];
-	"node2" -> "node1" [color="black"];
+	"node1" [shape="rect",color="gray",label=<let _x : untyped = 6>];
+	"node2" [shape="rect",color="black",peripheries="2",label=<ret>];
+	"node0" -> "node1" [color="black"];
+	"node1" -> "node0" [color="black"];
+	"node1" -> "node2" [color="black"];
 subgraph cluster_legend {
 	label="Legend";
 	style=dotted;
