@@ -79,20 +79,17 @@ public class RustStructType implements UnitType, RustType {
 
 	private final String name;
 	private final CompilationUnit unit;
-	private final boolean mutable;
 
 	/**
 	 * Builds the struct type.
 	 * 
-	 * @param name    name of the struct type
+	 * @param name    the name of the struct type
 	 * @param unit    the compilation unit of the struct type
-	 * @param mutable the mutability of the struct type
 	 * @param types   an ordered list of types inside the struct
 	 */
 	private RustStructType(String name, CompilationUnit unit, Type... types) {
 		this.name = name;
 		this.unit = unit;
-		this.mutable = true;
 	}
 
 	@Override

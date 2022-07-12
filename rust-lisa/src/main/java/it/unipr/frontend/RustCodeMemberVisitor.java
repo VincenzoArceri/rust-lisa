@@ -8,6 +8,7 @@ import it.unipr.cfg.expression.RustBoxExpression;
 import it.unipr.cfg.expression.RustCastExpression;
 import it.unipr.cfg.expression.RustDerefExpression;
 import it.unipr.cfg.expression.RustDoubleRefExpression;
+import it.unipr.cfg.expression.RustExplicitReturn;
 import it.unipr.cfg.expression.RustRangeExpression;
 import it.unipr.cfg.expression.RustRangeFromExpression;
 import it.unipr.cfg.expression.RustRefExpression;
@@ -62,6 +63,7 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
@@ -77,9 +79,17 @@ import it.unive.lisa.program.cfg.statement.global.AccessGlobal;
 import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -152,6 +162,25 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public String getFilePath() {
 		return filePath;
 	}
+	
+	private void switchLeafNodes(Statement oldNode, Statement newNode) {
+		AdjacencyMatrix<Statement, Edge, CFG> adj = currentCfg.getAdjacencyMatrix();
+				
+		for (Statement predecessor : adj.predecessorsOf(oldNode)) {
+			Edge e = adj.getEdgeConnecting(predecessor, oldNode);
+			
+			Edge newEdge = new SequentialEdge(predecessor, newNode);
+			if (e instanceof TrueEdge)
+				newEdge = new TrueEdge(predecessor, newNode);
+			else if (e instanceof FalseEdge)
+				newEdge = new FalseEdge(predecessor, newNode);
+			
+			adj.removeEdge(e);
+			currentCfg.addEdge(newEdge);
+		}
+		
+		adj.removeNode(oldNode);
+	}
 
 	@Override
 	public CFG visitFn_decl(Fn_declContext ctx) {
@@ -167,13 +196,51 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 		currentCfg.getEntrypoints().add(block.getLeft());
-
-		if (currentCfg.getAllExitpoints().isEmpty()) {
+		
+		Collection<Statement> nodes = currentCfg.getNodes();
+		
+		// Substitute exit points wit
+		if (returnType instanceof RustUnitType) {
 			Ret ret = new Ret(currentCfg, locationOf(ctx, filePath));
-			currentCfg.addNode(ret);
-			currentCfg.addEdge(new SequentialEdge(block.getRight(), ret));
-		}
+			
+			// Add possible missing ret as final instruction
+			if (currentCfg.getAllExitpoints().isEmpty()) {
+				Optional<Statement> first = nodes
+						.stream()
+						.filter(n -> currentCfg.getAdjacencyMatrix().followersOf(n).isEmpty())
+						.findFirst();
 
+				if (first.isPresent()) {
+					Statement lastNode = first.get();
+					currentCfg.addNode(ret);
+					currentCfg.addEdge(new SequentialEdge(lastNode, ret));
+				} 
+			} else currentCfg.addNode(ret);
+
+			// Substitute return with ret nodes 
+			for (Statement node : nodes) {
+				if (node instanceof RustExplicitReturn) {					
+					NoOp noop = new NoOp(currentCfg, locationOf(ctx, filePath));
+					currentCfg.addNode(noop);
+					
+					switchLeafNodes(node, noop);
+					currentCfg.addEdge(new SequentialEdge(noop, ret));
+				}
+			}
+		} 
+		// Substitute inner RustExplicitReturn with return statements
+		else {
+			for (Statement stmt : nodes)
+				if (stmt instanceof RustExplicitReturn) {
+					Expression value = ((RustExplicitReturn) stmt).getSubExpression();
+					
+					Return ret = new Return(currentCfg, locationOf(ctx, filePath), value);
+					currentCfg.addNode(ret);
+								
+					switchLeafNodes(stmt, ret);
+				}
+		}
+				
 		currentCfg.simplify();
 		return currentCfg;
 	}
@@ -330,6 +397,32 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		}
 
 		currentCfg.simplify();
+		
+		// There could be some return statement hidden inside
+		// We need to make them explicit
+		for (Statement stmt : currentCfg.getNodes()) {
+			if (stmt instanceof RustExplicitReturn) {
+				Expression value = ((RustExplicitReturn) stmt).getSubExpression();
+				
+				Return ret = new Return(currentCfg, locationOf(ctx, filePath), value);
+				currentCfg.addNode(ret);
+				
+				AdjacencyMatrix<Statement, Edge, CFG> adj = currentCfg.getAdjacencyMatrix();				
+				for (Statement predecessor : adj.predecessorsOf(stmt)) {
+					Edge e = adj.getEdgeConnecting(predecessor, stmt);
+					adj.removeEdge(e);
+
+					Edge newEdge = new SequentialEdge(predecessor, ret);;
+					if (e instanceof TrueEdge)
+						newEdge = new TrueEdge(predecessor, ret);
+					else if (e instanceof FalseEdge)
+						newEdge = new FalseEdge(predecessor, ret);
+
+					currentCfg.addEdge(newEdge);	
+				}
+			}
+		}
+
 		return currentCfg;
 	}
 
@@ -1518,6 +1611,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		} else if (ctx.getChild(0).getText().equals("self")) {
 			return new RustVariableRef(currentCfg, locationOf(ctx, filePath), "self", false);
+		 } else if (ctx.getChild(0).getText().equals("return")) {
+			 Expression returnValue = new RustUnitLiteral(currentCfg, locationOf(ctx, filePath));
+			 if (ctx.expr(0) != null)
+            	 returnValue = visitExpr(ctx.expr(0));
+					 
+			 return new RustExplicitReturn(currentCfg, locationOf(ctx, filePath), returnValue);
 		} else if (ctx.blocky_expr() != null) {
 			// TODO watch out for expression and statements
 			// return visitBlocky_expr(ctx.blocky_expr());
