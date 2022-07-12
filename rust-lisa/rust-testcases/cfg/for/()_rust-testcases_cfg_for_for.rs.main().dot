@@ -1,18 +1,18 @@
 digraph {
-	"node0" [shape="rect",color="black",label=<let mut x : untyped = 52>];
+	"node0" [shape="rect",color="black",label=<let mut _x : untyped = 52>];
 	"node1" [shape="rect",color="gray",label=<let RUSTLISA_FRESH : untyped = ..(0, 10)>];
-	"node2" [shape="rect",color="gray",label=<let mut i : untyped = RUSTLISA_FRESH::next()>];
-	"node3" [shape="rect",color="gray",label=<mut i = RUSTLISA_FRESH::next()>];
-	"node4" [shape="rect",color="gray",label=<x = -(x, 1)>];
-	"node5" [shape="rect",color="black",peripheries="2",label=<ret>];
-	"node6" [shape="rect",color="gray",label=<!=(mut i, null)>];
-	"node1" -> "node2" [color="black"];
-	"node2" -> "node6" [color="black"];
-	"node3" -> "node6" [color="black"];
-	"node4" -> "node3" [color="black"];
-	"node6" -> "node5" [color="red",style="dashed"];
-	"node6" -> "node4" [color="blue",style="dashed"];
+	"node2" [shape="rect",color="gray",label=<!=(mut _i, null)>];
+	"node3" [shape="rect",color="black",peripheries="2",label=<ret>];
+	"node4" [shape="rect",color="gray",label=<let mut _i : untyped = RUSTLISA_FRESH::next()>];
+	"node5" [shape="rect",color="gray",label=<mut _i = RUSTLISA_FRESH::next()>];
+	"node6" [shape="rect",color="gray",label=<_x = -(_x, 1)>];
+	"node1" -> "node4" [color="black"];
+	"node2" -> "node3" [color="red",style="dashed"];
+	"node2" -> "node6" [color="blue",style="dashed"];
+	"node4" -> "node2" [color="black"];
+	"node5" -> "node2" [color="black"];
 	"node0" -> "node1" [color="black"];
+	"node6" -> "node5" [color="black"];
 subgraph cluster_legend {
 	label="Legend";
 	style=dotted;
