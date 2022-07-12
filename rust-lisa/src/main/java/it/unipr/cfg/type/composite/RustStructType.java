@@ -83,9 +83,9 @@ public class RustStructType implements UnitType, RustType {
 	/**
 	 * Builds the struct type.
 	 * 
-	 * @param name    the name of the struct type
-	 * @param unit    the compilation unit of the struct type
-	 * @param types   an ordered list of types inside the struct
+	 * @param name  the name of the struct type
+	 * @param unit  the compilation unit of the struct type
+	 * @param types an ordered list of types inside the struct
 	 */
 	private RustStructType(String name, CompilationUnit unit, Type... types) {
 		this.name = name;

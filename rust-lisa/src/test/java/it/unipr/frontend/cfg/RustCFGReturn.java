@@ -12,13 +12,13 @@ public class RustCFGReturn extends RustLiSATestExecutor {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/return-void", "return-void.rs", conf);
 	}
-	
+
 	@Test
 	public void testReturn() throws AnalysisSetupException {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/return", "return.rs", conf);
 	}
-	
+
 	@Test
 	public void testImplicitReturn() throws AnalysisSetupException {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
