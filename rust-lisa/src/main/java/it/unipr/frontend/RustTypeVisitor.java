@@ -8,6 +8,7 @@ import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustArrayType;
 import it.unipr.cfg.type.composite.RustReferenceType;
+import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.cfg.type.composite.RustTupleType;
 import it.unipr.cfg.type.numeric.floating.RustF32Type;
 import it.unipr.cfg.type.numeric.floating.RustF64Type;
@@ -37,6 +38,7 @@ import it.unipr.rust.antlr.RustParser.Ty_path_segment_no_superContext;
 import it.unipr.rust.antlr.RustParser.Ty_path_tailContext;
 import it.unipr.rust.antlr.RustParser.Ty_sumContext;
 import it.unipr.rust.antlr.RustParser.Ty_sum_listContext;
+import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -53,14 +55,17 @@ import java.util.List;
 public class RustTypeVisitor extends RustBaseVisitor<Object> {
 
 	private final String filePath;
+	private final CompilationUnit unit;
 
 	/**
 	 * Constructs a {@link RustTypeVisitor} instance.
 	 * 
 	 * @param filePath the filePath String of reference
+	 * @param unit     the compilation unit of reference
 	 */
-	public RustTypeVisitor(String filePath) {
+	public RustTypeVisitor(String filePath, CompilationUnit unit) {
 		this.filePath = filePath;
+		this.unit = unit;
 	}
 
 	@Override
@@ -209,9 +214,10 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 		case "char":
 			return RustCharType.getInstance();
 		default:
-			// TODO as of now, more complex types than the simple ones are not
-			// parsed
-			return null;
+			if (RustStructType.has(ctx.Ident().getText())) {
+				return RustStructType.lookup(filePath, unit);
+			} else
+				throw new IllegalAccessError("The name of this type was not found");
 		}
 	}
 

@@ -2,6 +2,8 @@ package it.unipr.frontend;
 
 import static it.unipr.frontend.RustFrontendUtilities.locationOf;
 
+import it.unipr.cfg.expression.RustAccessMemberExpression;
+import it.unipr.cfg.expression.RustArrayAccess;
 import it.unipr.cfg.expression.RustBoxExpression;
 import it.unipr.cfg.expression.RustCastExpression;
 import it.unipr.cfg.expression.RustDerefExpression;
@@ -9,6 +11,7 @@ import it.unipr.cfg.expression.RustDoubleRefExpression;
 import it.unipr.cfg.expression.RustRangeExpression;
 import it.unipr.cfg.expression.RustRangeFromExpression;
 import it.unipr.cfg.expression.RustRefExpression;
+import it.unipr.cfg.expression.RustTupleAccess;
 import it.unipr.cfg.expression.RustVariableRef;
 import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
 import it.unipr.cfg.expression.bitwise.RustLeftShiftExpression;
@@ -44,10 +47,18 @@ import it.unipr.cfg.statement.RustLetAssignment;
 import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustStructType;
+import it.unipr.cfg.utils.RustAccessResolver;
+import it.unipr.cfg.utils.RustArrayAccessKeeper;
+import it.unipr.cfg.utils.RustAttributeAccessKeeper;
+import it.unipr.cfg.utils.RustFunctionCallKeeper;
+import it.unipr.cfg.utils.RustMethodKeeper;
+import it.unipr.cfg.utils.RustTupleAccessKeeper;
 import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustParser.*;
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.Global;
 import it.unive.lisa.program.Program;
+import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.Parameter;
@@ -62,6 +73,7 @@ import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.program.cfg.statement.VariableRef;
 import it.unive.lisa.program.cfg.statement.call.Call.CallType;
 import it.unive.lisa.program.cfg.statement.call.UnresolvedCall;
+import it.unive.lisa.program.cfg.statement.global.AccessGlobal;
 import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
@@ -147,7 +159,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		Type returnType = RustUnitType.getInstance();
 		if (ctx.fn_rtype() != null)
-			returnType = new RustTypeVisitor(filePath).visitFn_rtype(ctx.fn_rtype());
+			returnType = new RustTypeVisitor(filePath, unit).visitFn_rtype(ctx.fn_rtype());
 
 		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx, filePath), unit, false, fnName, returnType,
 				new Parameter[0]);
@@ -303,7 +315,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		Type returnType = RustUnitType.getInstance();
 		if (ctx.fn_rtype() != null)
-			returnType = new RustTypeVisitor(filePath).visitFn_rtype(ctx.fn_rtype());
+			returnType = new RustTypeVisitor(filePath, unit).visitFn_rtype(ctx.fn_rtype());
 
 		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx, filePath), unit, false, methodName, returnType,
 				new Parameter[0]);
@@ -350,7 +362,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Type visitParam_ty(Param_tyContext ctx) {
 		// TODO skipping second production
-		return new RustTypeVisitor(filePath).visitTy_sum(ctx.ty_sum());
+		return new RustTypeVisitor(filePath, unit).visitTy_sum(ctx.ty_sum());
 	}
 
 	@Override
@@ -380,7 +392,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (ctx.getChild(0).getText().equals("mut"))
 			mutability = true;
 
-		Type type = new RustTypeVisitor(filePath).visitTy_sum(ctx.ty_sum());
+		Type type = new RustTypeVisitor(filePath, unit).visitTy_sum(ctx.ty_sum());
 
 		return new Parameter(locationOf(ctx, filePath), "self", type);
 	}
@@ -542,7 +554,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public Type visitImpl_what(Impl_whatContext ctx) {
 		// TODO Skipping trait implementation for now and parsing only the last
 		// rule
-		return new RustTypeVisitor(filePath).visitTy_sum(ctx.ty_sum(0));
+		return new RustTypeVisitor(filePath, unit).visitTy_sum(ctx.ty_sum(0));
 	}
 
 	@Override
@@ -607,16 +619,44 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitPath(PathContext ctx) {
-		if (ctx.path_segment_no_super() != null)
-			return visitPath_segment_no_super(ctx.path_segment_no_super());
-		// TODO: skipping the production path_parent? '::' path_segment_no_super
-		return null;
+		if (ctx.path_parent() != null) {
+			Expression parent = visitPath_parent(ctx.path_parent());
+			Expression child = visitPath_segment_no_super(ctx.path_segment_no_super());
+
+			if (child instanceof RustVariableRef) {
+				Global global = new Global(locationOf(ctx, filePath), child.toString());
+				// TODO check if the toString is enough or it need something
+				// else
+				Unit unit = program.getUnit(parent.toString());
+				return new AccessGlobal(currentCfg, locationOf(ctx, filePath), unit, global);
+			}
+
+			throw new UnsupportedOperationException(ctx.getText());
+		}
+
+		return visitPath_segment_no_super(ctx.path_segment_no_super());
 	}
 
 	@Override
-	public Object visitPath_parent(Path_parentContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPath_parent(Path_parentContext ctx) {
+		// TODO skipping "'<' ty_sum as_trait? '>'" production
+		if (ctx.getChild(0).getText().equals("self")) {
+			return new RustVariableRef(currentCfg, locationOf(ctx, filePath), "self", false);
+		} else if (ctx.path_parent() == null) {
+			return visitPath_segment(ctx.path_segment());
+		}
+
+		Expression child = visitPath_segment(ctx.path_segment());
+		Expression parent = visitPath_parent(ctx.path_parent());
+
+		if (child instanceof RustVariableRef) {
+			Global global = new Global(locationOf(ctx, filePath), child.toString());
+			// TODO check if the toString is enough or it need something else
+			Unit unit = program.getUnit(parent.toString());
+			return new AccessGlobal(currentCfg, locationOf(ctx, filePath), unit, global);
+		}
+
+		throw new UnsupportedOperationException(ctx.getText());
 	}
 
 	@Override
@@ -626,9 +666,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitPath_segment(Path_segmentContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitPath_segment(Path_segmentContext ctx) {
+		if (ctx.path_segment_no_super() != null)
+			return visitPath_segment_no_super(ctx.path_segment_no_super());
+
+		return new RustVariableRef(currentCfg, locationOf(ctx, filePath), "super", false);
 	}
 
 	@Override
@@ -639,8 +681,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitSimple_path_segment(Simple_path_segmentContext ctx) {
-		// TODO: skipping Self
-		return visitIdent(ctx.ident());
+		if (ctx.getChild(0).getText().equals("Self"))
+			return new RustVariableRef(currentCfg, locationOf(ctx, filePath), "Self", false);
+
+		return new RustVariableRef(currentCfg, locationOf(ctx, filePath), ctx.ident().getText(), false);
 	}
 
 	@Override
@@ -741,7 +785,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Type visitTy(TyContext ctx) {
-		return new RustTypeVisitor(filePath).visitTy(ctx);
+		return new RustTypeVisitor(filePath, unit).visitTy(ctx);
 	}
 
 	@Override
@@ -1097,8 +1141,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			Expression expr = visitExpr(ctx.expr());
 
 			Return ret = new Return(currentCfg, locationOf(ctx, filePath), expr);
+			currentCfg.addNode(ret);
 
-			currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
+			if (lastStmt != null)
+				currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
+
+			if (entryNode == null)
+				entryNode = ret;
 
 			lastStmt = ret;
 		}
@@ -1411,7 +1460,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Expression visitPrim_expr_no_struct(Prim_expr_no_structContext ctx) {
 		// TODO remaining production to parse:
-//		   | 'self'
 //		   | 'move'? closure_params closure_tail
 //		   | blocky_expr
 //		   | 'break' lifetime_or_expr?
@@ -1468,6 +1516,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 			return new RustArrayLiteral(currentCfg, locationOf(ctx, filePath), Untyped.INSTANCE, new Expression[0]);
 
+		} else if (ctx.getChild(0).getText().equals("self")) {
+			return new RustVariableRef(currentCfg, locationOf(ctx, filePath), "self", false);
 		} else if (ctx.blocky_expr() != null) {
 			// TODO watch out for expression and statements
 			// return visitBlocky_expr(ctx.blocky_expr());
@@ -1570,35 +1620,97 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitPost_expr(Post_exprContext ctx) {
-		// TODO: skipping the production post_expr post_expr_tail
-		return visitPrim_expr(ctx.prim_expr());
+		if (ctx.prim_expr() != null)
+			return visitPrim_expr(ctx.prim_expr());
+
+		Expression head = visitPost_expr(ctx.post_expr());
+
+		RustAccessResolver tail = visitPost_expr_tail(ctx.post_expr_tail());
+
+		if (tail instanceof RustArrayAccessKeeper) {
+			RustArrayAccessKeeper right = (RustArrayAccessKeeper) tail;
+			return new RustArrayAccess(currentCfg, locationOf(ctx, filePath), head, right.getExpr());
+
+		} else if (tail instanceof RustTupleAccessKeeper) {
+			RustTupleAccessKeeper right = (RustTupleAccessKeeper) tail;
+
+			return new RustTupleAccess(currentCfg, locationOf(ctx, filePath), head, right.getExpr());
+		} else if (tail instanceof RustMethodKeeper) {
+			RustMethodKeeper right = (RustMethodKeeper) tail;
+
+			List<Expression> parameters = new ArrayList<>();
+			parameters.add(head);
+			parameters.addAll(right.getAccessParameter());
+
+			UnresolvedCall methodCall = new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
+					RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
+					RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.INSTANCE, "", right.getMethodName(),
+					RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, parameters.toArray(new Expression[0]));
+			return methodCall;
+
+		} else if (tail instanceof RustAttributeAccessKeeper) {
+			RustAttributeAccessKeeper right = (RustAttributeAccessKeeper) tail;
+			return new RustAccessMemberExpression(currentCfg, locationOf(ctx, filePath), head, right.getExpr());
+
+		} else {
+			RustFunctionCallKeeper right = (RustFunctionCallKeeper) tail;
+
+			System.out.println(head);
+
+			String receiverName = (head instanceof AccessGlobal ? ((AccessGlobal) head).getContainer().getName() : "");
+			String targetName = (head instanceof AccessGlobal ? ((AccessGlobal) head).getTarget().getName()
+					: head.toString());
+
+			UnresolvedCall functionCall = new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
+					RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
+					RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.STATIC, receiverName, targetName,
+					RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, right.getParameters().toArray(new Expression[0]));
+
+			return functionCall;
+		}
+
 	}
 
 	@Override
-	public Statement visitPost_expr_tail(Post_expr_tailContext ctx) {
+	public RustAccessResolver visitPost_expr_tail(Post_expr_tailContext ctx) {
 		switch (ctx.getChild(0).getText()) {
 		case "?":
 			// TODO should return the correct error handling operator on the
 			// correct type
 			return null;
 		case "[":
-			return visitExpr(ctx.expr());
+			return new RustArrayAccessKeeper(visitExpr(ctx.expr()));
 		case ".":
-			if (ctx.ident() == null) {
-				// TODO figure out what to return here
-				return null;
-			}
-			return visitExpr(ctx.expr());
-		case "(":
-			if (ctx.expr_list() != null) {
-				// return visitExpr_list(ctx.expr_list());
-				return null;
+			if (ctx.BareIntLit() != null) {
+				Expression position = new RustInteger(currentCfg, locationOf(ctx, filePath),
+						Integer.parseInt(ctx.BareIntLit().getText()));
+
+				return new RustTupleAccessKeeper(position);
 			}
 
-			// TODO figure out what to return here
-			NoOp noOp = new NoOp(currentCfg, locationOf(ctx, filePath));
-			currentCfg.addNode(noOp);
-			return noOp;
+			// TODO skipping ty_args?
+
+			String ident = ctx.ident().getText();
+
+			// Method call with parameters
+			if (ctx.expr_list() != null) {
+				List<Expression> parameters = visitExpr_list(ctx.expr_list());
+				return new RustMethodKeeper(ident, parameters);
+
+				// Method call without parameters
+			} else if (ctx.getChild(2) != null && ctx.getChild(2).getText().equals("("))
+				return new RustMethodKeeper(ident, new ArrayList<Expression>());
+
+			// Attribute access
+			else {
+				RustVariableRef attributeName = new RustVariableRef(currentCfg, locationOf(ctx, filePath), ident,
+						false);
+				return new RustAttributeAccessKeeper(attributeName);
+			}
+		case "(":
+			if (ctx.expr_list() != null)
+				return new RustFunctionCallKeeper(visitExpr_list(ctx.expr_list()));
+			return new RustFunctionCallKeeper(new ArrayList<Expression>());
 		}
 		// Unreachable
 		return null;
@@ -1906,7 +2018,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitPre_expr_no_struct(ctx.pre_expr_no_struct());
 
 		Expression left = visitCast_expr_no_struct(ctx.cast_expr_no_struct());
-		Type type = new RustTypeVisitor(filePath).visitTy_sum(ctx.ty_sum());
+		Type type = new RustTypeVisitor(filePath, unit).visitTy_sum(ctx.ty_sum());
 
 		return new RustCastExpression(currentCfg, locationOf(ctx, filePath), type, left);
 	}

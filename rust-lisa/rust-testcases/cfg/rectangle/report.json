@@ -1,0 +1,4 @@
+{
+  "warnings" : [ ],
+  "files" : [ "()_rust-testcases_cfg_rectangle_rectangle.rs.main().dot", "rust-testcases_cfg_rectangle_rectangle.rs_Rect.new().dot", "usize_Rect.area().dot", "usize_Rect.perim().dot" ]
+}
