@@ -18,11 +18,5 @@ public class RustCFGTypes extends RustLiSATestExecutor {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/struct-parsing", "struct-parsing.rs", conf);
 	}
-	
-	@Test
-	public void testReturn() throws AnalysisSetupException {
-		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
-		perform("cfg/return", "return.rs", conf);
-	}
 
 }

@@ -1,53 +1,61 @@
 fn main() {
-	let x = 2;
+	let _x = 2;
 }
 
 fn func1() {
-	let q = 6;
-	return;
-}
-
-fn func2() {
-	let x = 4;
-	
-	if x == 4 {
-		x + 2;
-		let z = 6;
-		return;
-	}
-	
-	let q = 6;
-	return;
-}
-
-fn func2() {
-	let x = 4;
-	
-	if x == 4 {
-		x + 2;
-		let z = 6;
-		return;
-	}
+	let _x = 6;
 	return;
 }
 
 fn func3() {
-	let x = 4;	
-	
-	loop {
-		let x = 6;
+	let _x = 4;
+
+	if _x == 4 {
+		let _y = _x + 2;
+		let _z = 6;
+		return;
 	}
+
+	let _y = 6;
 	return;
-	
 }
 
 fn func4() {
-	let x = 4;	
-	
-	loop {
-		let x = 6;
+	let _x = 4;
+
+	if _x == 4 {
+		let _y = _x + 2;
+		let _z = 6;
 		return;
 	}
 	return;
-	
 }
+
+fn func5() {
+	let _x = 4;
+
+	loop {
+		let _x = 6;
+	}
+	return;
+}
+
+fn func6() {
+	let _x = 4;
+
+	loop {
+		let _x = 6;
+		return;
+	}
+	return;
+}
+
+fn func7() {
+    let _x = 1;
+    if _x == 2 {
+        if _x < 3 {
+            return;
+        }
+    }
+}
+
