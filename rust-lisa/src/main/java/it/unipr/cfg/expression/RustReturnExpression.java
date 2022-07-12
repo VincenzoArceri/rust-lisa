@@ -21,7 +21,7 @@ import it.unive.lisa.type.Untyped;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustExplicitReturn extends UnaryExpression {
+public class RustReturnExpression extends UnaryExpression {
 
 	/**
 	 * Builds the return expression.
@@ -30,7 +30,7 @@ public class RustExplicitReturn extends UnaryExpression {
 	 * @param location the location where this expression is defined
 	 * @param expr     the inner
 	 */
-	public RustExplicitReturn(CFG cfg, CodeLocation location,
+	public RustReturnExpression(CFG cfg, CodeLocation location,
 			Expression expr) {
 		// TODO: need to change type of this expression
 		// once we have modeled Rust types

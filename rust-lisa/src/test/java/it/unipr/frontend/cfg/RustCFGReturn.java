@@ -18,5 +18,11 @@ public class RustCFGReturn extends RustLiSATestExecutor {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/return", "return.rs", conf);
 	}
+	
+	@Test
+	public void testImplicitReturn() throws AnalysisSetupException {
+		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
+		perform("cfg/implicit-return", "implicit-return.rs", conf);
+	}
 
 }

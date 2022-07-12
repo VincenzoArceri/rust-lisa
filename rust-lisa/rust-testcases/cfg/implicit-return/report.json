@@ -1,0 +1,4 @@
+{
+  "warnings" : [ ],
+  "files" : [ "()_rust-testcases_cfg_implicit-return_implicit-return.rs.main().dot", "i32_rust-testcases_cfg_implicit-return_implicit-return.rs.func1().dot", "i32_rust-testcases_cfg_implicit-return_implicit-return.rs.func2().dot", "i32_rust-testcases_cfg_implicit-return_implicit-return.rs.func3().dot", "i32_rust-testcases_cfg_implicit-return_implicit-return.rs.func4().dot" ]
+}

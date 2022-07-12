@@ -8,10 +8,10 @@ import it.unipr.cfg.expression.RustBoxExpression;
 import it.unipr.cfg.expression.RustCastExpression;
 import it.unipr.cfg.expression.RustDerefExpression;
 import it.unipr.cfg.expression.RustDoubleRefExpression;
-import it.unipr.cfg.expression.RustExplicitReturn;
 import it.unipr.cfg.expression.RustRangeExpression;
 import it.unipr.cfg.expression.RustRangeFromExpression;
 import it.unipr.cfg.expression.RustRefExpression;
+import it.unipr.cfg.expression.RustReturnExpression;
 import it.unipr.cfg.expression.RustTupleAccess;
 import it.unipr.cfg.expression.RustVariableRef;
 import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
@@ -222,7 +222,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 			// Substitute return with ret nodes 
 			for (Statement node : nodes) {
-				if (node instanceof RustExplicitReturn) {					
+				if (node instanceof RustReturnExpression) {					
 					NoOp noop = new NoOp(currentCfg, locationOf(ctx, filePath));
 					currentCfg.addNode(noop);
 					
@@ -234,8 +234,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		// Substitute inner RustExplicitReturn with return statements
 		else {
 			for (Statement stmt : nodes)
-				if (stmt instanceof RustExplicitReturn) {
-					Expression value = ((RustExplicitReturn) stmt).getSubExpression();
+				if (stmt instanceof RustReturnExpression) {
+					Expression value = ((RustReturnExpression) stmt).getSubExpression();
 					
 					Return ret = new Return(currentCfg, locationOf(ctx, filePath), value);
 					currentCfg.addNode(ret);
@@ -404,8 +404,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		// There could be some return statement hidden inside
 		// We need to make them explicit
 		for (Statement stmt : currentCfg.getNodes()) {
-			if (stmt instanceof RustExplicitReturn) {
-				Expression value = ((RustExplicitReturn) stmt).getSubExpression();
+			if (stmt instanceof RustReturnExpression) {
+				Expression value = ((RustReturnExpression) stmt).getSubExpression();
 				
 				Return ret = new Return(currentCfg, locationOf(ctx, filePath), value);
 				currentCfg.addNode(ret);
@@ -1178,10 +1178,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitBlock(BlockContext ctx) {
+		Statement entryStmt = null;
 		Statement lastStmt = null;
-		Statement entryNode = null;
 
-		if (ctx.stmt() != null) {
+		if (ctx.stmt() != null && ctx.stmt().size() != 0) {
 			for (StmtContext stmt : ctx.stmt()) {
 				@SuppressWarnings("unchecked")
 				// Note: since we are not sure what to return from visitStmt, we
@@ -1191,25 +1191,26 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				if (lastStmt != null)
 					currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
 				else
-					entryNode = currentStmt.getLeft();
+					entryStmt = currentStmt.getLeft();
 
 				lastStmt = currentStmt.getRight();
 			}
 		} else {
-			lastStmt = new NoOp(currentCfg, locationOf(ctx, filePath));
-			entryNode = new NoOp(currentCfg, locationOf(ctx, filePath));
-
-			currentCfg.addEdge(new SequentialEdge(entryNode, lastStmt));
+			entryStmt = new NoOp(currentCfg, locationOf(ctx, filePath));
+			lastStmt = entryStmt;
+			currentCfg.addNode(entryStmt);
 		}
 
 		if (ctx.expr() != null) {
-			Statement exprStmt = visitExpr(ctx.expr());
-			currentCfg.addEdge(new SequentialEdge(lastStmt, exprStmt));
+			Expression expr = visitExpr(ctx.expr());	
+			RustReturnExpression rre = new RustReturnExpression(currentCfg, locationOf(ctx, filePath), expr);
+			currentCfg.addNode(rre);			
+			currentCfg.addEdge(new SequentialEdge(lastStmt, rre));
 
-			return Pair.of(entryNode, exprStmt);
+			return Pair.of(entryStmt, rre);
 		}
 
-		return Pair.of(entryNode, lastStmt);
+		return Pair.of(entryStmt, lastStmt);
 	}
 
 	@Override
@@ -1236,7 +1237,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (ctx.expr() != null) {
 			Expression expr = visitExpr(ctx.expr());
 
-			Return ret = new Return(currentCfg, locationOf(ctx, filePath), expr);
+			RustReturnExpression ret = new RustReturnExpression(currentCfg, locationOf(ctx, filePath), expr);
 			currentCfg.addNode(ret);
 
 			if (lastStmt != null)
@@ -1619,7 +1620,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			 if (ctx.expr(0) != null)
             	 returnValue = visitExpr(ctx.expr(0));
 					 
-			 return new RustExplicitReturn(currentCfg, locationOf(ctx, filePath), returnValue);
+			 return new RustReturnExpression(currentCfg, locationOf(ctx, filePath), returnValue);
 		} else if (ctx.blocky_expr() != null) {
 			// TODO watch out for expression and statements
 			// return visitBlocky_expr(ctx.blocky_expr());
