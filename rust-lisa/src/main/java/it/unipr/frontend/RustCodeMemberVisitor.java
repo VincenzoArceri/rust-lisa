@@ -193,9 +193,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx, filePath), unit, false, fnName, returnType,
 				new Parameter[0]);
 		currentCfg = new CFG(cfgDesc);
+		
+		NoOp initPoint = new NoOp(currentCfg, locationOf(ctx, filePath));
+		currentCfg.addNode(initPoint, true);
 
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
-		currentCfg.getEntrypoints().add(block.getLeft());
+		currentCfg.addEdge(new SequentialEdge(initPoint, block.getLeft()));
 		
 		Collection<Statement> nodes = currentCfg.getNodes();
 		
