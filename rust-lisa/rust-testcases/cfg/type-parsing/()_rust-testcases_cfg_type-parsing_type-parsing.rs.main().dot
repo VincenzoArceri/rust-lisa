@@ -7,7 +7,7 @@ digraph {
 	"node5" [shape="rect",color="black",peripheries="2",label=<ret>];
 	"node6" [shape="rect",color="gray",label=<let _y1 : untyped = 7>];
 	"node7" [shape="rect",color="gray",label=<let _s : untyped = Test{42}>];
-	"node8" [shape="rect",color="gray",label=<let _b : untyped = .(_s, field1)>];
+	"node8" [shape="rect",color="gray",label=<let _b : untyped = _s.field1>];
 	"node9" [shape="rect",color="gray",label=<let _z : [i32; 4] = [1, 2, 3, 4]>];
 	"node0" -> "node6" [color="black"];
 	"node1" -> "node4" [color="black"];

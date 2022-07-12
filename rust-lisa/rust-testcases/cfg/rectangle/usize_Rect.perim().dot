@@ -1,5 +1,5 @@
 digraph {
-	"node0" [shape="rect",color="black",peripheries="2",label=<return +(*(2, .(self, width)), *(2, .(self, height)))>];
+	"node0" [shape="rect",color="black",peripheries="2",label=<return +(*(2, self.width), *(2, self.height))>];
 subgraph cluster_legend {
 	label="Legend";
 	style=dotted;

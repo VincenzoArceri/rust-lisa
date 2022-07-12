@@ -37,6 +37,11 @@ public class RustAccessMemberExpression extends BinaryExpression {
 	}
 
 	@Override
+	public String toString() {
+		return getSubExpressions()[0] + "." + getSubExpressions()[1];
+	}
+
+	@Override
 	protected <A extends AbstractState<A, H, V, T>,
 			H extends HeapDomain<H>,
 			V extends ValueDomain<V>,
