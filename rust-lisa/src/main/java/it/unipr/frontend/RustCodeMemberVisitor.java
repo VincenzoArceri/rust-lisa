@@ -197,7 +197,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		Collection<Statement> nodes = currentCfg.getNodes();
 
-		// Substitute exit points wit
 		if (returnType instanceof RustUnitType) {
 			Ret ret = new Ret(currentCfg, locationOf(ctx, filePath));
 
