@@ -2,16 +2,6 @@ package it.unipr.frontend;
 
 import static it.unipr.frontend.RustFrontendUtilities.locationOf;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.tuple.Pair;
-
 import it.unipr.cfg.expression.RustAccessMemberExpression;
 import it.unipr.cfg.expression.RustArrayAccess;
 import it.unipr.cfg.expression.RustBoxExpression;
@@ -90,6 +80,13 @@ import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Code member visitor for Rust.
@@ -200,17 +197,15 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (returnType instanceof RustUnitType) {
 			Ret ret = new Ret(currentCfg, locationOf(ctx, filePath));
 
-			// Add possible missing ret as final instruction
 			if (currentCfg.getAllExitpoints().isEmpty()) {
-				Optional<Statement> first = nodes
+				Set<Statement> exitNodes = nodes
 						.stream()
 						.filter(n -> currentCfg.getAdjacencyMatrix().followersOf(n).isEmpty())
-						.findFirst();
+						.collect(Collectors.toSet());
 
-				if (first.isPresent()) {
-					Statement lastNode = first.get();
+				for (Statement exit : exitNodes) {
 					currentCfg.addNode(ret);
-					currentCfg.addEdge(new SequentialEdge(lastNode, ret));
+					currentCfg.addEdge(new SequentialEdge(exit, ret));
 				}
 			} else
 				currentCfg.addNode(ret);
@@ -413,7 +408,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			if (currentCfg.getAllExitpoints().isEmpty()) {
 				Set<Statement> exitNodes = nodes
 						.stream()
-						.filter(n -> currentCfg.getAdjacencyMatrix().followersOf(n).isEmpty()).collect(Collectors.toSet());
+						.filter(n -> currentCfg.getAdjacencyMatrix().followersOf(n).isEmpty())
+						.collect(Collectors.toSet());
 
 				for (Statement exit : exitNodes) {
 					currentCfg.addNode(ret);
@@ -1598,9 +1594,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 						locationOf(ctx, filePath),
 						structType,
 						fields.stream()
-						.map(e -> e.getRight())
-						.collect(Collectors.toList())
-						.toArray(new Expression[0]));
+								.map(e -> e.getRight())
+								.collect(Collectors.toList())
+								.toArray(new Expression[0]));
 			}
 		}
 		return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
@@ -1609,11 +1605,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Expression visitPrim_expr_no_struct(Prim_expr_no_structContext ctx) {
 		// TODO remaining production to parse:
-		//		   | 'move'? closure_params closure_tail
-		//		   | blocky_expr
-		//		   | 'break' lifetime_or_expr?
-		//		   | 'continue' Lifetime?
-		//		   | 'return' expr?
+		// | 'move'? closure_params closure_tail
+		// | blocky_expr
+		// | 'break' lifetime_or_expr?
+		// | 'continue' Lifetime?
+		// | 'return' expr?
 
 		if (ctx.getChild(0).getText().equals("(")) {
 			// TODO Ignoring expr_inner_attrs? part
@@ -1629,9 +1625,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 							currentCfg,
 							locationOf(ctx, filePath),
 							exprs.stream()
-							.map(e -> e.getStaticType())
-							.collect(Collectors.toList())
-							.toArray(new RustType[0]),
+									.map(e -> e.getStaticType())
+									.collect(Collectors.toList())
+									.toArray(new RustType[0]),
 							exprs.toArray(new Expression[0]));
 				}
 
