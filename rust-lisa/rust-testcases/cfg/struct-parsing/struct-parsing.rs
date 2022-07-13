@@ -4,16 +4,18 @@ struct Number {
 
 impl Number {
 	pub fn zero() {
-        let x = 2;
+        let _x = 2;
     }
 }
 
 fn main() {
-	let x = 2;
-	
+	let _x = 2;
 	let num = 3;
-	
-	Number {
+    let _y = Number::zero();
+
+	let a = Number {
 		num,
 	};
+
+    let _b = a.num;
 }

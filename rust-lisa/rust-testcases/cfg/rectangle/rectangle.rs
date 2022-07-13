@@ -22,7 +22,6 @@ impl Rect {
 
 fn main() {
     let r = Rect::new(10, 5);
-    let a = r.area();
-    let b = r.perim();
-    let c = double(5);
+    let _a = r.area();
+    let _b = r.perim();
 }

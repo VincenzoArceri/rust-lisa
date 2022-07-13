@@ -1,30 +1,32 @@
 fn main() {
-    if x == 1 {
-        x = 1;
+    let mut _x = 3;
+
+    if _x == 1 {
+        _x = 1;
     }
 
-    if x == 2 {
-        x = 2;
+    if _x == 2 {
+        _x = 2;
     }
 
-    if x == 3 {
-        x = 3;
+    if _x == 3 {
+        _x = 3;
     } else {
-        x = 4;
+        _x = 4;
     }
 
-    if x == 5 {
-        x = 5;
-    } else if x == 6 {
-        x == 6;
+    if _x == 5 {
+        _x = 5;
+    } else if _x == 6 {
+        _x = 6;
     } else {
-        x = 7;
+        _x = 7;
     }
 
-    if x == 8 {
-        x = 9;
+    if _x == 8 {
+        _x = 9;
     } else {
-        x = 10;
+        _x = 10;
     }
 }
 

@@ -1,8 +1,10 @@
 fn main() {
-    if x == 5 {
-        x = 1;
-    } else if x == 1 {
-        x = 2;
+    let mut _x = 4;
+
+    if _x == 5 {
+        _x = 1;
+    } else if _x == 1 {
+        _x = 2;
     }
 }
 

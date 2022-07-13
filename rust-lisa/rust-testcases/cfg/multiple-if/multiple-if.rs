@@ -1,18 +1,20 @@
 fn main() {
-    if x == 5 {
-        x = 1;
-    } else if x != 1 {
-        x = 2;
-    } else if x >= 2 {
-        x = 3;
-    } else if x > 3 {
-        x = 4;
-    } else if x < 4 {
-        x = 5;
-    } else if x <= 5 {
-        x = 6;
+    let mut _x = 3;
+
+    if _x == 5 {
+        _x = 1;
+    } else if _x != 1 {
+        _x = 2;
+    } else if _x >= 2 {
+        _x = 3;
+    } else if _x > 3 {
+        _x = 4;
+    } else if _x < 4 {
+        _x = 5;
+    } else if _x <= 5 {
+        _x = 6;
     } else {
-        x = 7;
+        _x = 7;
     }
 }
 
