@@ -11,6 +11,16 @@ fn func1() {
 	return;
 }
 
+fn func2() {
+	let _x = 4;
+
+	if _x == 4 {
+		let _y = _x + 2;
+	} else {
+		let _y = _x + 3;
+	}
+}
+
 fn func3() {
 	let _x = 4;
 
@@ -61,4 +71,16 @@ fn func7() {
             return;
         }
     }
+}
+
+fn func8() {
+	let _x = 4;
+
+	if _x == 4 {
+		let _y = _x + 2;
+	} else {
+		let _y = _x + 3;
+	}
+	
+	return;
 }
