@@ -1,6 +1,6 @@
 fn main() {
     loop {
-        let x = 2;
+        let _x = 2;
     };
 }
 

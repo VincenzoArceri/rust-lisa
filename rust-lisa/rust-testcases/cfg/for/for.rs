@@ -1,8 +1,8 @@
 fn main() {
-    let mut x = 52;
+    let mut _x = 52;
 
-    for i in 0..10 {
-        x -=1;
+    for _i in 0..10 {
+        _x -=1;
     }
 }
 
