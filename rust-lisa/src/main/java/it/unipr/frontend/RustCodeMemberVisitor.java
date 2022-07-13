@@ -225,16 +225,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		}
 		// Substitute inner RustExplicitReturn with return statements
 		else {
-			List<Statement> nonNoOpNodes = nodes.stream().filter(n -> !(n instanceof NoOp))
-					.collect(Collectors.toList());
-			if (nonNoOpNodes.size() == 1) {
-				AdjacencyMatrix<Statement, Edge, CFG> adj = currentCfg.getAdjacencyMatrix();
-				Statement node = nonNoOpNodes.get(0);
-				adj.getEdges().forEach(e -> adj.removeEdge(e));
-				adj.getNodes().forEach(n -> adj.removeNode(n));
-				currentCfg.addNode(node);
-			}
-
 			// Add return to exit node if it's the only stmt
 			if (currentCfg.getNodes().size() == 1) {
 				Statement onlyNode = nodes.stream().findFirst().get();
