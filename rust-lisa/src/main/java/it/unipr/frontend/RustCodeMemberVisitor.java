@@ -1422,10 +1422,19 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		} else if ((loop_label == null && ctx.children.get(0).getText().equals("loop"))
 				|| ctx.children.get(1).getText().equals("loop")) {
 			Pair<Statement, Statement> stmt = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
-			currentCfg.addEdge(new SequentialEdge(stmt.getRight(), stmt.getLeft()));
 
-			firstStmt = stmt.getLeft();
-			lastStmt = stmt.getRight();
+			RustBoolean guard = new RustBoolean(currentCfg, locationOf(ctx, filePath), true);
+			currentCfg.addNode(guard);
+
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx, filePath));
+			currentCfg.addNode(noOp);
+
+			currentCfg.addEdge(new TrueEdge(guard, stmt.getLeft()));
+			currentCfg.addEdge(new FalseEdge(guard, noOp));
+			currentCfg.addEdge(new SequentialEdge(stmt.getRight(), guard));
+
+			firstStmt = guard;
+			lastStmt = noOp;
 
 		} else if ((loop_label == null && ctx.children.get(0).getText().equals("while"))
 				|| ctx.children.get(1).getText().equals("while")) {
