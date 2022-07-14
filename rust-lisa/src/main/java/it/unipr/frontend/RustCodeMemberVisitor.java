@@ -744,7 +744,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				
 		RustLexer lexer = new RustLexer(CharStreams.fromString(ctx.getText()));
 		RustParser parser = new RustParser(new CommonTokenStream(lexer));
-		
+				
 		// TODO It seems from the grammar that it could be any kind of block here, but for now we are restricting ourselves to the expression parsing
 		ParseTree tree = parser.expr();
 		Expression expr = visitExpr((ExprContext) tree);
@@ -769,7 +769,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public List<Expression> visitTt_parens(Tt_parensContext ctx) {
 		List<Expression> exprs = new ArrayList<>();
 		for (TtContext tt : ctx.tt())
-			// TODO Check if this is not a bug of the grammar: the token ',' should be included in the grammar to avoid arguments but it seems it is not
+			// TODO Check if this is not a bug of the grammar: the token ',' should be included in the grammar to divide arguments but it seems it is not
 			if (!(tt.getText().equals(",")))
 				exprs.addAll(visitTt(tt));
 
@@ -780,7 +780,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public List<Expression> visitTt_brackets(Tt_bracketsContext ctx) {
 		List<Expression> exprs = new ArrayList<>();
 		for (TtContext tt : ctx.tt())
-			exprs.addAll(visitTt(tt));
+			// TODO Check if this is not a bug of the grammar: the token ',' should be included in the grammar to divide arguments but it seems it is not
+			if (!(tt.getText().equals(",")))
+				exprs.addAll(visitTt(tt));
 
 		return exprs;
 	}
@@ -795,9 +797,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitMacro_tail(Macro_tailContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Expression> visitMacro_tail(Macro_tailContext ctx) {
+		return visitTt_delimited(ctx.tt_delimited());
 	}
 
 	@Override
@@ -1675,8 +1676,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		// | blocky_expr
 		// | 'break' lifetime_or_expr?
 		// | 'continue' Lifetime?
-		// | 'return' expr?
-
 		if (ctx.getChild(0).getText().equals("(")) {
 			// TODO Ignoring expr_inner_attrs? part
 
@@ -1741,8 +1740,16 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		} else if (ctx.lit() != null) {
 			return visitLit(ctx.lit());
 		} else {
-			// TODO: skipping macro_tail
-			return visitPath(ctx.path());
+			Expression path = visitPath(ctx.path());
+			if (ctx.macro_tail() != null) {
+				List<Expression> macroTail = visitMacro_tail(ctx.macro_tail());
+				
+				return new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
+						RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
+						RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.STATIC, "", path.toString() + "!",
+						RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, macroTail.toArray(new Expression[0]));
+			}
+			return path;
 		}
 
 		// Unreachable
