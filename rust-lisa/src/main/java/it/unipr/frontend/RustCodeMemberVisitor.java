@@ -55,6 +55,8 @@ import it.unipr.cfg.utils.RustFunctionCallKeeper;
 import it.unipr.cfg.utils.RustMethodKeeper;
 import it.unipr.cfg.utils.RustTupleAccessKeeper;
 import it.unipr.rust.antlr.RustBaseVisitor;
+import it.unipr.rust.antlr.RustLexer;
+import it.unipr.rust.antlr.RustParser;
 import it.unipr.rust.antlr.RustParser.*;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.program.Global;
@@ -80,6 +82,11 @@ import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix;
+
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -87,7 +94,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -307,33 +318,70 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitItem_macro_use(Item_macro_useContext ctx) {
-		// TODO Auto-generated method stub
+	public Expression visitItem_macro_use(Item_macro_useContext ctx) {
+		Expression macroPath = visitItem_macro_path(ctx.item_macro_path());
+
+		if (ctx.ident() != null) {
+			// TODO skipping for now because the ident here is used only in macro definition and not in macro calls
+			throw new UnsupportedOperationException("Ident " + ctx.ident().getText() + " is used only in macro definition, which is a feature that is currently not supported");
+		}
+
+		visitItem_macro_tail(ctx.item_macro_tail());
+
 		return null;
 	}
 
 	@Override
-	public Object visitItem_macro_path(Item_macro_pathContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitItem_macro_path(Item_macro_pathContext ctx) {
+		if (ctx.item_macro_path_parent() != null) {
+			Expression parent = visitItem_macro_path_parent(ctx.item_macro_path_parent());
+			Expression child = new RustVariableRef(currentCfg, locationOf(ctx, filePath), ctx.ident().getText(), false);
+
+			Global global = new Global(locationOf(ctx, filePath), child.toString());
+			// TODO check if the toString is enough or it needs something else
+			Unit unit = program.getUnit(parent.toString());
+
+			return new AccessGlobal(currentCfg, locationOf(ctx, filePath), unit, global);
+		}
+
+		return new RustVariableRef(currentCfg, locationOf(ctx, filePath), ctx.ident().getText(), false);
 	}
 
 	@Override
-	public Object visitItem_macro_path_parent(Item_macro_path_parentContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitItem_macro_path_parent(Item_macro_path_parentContext ctx) {
+		if (ctx.getChild(0).getText().equals("self")) {
+			return new RustVariableRef(currentCfg, locationOf(ctx, filePath), "self", false);
+		} else if (ctx.item_macro_path_parent() == null) {
+			return visitItem_macro_path_segment(ctx.item_macro_path_segment());
+		}
+
+		Expression child = visitItem_macro_path_segment(ctx.item_macro_path_segment());
+		Expression parent = visitItem_macro_path_parent(ctx.item_macro_path_parent());
+
+		Global global = new Global(locationOf(ctx, filePath), child.toString());
+		// TODO check if the toString is enough or it needs something else
+		Unit unit = program.getUnit(parent.toString());
+
+		return new AccessGlobal(currentCfg, locationOf(ctx, filePath), unit, global);
 	}
 
 	@Override
-	public Object visitItem_macro_path_segment(Item_macro_path_segmentContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitItem_macro_path_segment(Item_macro_path_segmentContext ctx) {
+		if (ctx.getText().equals("super"))
+			return new RustVariableRef(currentCfg, locationOf(ctx, filePath), "self", false);
+
+		return new RustVariableRef(currentCfg, locationOf(ctx, filePath), ctx.ident().getText(), false);
 	}
 
 	@Override
-	public Object visitItem_macro_tail(Item_macro_tailContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Expression> visitItem_macro_tail(Item_macro_tailContext ctx) {
+		if (ctx.tt_parens() != null) {
+			return visitTt_parens(ctx.tt_parens());
+		} else if (ctx.tt_brackets() != null) {
+			return visitTt_brackets(ctx.tt_brackets());
+		} else {
+			return visitTt_block(ctx.tt_block());
+		}
 	}
 
 	@Override
@@ -690,33 +738,53 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitTt(TtContext ctx) {
-		// TODO Auto-generated method stub
+	public List<Expression> visitTt(TtContext ctx) {
+		if (ctx.tt_delimited() != null) 
+			return visitTt_delimited(ctx.tt_delimited());
+		else {
+			ParseTree tree = RustFrontend.getParser().expr();
+			Expression expr = visitExpr((ExprContext)tree);
+			
+			System.out.println(expr);
+		}
 		return null;
 	}
 
 	@Override
-	public Object visitTt_delimited(Tt_delimitedContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Expression> visitTt_delimited(Tt_delimitedContext ctx) {
+		if (ctx.tt_parens() != null)
+			return visitTt_parens(ctx.tt_parens());
+		else if (ctx.tt_brackets() != null)
+			return visitTt_brackets(ctx.tt_brackets());
+		else
+			return visitTt_block(ctx.tt_block());
 	}
 
 	@Override
-	public Object visitTt_parens(Tt_parensContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Expression> visitTt_parens(Tt_parensContext ctx) {
+		List<Expression> exprs = new ArrayList<>();
+		for (TtContext tt : ctx.tt())
+			exprs.addAll(visitTt(tt));
+
+		return exprs;
 	}
 
 	@Override
-	public Object visitTt_brackets(Tt_bracketsContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Expression> visitTt_brackets(Tt_bracketsContext ctx) {
+		List<Expression> exprs = new ArrayList<>();
+		for (TtContext tt : ctx.tt())
+			exprs.addAll(visitTt(tt));
+
+		return exprs;
 	}
 
 	@Override
-	public Object visitTt_block(Tt_blockContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Expression> visitTt_block(Tt_blockContext ctx) {
+		List<Expression> exprs = new ArrayList<>();
+		for (TtContext tt : ctx.tt())
+			exprs.addAll(visitTt(tt));
+
+		return exprs;
 	}
 
 	@Override
@@ -1576,9 +1644,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 						locationOf(ctx, filePath),
 						structType,
 						fields.stream()
-								.map(e -> e.getRight())
-								.collect(Collectors.toList())
-								.toArray(new Expression[0]));
+						.map(e -> e.getRight())
+						.collect(Collectors.toList())
+						.toArray(new Expression[0]));
 			}
 		}
 		return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
@@ -1607,9 +1675,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 							currentCfg,
 							locationOf(ctx, filePath),
 							exprs.stream()
-									.map(e -> e.getStaticType())
-									.collect(Collectors.toList())
-									.toArray(new RustType[0]),
+							.map(e -> e.getStaticType())
+							.collect(Collectors.toList())
+							.toArray(new RustType[0]),
 							exprs.toArray(new Expression[0]));
 				}
 
