@@ -11,6 +11,7 @@ import it.unipr.cfg.expression.RustDoubleRefExpression;
 import it.unipr.cfg.expression.RustRangeExpression;
 import it.unipr.cfg.expression.RustRangeFromExpression;
 import it.unipr.cfg.expression.RustRefExpression;
+import it.unipr.cfg.expression.RustReturnExpression;
 import it.unipr.cfg.expression.RustTupleAccess;
 import it.unipr.cfg.expression.RustVariableRef;
 import it.unipr.cfg.expression.bitwise.RustAndBitwiseExpression;
@@ -62,6 +63,7 @@ import it.unive.lisa.program.Unit;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CFGDescriptor;
 import it.unive.lisa.program.cfg.Parameter;
+import it.unive.lisa.program.cfg.edge.Edge;
 import it.unive.lisa.program.cfg.edge.FalseEdge;
 import it.unive.lisa.program.cfg.edge.SequentialEdge;
 import it.unive.lisa.program.cfg.edge.TrueEdge;
@@ -77,10 +79,15 @@ import it.unive.lisa.program.cfg.statement.global.AccessGlobal;
 import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
+import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -153,6 +160,117 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		return filePath;
 	}
 
+	private void switchLeafNodes(Statement oldNode, Statement newNode) {
+		AdjacencyMatrix<Statement, Edge, CFG> adj = currentCfg.getAdjacencyMatrix();
+
+		Collection<Edge> edges = adj.getIngoingEdges(oldNode);
+		for (Edge e : edges) {
+
+			Edge newEdge = new SequentialEdge(e.getSource(), newNode);
+			if (e instanceof TrueEdge)
+				newEdge = new TrueEdge(e.getSource(), newNode);
+			else if (e instanceof FalseEdge)
+				newEdge = new FalseEdge(e.getSource(), newNode);
+
+			adj.removeEdge(e);
+			currentCfg.addEdge(newEdge);
+		}
+
+		adj.removeNode(oldNode);
+	}
+
+	private CFG prepareCFG(ParserRuleContext ctx, Type returnType) {
+		Collection<Statement> nodes = currentCfg.getNodes();
+
+		// Substitute exit points wit
+		if (returnType instanceof RustUnitType) {
+			Ret ret = new Ret(currentCfg, locationOf(ctx, filePath));
+
+			// Add possible missing ret as final instruction
+			if (currentCfg.getAllExitpoints().isEmpty()) {
+				Set<Statement> exitNodes = nodes
+						.stream()
+						.filter(n -> currentCfg.getAdjacencyMatrix().followersOf(n).isEmpty())
+						.collect(Collectors.toSet());
+
+				for (Statement exit : exitNodes) {
+					currentCfg.addNode(ret);
+					currentCfg.addEdge(new SequentialEdge(exit, ret));
+				}
+			} else
+				currentCfg.addNode(ret);
+
+			// Substitute return with ret nodes
+			for (Statement node : nodes) {
+				if (node instanceof RustReturnExpression) {
+					NoOp noOp = new NoOp(currentCfg, locationOf(ctx, filePath));
+					currentCfg.addNode(noOp);
+
+					switchLeafNodes(node, noOp);
+					currentCfg.addEdge(new SequentialEdge(noOp, ret));
+				}
+			}
+		}
+		// Substitute inner RustExplicitReturn with return statements
+		else {
+			List<Statement> nonNoOpNodes = nodes.stream().filter(n -> !(n instanceof NoOp))
+					.collect(Collectors.toList());
+			if (nonNoOpNodes.size() == 1) {
+				AdjacencyMatrix<Statement, Edge, CFG> adj = currentCfg.getAdjacencyMatrix();
+				Statement node = nonNoOpNodes.get(0);
+				adj.getEdges().forEach(e -> adj.removeEdge(e));
+				adj.getNodes().forEach(n -> adj.removeNode(n));
+				currentCfg.addNode(node);
+			}
+
+			// Add return to exit node if it's the only stmt
+			if (currentCfg.getNodes().size() == 1) {
+				Statement onlyNode = nodes.stream().findFirst().get();
+
+				NoOp noOp = new NoOp(currentCfg, locationOf(ctx, filePath));
+				currentCfg.addNode(noOp, true);
+				currentCfg.getEntrypoints().remove(onlyNode);
+
+				currentCfg.addEdge(new SequentialEdge(noOp, onlyNode));
+				currentCfg.getAllExitpoints().add(onlyNode);
+			}
+
+			for (Statement stmt : nodes)
+				if (stmt instanceof RustReturnExpression) {
+					Expression value = ((RustReturnExpression) stmt).getSubExpression();
+
+					Return ret = new Return(currentCfg, locationOf(ctx, filePath), value);
+					currentCfg.addNode(ret);
+
+					switchLeafNodes(stmt, ret);
+				}
+		}
+
+		currentCfg.simplify();
+
+		Set<Edge> toRemove = new HashSet<>();
+		Set<Edge> toAdd = new HashSet<>();
+
+		AdjacencyMatrix<Statement, Edge, CFG> adj = currentCfg.getAdjacencyMatrix();
+		for (Edge e : adj.getEdges())
+			if (e instanceof TrueEdge) {
+				Collection<Edge> ingoinEdges = adj.getIngoingEdges(e.getDestination());
+				for (Edge ingoing : ingoinEdges) {
+					if (ingoing instanceof FalseEdge && ingoing.getSource().equals(e.getSource())) {
+						toRemove.add(e);
+						toRemove.add(ingoing);
+
+						toAdd.add(new SequentialEdge(e.getSource(), e.getDestination()));
+					}
+				}
+			}
+
+		toRemove.forEach(r -> adj.removeEdge(r));
+		toAdd.forEach(a -> adj.addEdge(a));
+
+		return currentCfg;
+	}
+
 	@Override
 	public CFG visitFn_decl(Fn_declContext ctx) {
 		String fnName = getFnName(ctx.fn_head());
@@ -168,14 +286,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 		currentCfg.getEntrypoints().add(block.getLeft());
 
-		if (currentCfg.getAllExitpoints().isEmpty()) {
-			Ret ret = new Ret(currentCfg, locationOf(ctx, filePath));
-			currentCfg.addNode(ret);
-			currentCfg.addEdge(new SequentialEdge(block.getRight(), ret));
-		}
-
-		currentCfg.simplify();
-		return currentCfg;
+		return prepareCFG(ctx, returnType);
 	}
 
 	private String getFnName(Fn_headContext fnHead) {
@@ -319,18 +430,15 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		CFGDescriptor cfgDesc = new CFGDescriptor(locationOf(ctx, filePath), unit, false, methodName, returnType,
 				new Parameter[0]);
+
 		currentCfg = new CFG(cfgDesc);
+		NoOp initPoint = new NoOp(currentCfg, locationOf(ctx, filePath));
+		currentCfg.addNode(initPoint, true);
+
 		Pair<Statement, Statement> block = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
 		currentCfg.getEntrypoints().add(block.getLeft());
 
-		if (currentCfg.getAllExitpoints().isEmpty()) {
-			Ret ret = new Ret(currentCfg, locationOf(ctx, filePath));
-			currentCfg.addNode(ret);
-			currentCfg.addEdge(new SequentialEdge(block.getRight(), ret));
-		}
-
-		currentCfg.simplify();
-		return currentCfg;
+		return prepareCFG(ctx, returnType);
 	}
 
 	@Override
@@ -1082,56 +1190,61 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Pair<Statement, Statement> visitBlock(BlockContext ctx) {
+		Statement entryStmt = null;
 		Statement lastStmt = null;
-		Statement entryNode = null;
-
-		if (ctx.stmt() != null) {
-			for (StmtContext stmt : ctx.stmt()) {
-				@SuppressWarnings("unchecked")
-				// Note: since we are not sure what to return from visitStmt, we
-				// are sure that this function returns a pair of Statement
-				Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
-
-				if (lastStmt != null)
-					currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
-				else
-					entryNode = currentStmt.getLeft();
-
-				lastStmt = currentStmt.getRight();
-			}
-		} else {
-			lastStmt = new NoOp(currentCfg, locationOf(ctx, filePath));
-			entryNode = new NoOp(currentCfg, locationOf(ctx, filePath));
-
-			currentCfg.addEdge(new SequentialEdge(entryNode, lastStmt));
-		}
-
-		if (ctx.expr() != null) {
-			Statement exprStmt = visitExpr(ctx.expr());
-			currentCfg.addEdge(new SequentialEdge(lastStmt, exprStmt));
-
-			return Pair.of(entryNode, exprStmt);
-		}
-
-		return Pair.of(entryNode, lastStmt);
-	}
-
-	@Override
-	public Pair<Statement, Statement> visitBlock_with_inner_attrs(Block_with_inner_attrsContext ctx) {
-		// TODO: skipping inner attributes for the moment
-		Statement lastStmt = null;
-		Statement entryNode = null;
 
 		for (StmtContext stmt : ctx.stmt()) {
+			// Note: since we are not sure what to return from visitStmt, we
+			// are sure that this function returns a pair of Statement
 			@SuppressWarnings("unchecked")
-			// Note: since we are not sure what to return from visitStmt, we are
-			// sure that this function returns a pair of Statement
 			Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
 
 			if (lastStmt != null)
 				currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
 			else
-				entryNode = currentStmt.getLeft();
+				entryStmt = currentStmt.getLeft();
+
+			lastStmt = currentStmt.getRight();
+		}
+
+		if (ctx.expr() != null) {
+			Expression expr = visitExpr(ctx.expr());
+			RustReturnExpression ret = new RustReturnExpression(currentCfg, locationOf(ctx, filePath), expr);
+			currentCfg.addNode(ret);
+
+			if (entryStmt == null)
+				return Pair.of(ret, ret);
+
+			currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
+		}
+
+		if (ctx.expr() == null && ctx.stmt().size() == 0) {
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx, filePath));
+			currentCfg.addNode(noOp);
+
+			entryStmt = noOp;
+			lastStmt = noOp;
+		}
+
+		return Pair.of(entryStmt, lastStmt);
+	}
+
+	@Override
+	public Pair<Statement, Statement> visitBlock_with_inner_attrs(Block_with_inner_attrsContext ctx) {
+		// TODO: skipping inner attributes for the moment
+		Statement entryStmt = null;
+		Statement lastStmt = null;
+
+		for (StmtContext stmt : ctx.stmt()) {
+			// Note: since we are not sure what to return from visitStmt, we are
+			// sure that this function returns a pair of Statement
+			@SuppressWarnings("unchecked")
+			Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
+
+			if (lastStmt != null)
+				currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
+			else
+				entryStmt = currentStmt.getLeft();
 
 			lastStmt = currentStmt.getRight();
 		}
@@ -1139,20 +1252,25 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		// This expr is the one of return from a function
 		if (ctx.expr() != null) {
 			Expression expr = visitExpr(ctx.expr());
-
-			Return ret = new Return(currentCfg, locationOf(ctx, filePath), expr);
+			RustReturnExpression ret = new RustReturnExpression(currentCfg, locationOf(ctx, filePath), expr);
 			currentCfg.addNode(ret);
 
-			if (lastStmt != null)
-				currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
+			if (entryStmt == null) {
+				return Pair.of(ret, ret);
+			}
 
-			if (entryNode == null)
-				entryNode = ret;
-
-			lastStmt = ret;
+			currentCfg.addEdge(new SequentialEdge(lastStmt, ret));
 		}
 
-		return Pair.of(entryNode, lastStmt);
+		if (ctx.expr() == null && ctx.stmt().size() == 0) {
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx, filePath));
+			currentCfg.addNode(noOp);
+
+			entryStmt = noOp;
+			lastStmt = noOp;
+		}
+
+		return Pair.of(entryStmt, lastStmt);
 	}
 
 	@Override
@@ -1277,10 +1395,19 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		} else if ((loop_label == null && ctx.children.get(0).getText().equals("loop"))
 				|| ctx.children.get(1).getText().equals("loop")) {
 			Pair<Statement, Statement> stmt = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
-			currentCfg.addEdge(new SequentialEdge(stmt.getRight(), stmt.getLeft()));
 
-			firstStmt = stmt.getLeft();
-			lastStmt = stmt.getRight();
+			RustBoolean guard = new RustBoolean(currentCfg, locationOf(ctx, filePath), true);
+			currentCfg.addNode(guard);
+
+			NoOp noOp = new NoOp(currentCfg, locationOf(ctx, filePath));
+			currentCfg.addNode(noOp);
+
+			currentCfg.addEdge(new TrueEdge(guard, stmt.getLeft()));
+			currentCfg.addEdge(new FalseEdge(guard, noOp));
+			currentCfg.addEdge(new SequentialEdge(stmt.getRight(), guard));
+
+			firstStmt = guard;
+			lastStmt = noOp;
 
 		} else if ((loop_label == null && ctx.children.get(0).getText().equals("while"))
 				|| ctx.children.get(1).getText().equals("while")) {
@@ -1460,11 +1587,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Expression visitPrim_expr_no_struct(Prim_expr_no_structContext ctx) {
 		// TODO remaining production to parse:
-//		   | 'move'? closure_params closure_tail
-//		   | blocky_expr
-//		   | 'break' lifetime_or_expr?
-//		   | 'continue' Lifetime?
-//		   | 'return' expr?
+		// | 'move'? closure_params closure_tail
+		// | blocky_expr
+		// | 'break' lifetime_or_expr?
+		// | 'continue' Lifetime?
+		// | 'return' expr?
 
 		if (ctx.getChild(0).getText().equals("(")) {
 			// TODO Ignoring expr_inner_attrs? part
@@ -1518,6 +1645,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		} else if (ctx.getChild(0).getText().equals("self")) {
 			return new RustVariableRef(currentCfg, locationOf(ctx, filePath), "self", false);
+		} else if (ctx.getChild(0).getText().equals("return")) {
+			Expression returnValue = new RustUnitLiteral(currentCfg, locationOf(ctx, filePath));
+			if (ctx.expr(0) != null)
+				returnValue = visitExpr(ctx.expr(0));
+
+			return new RustReturnExpression(currentCfg, locationOf(ctx, filePath), returnValue);
 		} else if (ctx.blocky_expr() != null) {
 			// TODO watch out for expression and statements
 			// return visitBlocky_expr(ctx.blocky_expr());
@@ -1654,8 +1787,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		} else {
 			RustFunctionCallKeeper right = (RustFunctionCallKeeper) tail;
-
-			System.out.println(head);
 
 			String receiverName = (head instanceof AccessGlobal ? ((AccessGlobal) head).getContainer().getName() : "");
 			String targetName = (head instanceof AccessGlobal ? ((AccessGlobal) head).getTarget().getName()
