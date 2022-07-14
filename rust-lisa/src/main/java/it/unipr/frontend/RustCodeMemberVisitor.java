@@ -741,18 +741,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public List<Expression> visitTt(TtContext ctx) {
 		if (ctx.tt_delimited() != null) 
 			return visitTt_delimited(ctx.tt_delimited());
-				
-		RustLexer lexer = new RustLexer(CharStreams.fromString(ctx.getText()));
-		RustParser parser = new RustParser(new CommonTokenStream(lexer));
-				
-		// TODO It seems from the grammar that it could be any kind of block here, but for now we are restricting ourselves to the expression parsing
-		ParseTree tree = parser.expr();
-		Expression expr = visitExpr((ExprContext) tree);
-		
-		List<Expression> expressions = new ArrayList<>();
-		expressions.add(expr);
-	
-		return expressions;
+		throw new UnsupportedOperationException("Parsing should not reach this location");
 	}
 
 	@Override
@@ -764,36 +753,41 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		else
 			return visitTt_block(ctx.tt_block());
 	}
+	
+	private List<Expression> ttParseArguments(ParserRuleContext ctx) {
+		String context = ctx.getText();
+		String[] args = context.substring(1, context.length() - 1).split(","); 
+
+		List<Expression> expressions = new ArrayList<>();
+		
+		if (!(args[0].isBlank())) { // avoid <EOF>
+			for (String macroArg : args) {
+				RustLexer lexer = new RustLexer(CharStreams.fromString(macroArg));
+				RustParser parser = new RustParser(new CommonTokenStream(lexer));
+				
+				// TODO It seems from the grammar that it could be any kind of block here, but for now we are restricting ourselves to the expression parsing
+				ParseTree tree = parser.expr();
+				Expression expr = visitExpr((ExprContext) tree);
+				expressions.add(expr);
+			}
+		}
+		
+		return expressions;
+	}
 
 	@Override
 	public List<Expression> visitTt_parens(Tt_parensContext ctx) {
-		List<Expression> exprs = new ArrayList<>();
-		for (TtContext tt : ctx.tt())
-			// TODO Check if this is not a bug of the grammar: the token ',' should be included in the grammar to divide arguments but it seems it is not
-			if (!(tt.getText().equals(",")))
-				exprs.addAll(visitTt(tt));
-
-		return exprs;
+		return ttParseArguments(ctx);
 	}
 
 	@Override
 	public List<Expression> visitTt_brackets(Tt_bracketsContext ctx) {
-		List<Expression> exprs = new ArrayList<>();
-		for (TtContext tt : ctx.tt())
-			// TODO Check if this is not a bug of the grammar: the token ',' should be included in the grammar to divide arguments but it seems it is not
-			if (!(tt.getText().equals(",")))
-				exprs.addAll(visitTt(tt));
-
-		return exprs;
+		return ttParseArguments(ctx);
 	}
 
 	@Override
 	public List<Expression> visitTt_block(Tt_blockContext ctx) {
-		List<Expression> exprs = new ArrayList<>();
-		for (TtContext tt : ctx.tt())
-			exprs.addAll(visitTt(tt));
-
-		return exprs;
+		return ttParseArguments(ctx);
 	}
 
 	@Override
@@ -1107,6 +1101,16 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			// The grammar says there is a bug here, skipping
 			return null;
 		}
+		
+		if (ctx.path() != null) {
+			Expression path = visitPath(ctx.path());
+			List<Expression> macroTail = visitMacro_tail(ctx.macro_tail());
+			
+			return new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
+					RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
+					RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.STATIC, "", path.toString() + "!",
+					RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, macroTail.toArray(new Expression[0]));
+		}
 
 		switch (ctx.getChild(0).getText()) {
 		case "_":
@@ -1134,7 +1138,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			// pat_no_mut
 			// : pat_range_end '...' pat_range_end
 			// | pat_range_end '..' pat_range_end
-			// | path macro_tail
 			return null;
 		}
 	}
