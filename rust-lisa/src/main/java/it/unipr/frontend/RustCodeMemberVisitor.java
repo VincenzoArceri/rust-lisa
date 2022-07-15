@@ -82,11 +82,6 @@ import it.unive.lisa.program.cfg.statement.literal.NullLiteral;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import it.unive.lisa.util.datastructures.graph.AdjacencyMatrix;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -94,7 +89,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -322,11 +316,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Expression macroPath = visitItem_macro_path(ctx.item_macro_path());
 
 		if (ctx.ident() != null)
-			// TODO skipping for now because the ident here is used only in macro definition and not in macro calls
-			throw new UnsupportedOperationException("Ident " + ctx.ident().getText() + " is used only in macro definition, which is a feature that is currently not supported");
+			// TODO skipping for now because the ident here is used only in
+			// macro definition and not in macro calls
+			throw new UnsupportedOperationException("Ident " + ctx.ident().getText()
+					+ " is used only in macro definition, which is a feature that is currently not supported");
 
 		List<Expression> arguments = visitItem_macro_tail(ctx.item_macro_tail());
-		
+
 		return new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
 				RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
 				RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.STATIC, "", macroPath.toString() + "!",
@@ -739,7 +735,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public List<Expression> visitTt(TtContext ctx) {
-		if (ctx.tt_delimited() != null) 
+		if (ctx.tt_delimited() != null)
 			return visitTt_delimited(ctx.tt_delimited());
 		throw new UnsupportedOperationException("Parsing should not reach this location");
 	}
@@ -753,25 +749,27 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		else
 			return visitTt_block(ctx.tt_block());
 	}
-	
+
 	private List<Expression> ttParseArguments(ParserRuleContext ctx) {
 		String context = ctx.getText();
-		String[] args = context.substring(1, context.length() - 1).split(","); 
+		String[] args = context.substring(1, context.length() - 1).split(",");
 
 		List<Expression> expressions = new ArrayList<>();
-		
+
 		if (!(args[0].isBlank())) { // avoid <EOF>
 			for (String macroArg : args) {
 				RustLexer lexer = new RustLexer(CharStreams.fromString(macroArg));
 				RustParser parser = new RustParser(new CommonTokenStream(lexer));
-				
-				// TODO It seems from the grammar that it could be any kind of block here, but for now we are restricting ourselves to the expression parsing
+
+				// TODO It seems from the grammar that it could be any kind of
+				// block here, but for now we are restricting ourselves to the
+				// expression parsing
 				ParseTree tree = parser.expr();
 				Expression expr = visitExpr((ExprContext) tree);
 				expressions.add(expr);
 			}
 		}
-		
+
 		return expressions;
 	}
 
@@ -806,6 +804,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				// TODO check if the toString is enough or it need something
 				// else
 				Unit unit = program.getUnit(parent.toString());
+
 				return new AccessGlobal(currentCfg, locationOf(ctx, filePath), unit, global);
 			}
 
@@ -1101,11 +1100,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			// The grammar says there is a bug here, skipping
 			return null;
 		}
-		
+
 		if (ctx.path() != null) {
 			Expression path = visitPath(ctx.path());
 			List<Expression> macroTail = visitMacro_tail(ctx.macro_tail());
-			
+
 			return new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
 					RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
 					RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.STATIC, "", path.toString() + "!",
@@ -1348,15 +1347,18 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		return Pair.of(entryStmt, lastStmt);
 	}
-	
+
 	@Override
 	public Expression visitItem(ItemContext ctx) {
-		// Note that this function is an extract of what can be found in RustFrontend::visitItem but limited only to macro parsing.
-		// This function is redefined here mainly to avoid co-dependence between this class and the RustFrontend.
-		
+		// Note that this function is an extract of what can be found in
+		// RustFrontend::visitItem but limited only to macro parsing.
+		// This function is redefined here mainly to avoid co-dependence between
+		// this class and the RustFrontend.
+
 		if (ctx.item_macro_use() == null)
-			throw new UnsupportedOperationException("Parsing shouldn't be here - visitItem() function was called but there is no macro rule to parse");
-		
+			throw new UnsupportedOperationException(
+					"Parsing shouldn't be here - visitItem() function was called but there is no macro rule to parse");
+
 		// Both macro definitions and calls are here
 		// TODO parsing only calls for now
 		return visitItem_macro_use(ctx.item_macro_use());
@@ -1664,9 +1666,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 						locationOf(ctx, filePath),
 						structType,
 						fields.stream()
-						.map(e -> e.getRight())
-						.collect(Collectors.toList())
-						.toArray(new Expression[0]));
+								.map(e -> e.getRight())
+								.collect(Collectors.toList())
+								.toArray(new Expression[0]));
 			}
 		}
 		return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
@@ -1679,6 +1681,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		// | blocky_expr
 		// | 'break' lifetime_or_expr?
 		// | 'continue' Lifetime?
+
 		if (ctx.getChild(0).getText().equals("(")) {
 			// TODO Ignoring expr_inner_attrs? part
 
@@ -1693,9 +1696,9 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 							currentCfg,
 							locationOf(ctx, filePath),
 							exprs.stream()
-							.map(e -> e.getStaticType())
-							.collect(Collectors.toList())
-							.toArray(new RustType[0]),
+									.map(e -> e.getStaticType())
+									.collect(Collectors.toList())
+									.toArray(new RustType[0]),
 							exprs.toArray(new Expression[0]));
 				}
 
@@ -1744,9 +1747,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitLit(ctx.lit());
 		} else {
 			Expression path = visitPath(ctx.path());
+
 			if (ctx.macro_tail() != null) {
 				List<Expression> macroTail = visitMacro_tail(ctx.macro_tail());
-				
+
 				return new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
 						RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
 						RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.STATIC, "", path.toString() + "!",

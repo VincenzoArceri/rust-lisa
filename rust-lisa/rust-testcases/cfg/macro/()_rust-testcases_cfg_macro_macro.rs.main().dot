@@ -1,0 +1,24 @@
+digraph {
+	"node0" [shape="rect",color="black",label=<todo!()>];
+	"node1" [shape="rect",color="black",peripheries="2",label=<ret>];
+	"node2" [shape="rect",color="gray",label=<let _y : untyped = vec!(1, 2, 3, 4)>];
+	"node3" [shape="rect",color="gray",label=<let x : untyped = 2>];
+	"node4" [shape="rect",color="gray",label=<env!(&quot;PATH&quot;)>];
+	"node5" [shape="rect",color="gray",label=<println!(&quot;{}&quot;, x)>];
+	"node6" [shape="rect",color="gray",label=<assert_eq!(+(x, 2), 4)>];
+	"node7" [shape="rect",color="gray",label=<panic!(&quot;Something went wrong&quot;)>];
+	"node0" -> "node3" [color="black"];
+	"node2" -> "node4" [color="black"];
+	"node3" -> "node5" [color="black"];
+	"node4" -> "node6" [color="black"];
+	"node5" -> "node2" [color="black"];
+	"node6" -> "node7" [color="black"];
+	"node7" -> "node1" [color="black"];
+subgraph cluster_legend {
+	label="Legend";
+	style=dotted;
+	node [shape=plaintext];
+	"legend" [label=<<table border="0" cellpadding="2" cellspacing="0" cellborder="0"><tr><td align="right">node border&nbsp;</td><td align="left"><font color="gray">gray</font>, single</td></tr><tr><td align="right">entrypoint border&nbsp;</td><td align="left"><font color="black">black</font>, single</td></tr><tr><td align="right">exitpoint border&nbsp;</td><td align="left"><font color="black">black</font>, double</td></tr><tr><td align="right">sequential edge&nbsp;</td><td align="left"><font color="black">black</font>, solid</td></tr><tr><td align="right">true edge&nbsp;</td><td align="left"><font color="blue">blue</font>, dashed</td></tr><tr><td align="right">false edge&nbsp;</td><td align="left"><font color="red">red</font>, dashed</td></tr></table>>];
+}
+
+}

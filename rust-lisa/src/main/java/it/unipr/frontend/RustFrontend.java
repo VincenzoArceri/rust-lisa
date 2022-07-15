@@ -83,12 +83,12 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	 * The parameter evaluation order strategy.
 	 */
 	public static final EvaluationOrder EVALUATION_ORDER = LeftToRightEvaluation.INSTANCE;
-	
+
 	/**
 	 * Reference to the parser
 	 */
 	private static RustParser parser;
-	
+
 	/**
 	 * File path of the Rust program to be analyzed
 	 */
@@ -104,7 +104,6 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	 * Reference to the current unit
 	 */
 	private CompilationUnit currentUnit;
-	
 
 	private RustFrontend(String filePath) {
 		this.filePath = filePath;
@@ -150,7 +149,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	public static Program processFile(String filePath) throws IOException {
 		return new RustFrontend(filePath).toLiSAProgram();
 	}
-	
+
 	/**
 	 * Yields the instance of {@link RustParser}.
 	 * 
@@ -195,18 +194,18 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 		for (ItemContext i : ctx.item())
 			visitItem(i);
 
-		for (Type t : RustStructType.all())
-			program.addCompilationUnit(((RustStructType) t).getUnit());
-
 		registerTypes();
 		return null;
 	}
-	
+
 	@Override
-	public Void visitItem(ItemContext ctx) {		
+	public Void visitItem(ItemContext ctx) {
 		if (ctx.pub_item() != null && ctx.pub_item().struct_decl() != null)
 			visitPub_item(ctx.pub_item());
-		
+
+		for (Type t : RustStructType.all())
+			program.addCompilationUnit(((RustStructType) t).getUnit());
+
 		if (ctx.impl_block() != null) {
 			RustStructType struct = RustStructType.get(ctx.impl_block().impl_what().getText());
 			CompilationUnit u = struct.getUnit();
@@ -221,12 +220,11 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 			program.addCFG(new RustCodeMemberVisitor(filePath, program, currentUnit)
 					.visitFn_decl(ctx.pub_item().fn_decl()));
 
-		
 		if (ctx.item_macro_use() != null)
 			// Both macro definitions and calls are here
 			// TODO parsing only calls for now
 			new RustCodeMemberVisitor(filePath, program, currentUnit).visitItem_macro_use(ctx.item_macro_use());
-		
+
 		return null;
 	}
 
