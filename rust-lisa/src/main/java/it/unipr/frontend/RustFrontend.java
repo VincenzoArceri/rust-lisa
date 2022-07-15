@@ -64,22 +64,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 public class RustFrontend extends RustBaseVisitor<Object> {
 
 	/**
-	 * File path of the Rust program to be analyzed
-	 */
-	private final String filePath;
-
-	/**
-	 * LiSA program corresponding to the Rust program located at
-	 * {@code filePath}
-	 */
-	private final Program program;
-
-	/**
-	 * Reference to the current unit
-	 */
-	private CompilationUnit currentUnit;
-
-	/**
 	 * The strategy of traversing super-unit to search for target call
 	 * implementation.
 	 */
@@ -99,6 +83,27 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	 * The parameter evaluation order strategy.
 	 */
 	public static final EvaluationOrder EVALUATION_ORDER = LeftToRightEvaluation.INSTANCE;
+
+	/**
+	 * Reference to the parser
+	 */
+	private static RustParser parser;
+
+	/**
+	 * File path of the Rust program to be analyzed
+	 */
+	private final String filePath;
+
+	/**
+	 * LiSA program corresponding to the Rust program located at
+	 * {@code filePath}
+	 */
+	private final Program program;
+
+	/**
+	 * Reference to the current unit
+	 */
+	private CompilationUnit currentUnit;
 
 	private RustFrontend(String filePath) {
 		this.filePath = filePath;
@@ -146,6 +151,15 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	}
 
 	/**
+	 * Yields the instance of {@link RustParser}.
+	 * 
+	 * @return the reference to the parser
+	 */
+	public static RustParser getParser() {
+		return parser;
+	}
+
+	/**
 	 * Yields the {@link Program} corresponding to the Rust program located at
 	 * {@code filePath}.
 	 * 
@@ -159,6 +173,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 		InputStream is = new FileInputStream(filePath);
 		RustLexer lexer = new RustLexer(CharStreams.fromStream(is, StandardCharsets.UTF_8));
 		RustParser parser = new RustParser(new CommonTokenStream(lexer));
+		RustFrontend.parser = parser;
 
 		ParseTree tree = parser.crate();
 		visitCrate((CrateContext) tree);
@@ -176,31 +191,40 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	@Override
 	public Void visitMod_body(Mod_bodyContext ctx) {
 		// TODO: skipping for the moment inner_attr
-		for (ItemContext i : ctx.item()) {
-			if (i.pub_item() != null && i.pub_item().struct_decl() != null)
-				visitPub_item(i.pub_item());
-		}
-
 		for (ItemContext i : ctx.item())
-			if (i.impl_block() != null) {
-				RustStructType struct = RustStructType.get(i.impl_block().impl_what().getText());
-				CompilationUnit u = struct.getUnit();
+			visitItem(i);
 
-				List<CFG> implCfg = new RustCodeMemberVisitor(filePath, program, u).visitImpl_block(i.impl_block());
+		registerTypes();
+		return null;
+	}
 
-				for (CFG cfg : implCfg)
-					u.addInstanceCFG(cfg);
-			}
+	@Override
+	public Void visitItem(ItemContext ctx) {
+		if (ctx.pub_item() != null && ctx.pub_item().struct_decl() != null)
+			visitPub_item(ctx.pub_item());
 
 		for (Type t : RustStructType.all())
 			program.addCompilationUnit(((RustStructType) t).getUnit());
 
-		for (ItemContext i : ctx.item())
-			if (i.pub_item() != null && i.pub_item().fn_decl() != null)
-				program.addCFG(
-						new RustCodeMemberVisitor(filePath, program, currentUnit).visitFn_decl(i.pub_item().fn_decl()));
+		if (ctx.impl_block() != null) {
+			RustStructType struct = RustStructType.get(ctx.impl_block().impl_what().getText());
+			CompilationUnit u = struct.getUnit();
 
-		registerTypes();
+			List<CFG> implCfg = new RustCodeMemberVisitor(filePath, program, u).visitImpl_block(ctx.impl_block());
+
+			for (CFG cfg : implCfg)
+				u.addInstanceCFG(cfg);
+		}
+
+		if (ctx.pub_item() != null && ctx.pub_item().fn_decl() != null)
+			program.addCFG(new RustCodeMemberVisitor(filePath, program, currentUnit)
+					.visitFn_decl(ctx.pub_item().fn_decl()));
+
+		if (ctx.item_macro_use() != null)
+			// Both macro definitions and calls are here
+			// TODO parsing only calls for now
+			new RustCodeMemberVisitor(filePath, program, currentUnit).visitItem_macro_use(ctx.item_macro_use());
+
 		return null;
 	}
 

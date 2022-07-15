@@ -26,4 +26,9 @@ public class RustString extends Literal<String> {
 		// once we have modeled Rust types
 		super(cfg, location, value, new RustReferenceType(RustStrType.getInstance(), false));
 	}
+
+	@Override
+	public String toString() {
+		return "\"" + getValue() + "\"";
+	}
 }
