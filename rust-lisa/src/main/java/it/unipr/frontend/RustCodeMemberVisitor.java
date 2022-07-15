@@ -365,7 +365,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Expression visitItem_macro_path_segment(Item_macro_path_segmentContext ctx) {
 		if (ctx.getText().equals("super"))
-			return new RustVariableRef(currentCfg, locationOf(ctx, filePath), "self", false);
+			return new RustVariableRef(currentCfg, locationOf(ctx, filePath), "super", false);
 
 		return new RustVariableRef(currentCfg, locationOf(ctx, filePath), ctx.ident().getText(), false);
 	}
