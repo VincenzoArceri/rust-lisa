@@ -19,4 +19,9 @@ public class RustCFGEmpty extends RustLiSATestExecutor {
 		perform("cfg/empty-statement", "empty-statement.rs", conf);
 	}
 
+	@Test
+	public void testEmptyMethod() throws AnalysisSetupException {
+		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
+		perform("cfg/empty-method", "empty-method.rs", conf);
+	}
 }
