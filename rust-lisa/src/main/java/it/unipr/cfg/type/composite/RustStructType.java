@@ -40,7 +40,7 @@ public class RustStructType implements UnitType, RustType {
 	 * 
 	 * @param name the name of the struct
 	 * 
-	 * @return all instances of a Rust struct types
+	 * @return all instances of a Rust struct types, null otherwise
 	 */
 	public static RustStructType get(String name) {
 		return INSTANCES.get(name);
@@ -87,14 +87,14 @@ public class RustStructType implements UnitType, RustType {
 	 * @param unit  the compilation unit of the struct type
 	 * @param types an ordered list of types inside the struct
 	 */
-	private RustStructType(String name, CompilationUnit unit, Type... types) {
+	private RustStructType(String name, CompilationUnit unit) {
 		this.name = name;
 		this.unit = unit;
 	}
 
 	@Override
 	public boolean canBeAssignedTo(Type other) {
-		if (other instanceof RustArrayType) {
+		if (other instanceof RustStructType) {
 			RustStructType o = (RustStructType) other;
 			return (name.equals(o.name) && unit.equals(o.unit));
 		}
