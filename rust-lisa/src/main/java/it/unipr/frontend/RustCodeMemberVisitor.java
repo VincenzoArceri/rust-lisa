@@ -165,6 +165,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		return filePath;
 	}
 
+	/**
+	 * Deletes a node that is a leaf node (e.g. a terminating node) in the CFG,
+	 * putting a different node in the same place.
+	 * 
+	 * @param oldNode the node that needs to be deleted from the tree
+	 * @param newNode the new node that need to be inserted
+	 */
 	private void switchLeafNodes(Statement oldNode, Statement newNode) {
 		AdjacencyMatrix<Statement, Edge, CFG> adj = currentCfg.getAdjacencyMatrix();
 
@@ -184,6 +191,16 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		adj.removeNode(oldNode);
 	}
 
+	/**
+	 * Perform a lot of operation needed in order to prepare the CFG for the
+	 * use.
+	 * 
+	 * @param ctx        the context in which to operate
+	 * @param returnType the return type of this CFG (e.g. return type of a
+	 *                       function)
+	 * 
+	 * @return the ready-to-use CFG
+	 */
 	private CFG prepareCFG(ParserRuleContext ctx, Type returnType) {
 		Collection<Statement> nodes = currentCfg.getNodes();
 
@@ -750,6 +767,15 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return visitTt_block(ctx.tt_block());
 	}
 
+	/**
+	 * Parses the arguments inside a tt block (e.g. a macro call) and returns
+	 * them.
+	 * 
+	 * @param ctx the context to be used
+	 * 
+	 * @return a {@link List} of {@link Expression} that signifies the macro
+	 *             parameters
+	 */
 	private List<Expression> ttParseArguments(ParserRuleContext ctx) {
 		String context = ctx.getText();
 		String[] args = context.substring(1, context.length() - 1).split(",");
@@ -1760,7 +1786,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		}
 
 		// Unreachable
-		throw new UnsupportedOperationException("Something went wrong during parsing in RustCodeMememberVisitor::visitPrim_expr_no_struct");
+		throw new UnsupportedOperationException(
+				"Something went wrong during parsing in RustCodeMememberVisitor::visitPrim_expr_no_struct");
 	}
 
 	@Override
@@ -1848,8 +1875,19 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		else
 			return new RustInteger(currentCfg, locationOf(ctx, filePath), Integer.parseInt(ctx.getText()));
 	}
-	
-	private Expression postExprTailParser(ParserRuleContext ctx, RustAccessResolver tail, Expression head) {
+
+	/**
+	 * Yields an {@link Expression} which is the result of parsing the rule
+	 * "post_expr[_no_struct] post_expr_tail".
+	 * 
+	 * @param ctx  the context used
+	 * @param head the post_expr[_no_struct] part
+	 * @param tail the post_expr_tail
+	 * 
+	 * @return the result of parsing the rule post_expr[_no_struct]
+	 *             post_expr_tail
+	 */
+	private Expression postExprTailParser(ParserRuleContext ctx, Expression head, RustAccessResolver tail) {
 		if (tail instanceof RustArrayAccessKeeper) {
 			RustArrayAccessKeeper right = (RustArrayAccessKeeper) tail;
 			return new RustArrayAccess(currentCfg, locationOf(ctx, filePath), head, right.getExpr());
@@ -1900,7 +1938,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		RustAccessResolver tail = visitPost_expr_tail(ctx.post_expr_tail());
 
-		return postExprTailParser(ctx, tail, head);
+		return postExprTailParser(ctx, head, tail);
 
 	}
 
@@ -2197,12 +2235,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	public Expression visitPost_expr_no_struct(Post_expr_no_structContext ctx) {
 		if (ctx.prim_expr_no_struct() != null)
 			return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
-		
+
 		Expression head = visitPost_expr_no_struct(ctx.post_expr_no_struct());
 
 		RustAccessResolver tail = visitPost_expr_tail(ctx.post_expr_tail());
 
-		return postExprTailParser(ctx, tail, head);
+		return postExprTailParser(ctx, head, tail);
 	}
 
 	@Override
@@ -2233,7 +2271,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return new RustBoxExpression(currentCfg, locationOf(ctx, filePath), expr);
 		default:
 			// Preceding cases are exhaustive
-			throw new UnsupportedOperationException("Something went wrong during parsing of RustCodeMemeberVisito::visitPre_expr_no_struct");
+			throw new UnsupportedOperationException(
+					"Something went wrong during parsing of RustCodeMemeberVisito::visitPre_expr_no_struct");
 		}
 	}
 
