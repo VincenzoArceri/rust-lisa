@@ -1656,10 +1656,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		if (ctx.prim_expr_no_struct() == null) {
 			// TODO skipping expr_inner_attrs? part
 			Expression path = visitPath(ctx.path());
+			RustStructType structType = RustStructType.lookup(path.toString(), unit);
+
 			if (ctx.fields() != null) {
 				List<Pair<Expression, Expression>> fields = visitFields(ctx.fields());
-
-				RustStructType structType = RustStructType.lookup(path.toString(), unit);
 
 				return new RustStructLiteral(
 						currentCfg,
@@ -1669,8 +1669,15 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 								.map(e -> e.getRight())
 								.collect(Collectors.toList())
 								.toArray(new Expression[0]));
-			}
-		}
+			
+			} else // Still a struct parsing but with no fields inside
+				return new RustStructLiteral(
+					currentCfg,
+					locationOf(ctx, filePath),
+					structType,
+					new Expression[0]);
+		} 
+				
 		return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
 	}
 
