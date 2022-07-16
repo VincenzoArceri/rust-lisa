@@ -1760,7 +1760,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		}
 
 		// Unreachable
-		return null;
+		throw new UnsupportedOperationException("Something went wrong during parsing in RustCodeMememberVisitor::visitPrim_expr_no_struct");
 	}
 
 	@Override
@@ -1848,16 +1848,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		else
 			return new RustInteger(currentCfg, locationOf(ctx, filePath), Integer.parseInt(ctx.getText()));
 	}
-
-	@Override
-	public Expression visitPost_expr(Post_exprContext ctx) {
-		if (ctx.prim_expr() != null)
-			return visitPrim_expr(ctx.prim_expr());
-
-		Expression head = visitPost_expr(ctx.post_expr());
-
-		RustAccessResolver tail = visitPost_expr_tail(ctx.post_expr_tail());
-
+	
+	private Expression postExprTailParser(ParserRuleContext ctx, RustAccessResolver tail, Expression head) {
 		if (tail instanceof RustArrayAccessKeeper) {
 			RustArrayAccessKeeper right = (RustArrayAccessKeeper) tail;
 			return new RustArrayAccess(currentCfg, locationOf(ctx, filePath), head, right.getExpr());
@@ -1897,6 +1889,18 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 			return functionCall;
 		}
+	}
+
+	@Override
+	public Expression visitPost_expr(Post_exprContext ctx) {
+		if (ctx.prim_expr() != null)
+			return visitPrim_expr(ctx.prim_expr());
+
+		Expression head = visitPost_expr(ctx.post_expr());
+
+		RustAccessResolver tail = visitPost_expr_tail(ctx.post_expr_tail());
+
+		return postExprTailParser(ctx, tail, head);
 
 	}
 
@@ -2191,23 +2195,14 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitPost_expr_no_struct(Post_expr_no_structContext ctx) {
-		if (ctx.prim_expr_no_struct() != null) {
+		if (ctx.prim_expr_no_struct() != null)
 			return visitPrim_expr_no_struct(ctx.prim_expr_no_struct());
-		}
+		
+		Expression head = visitPost_expr_no_struct(ctx.post_expr_no_struct());
 
-		// TODO it is necessary to think about what this function returns in the
-		// future
-		// Pair<Statement, Statement> left =
-		// visitPost_expr_no_struct(ctx.post_expr_no_struct());
-		// Statement right = visitPost_expr_tail(ctx.post_expr_tail());
-		//
-		// currentCfg.addNode(right);
-		//
-		// currentCfg.addEdge(new SequentialEdge(left.getRight(), right));
-		//
-		// return Pair.of(left.getLeft(), right);
+		RustAccessResolver tail = visitPost_expr_tail(ctx.post_expr_tail());
 
-		return null;
+		return postExprTailParser(ctx, tail, head);
 	}
 
 	@Override
@@ -2219,7 +2214,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		if (ctx.expr_attrs() != null) {
 			// TODO skipping expr_attrs pre_expr_no_struct production
-			return null;
 		}
 
 		boolean mutable = (ctx.getChild(1).getText().equals("mut") ? true : false);
@@ -2239,7 +2233,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			return new RustBoxExpression(currentCfg, locationOf(ctx, filePath), expr);
 		default:
 			// Preceding cases are exhaustive
-			return null;
+			throw new UnsupportedOperationException("Something went wrong during parsing of RustCodeMemeberVisito::visitPre_expr_no_struct");
 		}
 	}
 
