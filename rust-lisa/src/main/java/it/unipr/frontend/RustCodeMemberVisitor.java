@@ -629,54 +629,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitEnum_decl(Enum_declContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_variant(Enum_variantContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_variant_list(Enum_variant_listContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_variant_main(Enum_variant_mainContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_tuple_field(Enum_tuple_fieldContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_tuple_field_list(Enum_tuple_field_listContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_field_decl(Enum_field_declContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_field_decl_list(Enum_field_decl_listContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Object visitUnion_decl(Union_declContext ctx) {
 		// TODO Auto-generated method stub
 		return null;

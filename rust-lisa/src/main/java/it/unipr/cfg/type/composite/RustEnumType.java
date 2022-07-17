@@ -2,7 +2,6 @@ package it.unipr.cfg.type.composite;
 
 import it.unipr.cfg.type.RustType;
 import it.unive.lisa.program.CompilationUnit;
-import it.unive.lisa.type.ArrayType;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
@@ -67,17 +66,18 @@ public class RustEnumType implements RustType {
 	private final Type[] types;
 
 	/**
-	 * Construct the {@link RustEnumType} object. Note that {@code variantNames} and {@code types} must have the same length.
+	 * Construct the {@link RustEnumType} object. Note that {@code variantNames}
+	 * and {@code types} must have the same length.
 	 * 
-	 * @param name			the name of this enum
-	 * @param unit      	the compilation unit it belongs to
-	 * @param variantNames	the names of the variants
-	 * @param types			the types of the variants
+	 * @param name         the name of this enum
+	 * @param unit         the compilation unit it belongs to
+	 * @param variantNames the names of the variants
+	 * @param types        the types of the variants
 	 */
 	public RustEnumType(String name, CompilationUnit unit, String[] variantNames, Type[] types) {
 		if (variantNames.length != types.length)
 			throw new IllegalArgumentException("Arguments variantNames and types have different length");
-		
+
 		this.name = Objects.requireNonNull(name);
 		this.unit = Objects.requireNonNull(unit);
 		this.variantNames = Objects.requireNonNull(variantNames);
@@ -93,7 +93,7 @@ public class RustEnumType implements RustType {
 					&& variantNames.equals(other.variantNames)
 					&& types.equals(other.types);
 		}
-		
+
 		return o instanceof Untyped;
 	}
 
@@ -107,7 +107,7 @@ public class RustEnumType implements RustType {
 					&& types.equals(other.types))
 				return other;
 		}
-		
+
 		return Untyped.INSTANCE;
 	}
 
@@ -119,7 +119,7 @@ public class RustEnumType implements RustType {
 
 		return instances;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return (variantNames.hashCode() + name.hashCode()) ^ unit.hashCode() / types.hashCode();
@@ -149,7 +149,7 @@ public class RustEnumType implements RustType {
 				return false;
 		} else if (!variantNames.equals(other.variantNames))
 			return false;
-		
+
 		if (unit == null) {
 			if (other.unit != null)
 				return false;
@@ -168,11 +168,19 @@ public class RustEnumType implements RustType {
 	@Override
 	public String toString() {
 		String result = "enum " + name + "{";
-		
+
 		for (int i = 0; i < variantNames.length; i++)
 			result += variantNames[i] + " : " + types[i];
-		
+
 		return result + "}";
 	}
 
+	/**
+	 * Yields the compilation unit.
+	 * 
+	 * @return the compilation unit of this type
+	 */
+	public CompilationUnit getUnit() {
+		return unit;
+	}
 }

@@ -8,6 +8,7 @@ import it.unipr.cfg.type.RustPointerType;
 import it.unipr.cfg.type.RustStrType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustArrayType;
+import it.unipr.cfg.type.composite.RustEnumType;
 import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.cfg.type.composite.RustTupleType;
 import it.unipr.cfg.type.numeric.floating.RustF32Type;
@@ -28,6 +29,7 @@ import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustLexer;
 import it.unipr.rust.antlr.RustParser;
 import it.unipr.rust.antlr.RustParser.CrateContext;
+import it.unipr.rust.antlr.RustParser.Enum_declContext;
 import it.unipr.rust.antlr.RustParser.ItemContext;
 import it.unipr.rust.antlr.RustParser.Mod_bodyContext;
 import it.unipr.rust.antlr.RustParser.Pub_itemContext;
@@ -50,10 +52,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * The Rust front-end for LiSA.
@@ -131,6 +135,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 		program.registerType(RustUnitType.getInstance());
 		RustPointerType.all().forEach(program::registerType);
 		RustStructType.all().forEach(program::registerType);
+		RustEnumType.all().forEach(program::registerType);
 		RustArrayType.all().forEach(program::registerType);
 		RustTupleType.all().forEach(program::registerType);
 	}
@@ -200,11 +205,15 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 
 	@Override
 	public Void visitItem(ItemContext ctx) {
-		if (ctx.pub_item() != null && ctx.pub_item().struct_decl() != null)
+		if (ctx.pub_item() != null && (ctx.pub_item().struct_decl() != null ||
+				ctx.pub_item().enum_decl() != null))
 			visitPub_item(ctx.pub_item());
 
 		for (Type t : RustStructType.all())
 			program.addCompilationUnit(((RustStructType) t).getUnit());
+
+		for (Type t : RustEnumType.all())
+			program.addCompilationUnit(((RustEnumType) t).getUnit());
 
 		if (ctx.impl_block() != null) {
 			RustStructType struct = RustStructType.get(ctx.impl_block().impl_what().getText());
@@ -230,24 +239,51 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 
 	@Override
 	public Void visitPub_item(Pub_itemContext ctx) {
-		if (ctx.struct_decl() != null) {
-			String name = ctx.struct_decl().ident().getText();
-			CompilationUnit structUnit = new CompilationUnit(locationOf(ctx, filePath), name, true);
+		if (ctx.struct_decl() != null)
+			visitStruct_decl(ctx.struct_decl());
 
-			RustStructType.lookup(name, structUnit);
+		if (ctx.enum_decl() != null)
+			visitEnum_decl(ctx.enum_decl());
 
-			List<Global> fields = visitStruct_decl(ctx.struct_decl());
-
-			for (Global f : fields)
-				structUnit.addInstanceGlobal(f);
-		}
 		return null;
 	}
 
 	@Override
-	public List<Global> visitStruct_decl(Struct_declContext ctx) {
+	public Void visitStruct_decl(Struct_declContext ctx) {
 		// TODO skipping ty_params? production
-		return new RustTypeVisitor(filePath, currentUnit).visitStruct_tail(ctx.struct_tail());
+		String name = ctx.ident().getText();
+		CompilationUnit structUnit = new CompilationUnit(locationOf(ctx, filePath), name, true);
+
+		RustStructType.lookup(name, structUnit);
+
+		List<Global> fields = new RustTypeVisitor(filePath, currentUnit).visitStruct_tail(ctx.struct_tail());
+
+		for (Global f : fields)
+			structUnit.addInstanceGlobal(f);
+
+		return null;
+	}
+
+	@Override
+	public Void visitEnum_decl(Enum_declContext ctx) {
+		// TODO skipping ty_params? and where_clause?
+		String name = ctx.ident().getText();
+		CompilationUnit enumUnit = new CompilationUnit(locationOf(ctx, filePath), name, true);
+
+		List<Pair<String, Type>> enumVariants = new RustTypeVisitor(filePath, currentUnit)
+				.visitEnum_variant_list(ctx.enum_variant_list());
+		List<String> variantNames = new ArrayList<>();
+		List<Type> variantTypes = new ArrayList<>();
+		for (Pair<String, Type> variant : enumVariants) {
+			variantNames.add(variant.getLeft());
+			variantTypes.add(variant.getRight());
+		}
+
+		RustEnumType enumType = new RustEnumType(name, enumUnit, variantNames.toArray(new String[0]),
+				variantTypes.toArray(new Type[0]));
+		RustEnumType.lookup(enumType);
+
+		return null;
 	}
 
 }

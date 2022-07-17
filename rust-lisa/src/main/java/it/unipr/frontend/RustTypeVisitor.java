@@ -1,5 +1,7 @@
 package it.unipr.frontend;
 
+import static it.unipr.frontend.RustFrontendUtilities.locationOf;
+
 import it.unipr.cfg.type.RustBooleanType;
 import it.unipr.cfg.type.RustCharType;
 import it.unipr.cfg.type.RustPointerType;
@@ -25,6 +27,13 @@ import it.unipr.cfg.type.numeric.unsigned.RustU64Type;
 import it.unipr.cfg.type.numeric.unsigned.RustU8Type;
 import it.unipr.cfg.type.numeric.unsigned.RustUsizeType;
 import it.unipr.rust.antlr.RustBaseVisitor;
+import it.unipr.rust.antlr.RustParser.Enum_field_declContext;
+import it.unipr.rust.antlr.RustParser.Enum_field_decl_listContext;
+import it.unipr.rust.antlr.RustParser.Enum_tuple_fieldContext;
+import it.unipr.rust.antlr.RustParser.Enum_tuple_field_listContext;
+import it.unipr.rust.antlr.RustParser.Enum_variantContext;
+import it.unipr.rust.antlr.RustParser.Enum_variant_listContext;
+import it.unipr.rust.antlr.RustParser.Enum_variant_mainContext;
 import it.unipr.rust.antlr.RustParser.ExprContext;
 import it.unipr.rust.antlr.RustParser.Field_declContext;
 import it.unipr.rust.antlr.RustParser.Field_decl_listContext;
@@ -45,6 +54,7 @@ import it.unive.lisa.type.Untyped;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Type visitor for Rust, managing the parsing of Rust types.
@@ -108,7 +118,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 
 		case "&":
 			// TODO Ignoring lifetimes for now
-			if (ctx.getChild(2).getText().equals("mut"))
+			if (ctx.getChild(2) != null && ctx.getChild(2).getText().equals("mut"))
 				mutable = true;
 
 			return new RustReferenceType(visitTy(ctx.ty()), mutable);
@@ -209,7 +219,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			return RustUsizeType.getInstance();
 		case "bool":
 			return RustBooleanType.getInstance();
-		case "&str":
+		case "str":
 			return RustStrType.getInstance();
 		case "char":
 			return RustCharType.getInstance();
@@ -271,6 +281,88 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 			declarations.add(visitField_decl(fdCtx));
 
 		return declarations;
+	}
+
+	@Override
+	public Pair<String, Type> visitEnum_variant(Enum_variantContext ctx) {
+		// TODO skipping attr*
+		return visitEnum_variant_main(ctx.enum_variant_main());
+	}
+
+	@Override
+	public List<Pair<String, Type>> visitEnum_variant_list(Enum_variant_listContext ctx) {
+		List<Pair<String, Type>> variants = new ArrayList<>();
+		for (Enum_variantContext variantCtx : ctx.enum_variant())
+			variants.add(visitEnum_variant(variantCtx));
+
+		return variants;
+	}
+
+	@Override
+	public Pair<String, Type> visitEnum_variant_main(Enum_variant_mainContext ctx) {
+		String name = ctx.ident().getText();
+
+		if (ctx.expr() != null) {
+			// TODO This is a custom discriminant for a fieldless enumeration.
+			// This could be cast to an integer later on. This is too coarse for
+			// now.
+			// Please see
+			// "https://doc.rust-lang.org/reference/items/enumerations.html#custom-discriminant-values-for-fieldless-enumerations"
+		} else if (ctx.children.size() > 1 && ctx.children.get(1).getText().equals("(")) {
+			if (ctx.enum_tuple_field_list() != null) {
+				List<Type> tupleFieldList = visitEnum_tuple_field_list(ctx.enum_tuple_field_list());
+				RustTupleType tuple = new RustTupleType(tupleFieldList);
+				RustTupleType.lookup(tuple);
+
+				return Pair.of(name, tuple);
+			}
+		} else if (ctx.children.size() > 1 && ctx.children.get(1).getText().equals("{")) {
+			if (ctx.enum_field_decl_list() != null) {
+				List<Global> fieldList = visitEnum_field_decl_list(ctx.enum_field_decl_list());
+
+				CompilationUnit structUnit = new CompilationUnit(locationOf(ctx, filePath),
+						unit.toString() + "::" + name, true);
+				RustStructType struct = RustStructType.lookup(name, structUnit);
+
+				for (Global f : fieldList)
+					structUnit.addInstanceGlobal(f);
+
+				return Pair.of(name, struct);
+			}
+		}
+
+		return Pair.of(name, RustUnitType.getInstance());
+	}
+
+	@Override
+	public Type visitEnum_tuple_field(Enum_tuple_fieldContext ctx) {
+		return visitTy_sum(ctx.ty_sum());
+	}
+
+	@Override
+	public List<Type> visitEnum_tuple_field_list(Enum_tuple_field_listContext ctx) {
+		List<Type> types = new ArrayList<>();
+		for (Enum_tuple_fieldContext typeCtx : ctx.enum_tuple_field())
+			types.add(visitEnum_tuple_field(typeCtx));
+
+		return types;
+	}
+
+	@Override
+	public Global visitEnum_field_decl(Enum_field_declContext ctx) {
+		String name = ctx.ident().getText();
+		Type type = visitTy_sum(ctx.ty_sum());
+
+		return new Global(RustFrontendUtilities.locationOf(ctx, filePath), name, type);
+	}
+
+	@Override
+	public List<Global> visitEnum_field_decl_list(Enum_field_decl_listContext ctx) {
+		List<Global> globals = new ArrayList<>();
+		for (Enum_field_declContext typeCtx : ctx.enum_field_decl())
+			globals.add(visitEnum_field_decl(typeCtx));
+
+		return globals;
 	}
 
 }
