@@ -274,9 +274,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 
 		List<RustEnumVariant> enumVariants = new RustTypeVisitor(filePath, currentUnit)
 				.visitEnum_variant_list(ctx.enum_variant_list());
-		
-		System.out.println(enumUnit);
-
+	
 		for (RustEnumVariant variant : enumVariants)
 			enumUnit.addVariant(variant);
 		
