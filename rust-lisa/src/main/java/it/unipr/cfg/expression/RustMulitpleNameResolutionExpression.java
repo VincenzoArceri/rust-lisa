@@ -1,13 +1,5 @@
 package it.unipr.cfg.expression;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.abego.treelayout.internal.util.java.lang.string.StringUtil;
-import org.apache.commons.lang3.StringUtils;
-
 import it.unive.lisa.analysis.AbstractState;
 import it.unive.lisa.analysis.AnalysisState;
 import it.unive.lisa.analysis.SemanticException;
@@ -22,6 +14,10 @@ import it.unive.lisa.program.cfg.CodeLocation;
 import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Rust multiple name resolution for destructuring (e.g., A::B(a, b, c).
@@ -36,7 +32,8 @@ public class RustMulitpleNameResolutionExpression extends NaryExpression {
 	 * 
 	 * @param cfg      the {@link CFG} where this literal lies
 	 * @param location the location where this literal is defined
-	 * @param values   the values inside the literal with the first element the path resolution
+	 * @param values   the values inside the literal with the first element the
+	 *                     path resolution
 	 */
 	public RustMulitpleNameResolutionExpression(CFG cfg, CodeLocation location, Expression[] values) {
 		super(cfg, location, "::", values);
@@ -48,7 +45,7 @@ public class RustMulitpleNameResolutionExpression extends NaryExpression {
 				.stream()
 				.map(x -> x.toString())
 				.collect(Collectors.toList());
-		
+
 		return exprs.get(0) + "(" + StringUtils.join(exprs.subList(1, exprs.size()), ",") + ")";
 	}
 

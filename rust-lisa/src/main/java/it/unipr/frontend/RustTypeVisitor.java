@@ -56,7 +56,6 @@ import it.unive.lisa.type.Untyped;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Type visitor for Rust, managing the parsing of Rust types.

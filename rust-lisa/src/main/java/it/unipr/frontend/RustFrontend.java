@@ -54,12 +54,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * The Rust front-end for LiSA.
@@ -274,10 +272,10 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 
 		List<RustEnumVariant> enumVariants = new RustTypeVisitor(filePath, currentUnit)
 				.visitEnum_variant_list(ctx.enum_variant_list());
-	
+
 		for (RustEnumVariant variant : enumVariants)
 			enumUnit.addVariant(variant);
-		
+
 		RustEnumType enumType = new RustEnumType(name, enumUnit);
 		RustEnumType.lookup(enumType);
 

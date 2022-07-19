@@ -1011,7 +1011,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitPat(PatContext ctx) {		
+	public Expression visitPat(PatContext ctx) {
 		if (ctx.pat_no_mut() != null)
 			return visitPat_no_mut(ctx.pat_no_mut());
 
@@ -1081,13 +1081,14 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		if (ctx.path() != null) {
 			Expression path = visitPath(ctx.path());
-			
+
 			if (ctx.children.get(1).getText().equals("(")) {
 				if (ctx.pat_list_with_dots() != null) {
 					List<Expression> lhs = visitPat_list_with_dots(ctx.pat_list_with_dots());
-					
+
 					lhs.add(0, path);
-					return new RustMulitpleNameResolutionExpression(currentCfg, locationOf(ctx, filePath), lhs.toArray(new Expression[0]));
+					return new RustMulitpleNameResolutionExpression(currentCfg, locationOf(ctx, filePath),
+							lhs.toArray(new Expression[0]));
 				}
 			}
 
@@ -1163,7 +1164,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public List<Expression> visitPat_list_with_dots(Pat_list_with_dotsContext ctx) {
 		if (ctx.pat() != null && ctx.pat().size() > 0) {
-			
+
 			List<Expression> exprs = new ArrayList<>();
 			for (PatContext patContext : ctx.pat()) {
 				Expression path = visitPat(patContext);
@@ -1172,13 +1173,13 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			if (ctx.pat_list_dots_tail() != null) {
 				exprs.addAll(visitPat_list_dots_tail(ctx.pat_list_dots_tail()));
 			}
-			
+
 			return exprs;
 		}
-		
+
 		if (ctx.pat_list_dots_tail() != null)
 			return visitPat_list_dots_tail(ctx.pat_list_dots_tail());
-		
+
 		// Unreachable
 		return null;
 	}
@@ -1186,12 +1187,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public List<Expression> visitPat_list_dots_tail(Pat_list_dots_tailContext ctx) {
 		List<Expression> result = new ArrayList<>();
-		
+
 		// TODO Missing Range Operator insertion here
 
 		if (ctx.pat_list() != null)
 			result.add(visitPat_list(ctx.pat_list()));
-		
+
 		return result;
 	}
 

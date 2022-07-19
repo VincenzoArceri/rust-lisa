@@ -1,7 +1,6 @@
 package it.unipr.cfg.type.composite.enums;
 
 import it.unipr.cfg.type.RustType;
-import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
@@ -68,9 +67,8 @@ public class RustEnumType implements RustType, UnitType {
 	 * Construct the {@link RustEnumType} object. Note that {@code variantNames}
 	 * and {@code types} must have the same length.
 	 * 
-	 * @param name         the name of this enum
-	 * @param unit         the compilation unit it belongs to
-	 * 
+	 * @param name the name of this enum
+	 * @param unit the compilation unit it belongs to
 	 */
 	public RustEnumType(String name, EnumCompilationUnit unit) {
 		this.name = Objects.requireNonNull(name);
