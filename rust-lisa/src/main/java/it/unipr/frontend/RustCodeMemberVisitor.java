@@ -1081,12 +1081,18 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		if (ctx.path() != null) {
 			Expression path = visitPath(ctx.path());
-			List<Expression> macroTail = visitMacro_tail(ctx.macro_tail());
 
-			return new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
-					RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
-					RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.STATIC, "", path.toString() + "!",
-					RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, macroTail.toArray(new Expression[0]));
+			if (ctx.macro_tail() != null) {
+				List<Expression> macroTail = visitMacro_tail(ctx.macro_tail());
+
+				return new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
+						RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
+						RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.STATIC, "", path.toString() + "!",
+						RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, macroTail.toArray(new Expression[0]));
+
+			}
+
+			return path;
 		}
 
 		switch (ctx.getChild(0).getText()) {
@@ -1115,6 +1121,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			// pat_no_mut
 			// : pat_range_end '...' pat_range_end
 			// | pat_range_end '..' pat_range_end
+			// | path '(' pat_list_with_dots? ')'
+			// | path '{' pat_fields? '}'
 			return null;
 		}
 	}
@@ -1563,10 +1571,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Expression visitCond_or_pat(Cond_or_patContext ctx) {
 		if (ctx.getChild(0).getText().equals("let")) {
-			// TODO ignoring this if branch for now
-			Object o = visitPat(ctx.pat());
-			Statement pair = visitExpr(ctx.expr());
-			return null;
+			Expression pat = visitPat(ctx.pat());
+			Expression expr = visitExpr(ctx.expr());
+
+			return new RustLetAssignment(currentCfg, locationOf(ctx, filePath), Untyped.INSTANCE, pat, expr);
 		}
 
 		return visitExpr_no_struct(ctx.expr_no_struct());

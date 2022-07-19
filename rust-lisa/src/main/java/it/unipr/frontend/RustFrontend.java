@@ -8,9 +8,11 @@ import it.unipr.cfg.type.RustPointerType;
 import it.unipr.cfg.type.RustStrType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustArrayType;
-import it.unipr.cfg.type.composite.RustEnumType;
 import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.cfg.type.composite.RustTupleType;
+import it.unipr.cfg.type.composite.enums.EnumCompilationUnit;
+import it.unipr.cfg.type.composite.enums.RustEnumType;
+import it.unipr.cfg.type.composite.enums.RustEnumVariant;
 import it.unipr.cfg.type.numeric.floating.RustF32Type;
 import it.unipr.cfg.type.numeric.floating.RustF64Type;
 import it.unipr.cfg.type.numeric.signed.RustI128Type;
@@ -268,19 +270,17 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 	public Void visitEnum_decl(Enum_declContext ctx) {
 		// TODO skipping ty_params? and where_clause?
 		String name = ctx.ident().getText();
-		CompilationUnit enumUnit = new CompilationUnit(locationOf(ctx, filePath), name, true);
+		EnumCompilationUnit enumUnit = new EnumCompilationUnit(locationOf(ctx, filePath), name, true);
 
-		List<Pair<String, Type>> enumVariants = new RustTypeVisitor(filePath, currentUnit)
+		List<RustEnumVariant> enumVariants = new RustTypeVisitor(filePath, currentUnit)
 				.visitEnum_variant_list(ctx.enum_variant_list());
-		List<String> variantNames = new ArrayList<>();
-		List<Type> variantTypes = new ArrayList<>();
-		for (Pair<String, Type> variant : enumVariants) {
-			variantNames.add(variant.getLeft());
-			variantTypes.add(variant.getRight());
-		}
+		
+		System.out.println(enumUnit);
 
-		RustEnumType enumType = new RustEnumType(name, enumUnit, variantNames.toArray(new String[0]),
-				variantTypes.toArray(new Type[0]));
+		for (RustEnumVariant variant : enumVariants)
+			enumUnit.addVariant(variant);
+		
+		RustEnumType enumType = new RustEnumType(name, enumUnit);
 		RustEnumType.lookup(enumType);
 
 		return null;

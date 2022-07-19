@@ -12,6 +12,8 @@ import it.unipr.cfg.type.composite.RustArrayType;
 import it.unipr.cfg.type.composite.RustReferenceType;
 import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.cfg.type.composite.RustTupleType;
+import it.unipr.cfg.type.composite.enums.RustEnumSimpleVariant;
+import it.unipr.cfg.type.composite.enums.RustEnumVariant;
 import it.unipr.cfg.type.numeric.floating.RustF32Type;
 import it.unipr.cfg.type.numeric.floating.RustF64Type;
 import it.unipr.cfg.type.numeric.signed.RustI128Type;
@@ -284,14 +286,14 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Pair<String, Type> visitEnum_variant(Enum_variantContext ctx) {
+	public RustEnumVariant visitEnum_variant(Enum_variantContext ctx) {
 		// TODO skipping attr*
 		return visitEnum_variant_main(ctx.enum_variant_main());
 	}
 
 	@Override
-	public List<Pair<String, Type>> visitEnum_variant_list(Enum_variant_listContext ctx) {
-		List<Pair<String, Type>> variants = new ArrayList<>();
+	public List<RustEnumVariant> visitEnum_variant_list(Enum_variant_listContext ctx) {
+		List<RustEnumVariant> variants = new ArrayList<>();
 		for (Enum_variantContext variantCtx : ctx.enum_variant())
 			variants.add(visitEnum_variant(variantCtx));
 
@@ -299,7 +301,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Pair<String, Type> visitEnum_variant_main(Enum_variant_mainContext ctx) {
+	public RustEnumVariant visitEnum_variant_main(Enum_variant_mainContext ctx) {
 		String name = ctx.ident().getText();
 
 		if (ctx.expr() != null) {
@@ -314,7 +316,7 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 				RustTupleType tuple = new RustTupleType(tupleFieldList);
 				RustTupleType.lookup(tuple);
 
-				return Pair.of(name, tuple);
+				return tuple;
 			}
 		} else if (ctx.children.size() > 1 && ctx.children.get(1).getText().equals("{")) {
 			if (ctx.enum_field_decl_list() != null) {
@@ -327,11 +329,11 @@ public class RustTypeVisitor extends RustBaseVisitor<Object> {
 				for (Global f : fieldList)
 					structUnit.addInstanceGlobal(f);
 
-				return Pair.of(name, struct);
+				return struct;
 			}
 		}
 
-		return Pair.of(name, RustUnitType.getInstance());
+		return new RustEnumSimpleVariant(name);
 	}
 
 	@Override
