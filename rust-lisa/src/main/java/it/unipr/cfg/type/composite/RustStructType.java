@@ -1,7 +1,10 @@
 package it.unipr.cfg.type.composite;
 
 import it.unipr.cfg.type.RustType;
+import it.unipr.cfg.type.composite.enums.RustEnumVariant;
 import it.unive.lisa.program.CompilationUnit;
+import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
@@ -16,7 +19,7 @@ import java.util.Map;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustStructType implements UnitType, RustType {
+public class RustStructType implements UnitType, RustType, RustEnumVariant {
 
 	private static final Map<String, RustStructType> INSTANCES = new HashMap<>();
 
@@ -162,6 +165,12 @@ public class RustStructType implements UnitType, RustType {
 	@Override
 	public int hashCode() {
 		return name.hashCode();
+	}
+
+	@Override
+	public Statement match(Expression toMatch) {
+		// TODO too coarse
+		return null;
 	}
 
 }
