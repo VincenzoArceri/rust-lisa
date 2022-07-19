@@ -1,8 +1,9 @@
-package it.unipr.cfg.type.composite;
+package it.unipr.cfg.type.composite.enums;
 
 import it.unipr.cfg.type.RustType;
 import it.unive.lisa.program.CompilationUnit;
 import it.unive.lisa.type.Type;
+import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
 import java.util.HashSet;
@@ -15,7 +16,7 @@ import java.util.Set;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustEnumType implements RustType {
+public class RustEnumType implements RustType, UnitType {
 
 	/**
 	 * Collection of all enums.
@@ -61,9 +62,7 @@ public class RustEnumType implements RustType {
 	 * In Rust an enum has its own values.
 	 */
 	private final String name;
-	private final CompilationUnit unit;
-	private final String[] variantNames;
-	private final Type[] types;
+	private final EnumCompilationUnit unit;
 
 	/**
 	 * Construct the {@link RustEnumType} object. Note that {@code variantNames}
@@ -71,17 +70,11 @@ public class RustEnumType implements RustType {
 	 * 
 	 * @param name         the name of this enum
 	 * @param unit         the compilation unit it belongs to
-	 * @param variantNames the names of the variants
-	 * @param types        the types of the variants
+	 * 
 	 */
-	public RustEnumType(String name, CompilationUnit unit, String[] variantNames, Type[] types) {
-		if (variantNames.length != types.length)
-			throw new IllegalArgumentException("Arguments variantNames and types have different length");
-
+	public RustEnumType(String name, EnumCompilationUnit unit) {
 		this.name = Objects.requireNonNull(name);
 		this.unit = Objects.requireNonNull(unit);
-		this.variantNames = Objects.requireNonNull(variantNames);
-		this.types = Objects.requireNonNull(types);
 	}
 
 	@Override
@@ -89,9 +82,7 @@ public class RustEnumType implements RustType {
 		if (o instanceof RustEnumType) {
 			RustEnumType other = (RustEnumType) o;
 			return name.equals(other.name)
-					&& unit.equals(other.unit)
-					&& variantNames.equals(other.variantNames)
-					&& types.equals(other.types);
+					&& unit.equals(other.unit);
 		}
 
 		return o instanceof Untyped;
@@ -102,9 +93,7 @@ public class RustEnumType implements RustType {
 		if (o instanceof RustEnumType) {
 			RustEnumType other = (RustEnumType) o;
 			if (name.equals(other.name)
-					&& unit.equals(other.unit)
-					&& variantNames.equals(other.variantNames)
-					&& types.equals(other.types))
+					&& unit.equals(other.unit))
 				return other;
 		}
 
@@ -122,7 +111,7 @@ public class RustEnumType implements RustType {
 
 	@Override
 	public int hashCode() {
-		return (variantNames.hashCode() + name.hashCode()) ^ unit.hashCode() / types.hashCode();
+		return (name.hashCode()) ^ unit.hashCode();
 	}
 
 	@Override
@@ -137,18 +126,6 @@ public class RustEnumType implements RustType {
 			return false;
 
 		RustEnumType other = (RustEnumType) obj;
-
-		if (types == null) {
-			if (other.types != null)
-				return false;
-		} else if (!types.equals(other.types))
-			return false;
-
-		if (variantNames == null) {
-			if (other.variantNames != null)
-				return false;
-		} else if (!variantNames.equals(other.variantNames))
-			return false;
 
 		if (unit == null) {
 			if (other.unit != null)
@@ -168,10 +145,9 @@ public class RustEnumType implements RustType {
 	@Override
 	public String toString() {
 		String result = "enum " + name + "{";
-
-		for (int i = 0; i < variantNames.length; i++)
-			result += variantNames[i] + " : " + types[i];
-
+		for (RustEnumVariant variant : unit.getVariants()) {
+			result += variant.toString() + ",\n";
+		}
 		return result + "}";
 	}
 
@@ -180,7 +156,7 @@ public class RustEnumType implements RustType {
 	 * 
 	 * @return the compilation unit of this type
 	 */
-	public CompilationUnit getUnit() {
+	public EnumCompilationUnit getUnit() {
 		return unit;
 	}
 }
