@@ -57,6 +57,32 @@ public class RustEnumType implements RustType, UnitType {
 	}
 
 	/**
+	 * Retrieve a single instance of a Rust enum types.
+	 * 
+	 * @param name the name of the enum
+	 * 
+	 * @return all instances of a Rust enum types
+	 * 
+	 * @throws IllegalArgumentException if there is no struct with such name
+	 */
+	public static RustEnumType get(String name) {
+		if (INSTANCES.get(name) == null)
+			throw new IllegalArgumentException("There is no enum with name " + name);
+		return INSTANCES.get(name);
+	}
+
+	/**
+	 * Checks whether a enum type named {@code name} has been already built.
+	 * 
+	 * @param name the name of the enum type
+	 * 
+	 * @return whether a enum type named {@code name} has been already built.
+	 */
+	public static boolean has(String name) {
+		return INSTANCES.containsKey(name);
+	}
+
+	/**
 	 * In Rust an enum has its own values.
 	 */
 	private final String name;
@@ -141,11 +167,7 @@ public class RustEnumType implements RustType, UnitType {
 
 	@Override
 	public String toString() {
-		String result = "enum " + name + "{";
-		for (RustEnumVariant variant : unit.getVariants()) {
-			result += variant.toString() + ",\n";
-		}
-		return result + "}";
+		return name;
 	}
 
 	/**

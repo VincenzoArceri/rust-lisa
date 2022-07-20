@@ -15,8 +15,6 @@ import it.unive.lisa.program.cfg.statement.Expression;
 import it.unive.lisa.program.cfg.statement.NaryExpression;
 import it.unive.lisa.symbolic.SymbolicExpression;
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -41,12 +39,7 @@ public class RustMulitpleNameResolutionExpression extends NaryExpression {
 
 	@Override
 	public String toString() {
-		List<String> exprs = Arrays.asList(getSubExpressions())
-				.stream()
-				.map(x -> x.toString())
-				.collect(Collectors.toList());
-
-		return exprs.get(0) + "(" + StringUtils.join(exprs.subList(1, exprs.size()), ",") + ")";
+		return StringUtils.join(Arrays.asList(getSubExpressions()), ",");
 	}
 
 	@Override

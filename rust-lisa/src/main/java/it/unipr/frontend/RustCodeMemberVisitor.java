@@ -39,6 +39,7 @@ import it.unipr.cfg.expression.literal.RustString;
 import it.unipr.cfg.expression.literal.RustStructLiteral;
 import it.unipr.cfg.expression.literal.RustTupleLiteral;
 import it.unipr.cfg.expression.literal.RustUnitLiteral;
+import it.unipr.cfg.expression.literal.enums.RustEnumTupleLiteral;
 import it.unipr.cfg.expression.numeric.RustAddExpression;
 import it.unipr.cfg.expression.numeric.RustDivExpression;
 import it.unipr.cfg.expression.numeric.RustMinusExpression;
@@ -50,6 +51,7 @@ import it.unipr.cfg.statement.RustLetAssignment;
 import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustStructType;
+import it.unipr.cfg.type.composite.enums.RustEnumType;
 import it.unipr.cfg.utils.RustAccessResolver;
 import it.unipr.cfg.utils.RustArrayAccessKeeper;
 import it.unipr.cfg.utils.RustAttributeAccessKeeper;
@@ -1081,14 +1083,45 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		if (ctx.path() != null) {
 			Expression path = visitPath(ctx.path());
+			AccessGlobal accessedPath = (AccessGlobal) path;
+			String typeName = accessedPath.getContainer().getName();
+			String variantName = accessedPath.getTarget().getName();
 
 			if (ctx.children.get(1).getText().equals("(")) {
 				if (ctx.pat_list_with_dots() != null) {
 					List<Expression> lhs = visitPat_list_with_dots(ctx.pat_list_with_dots());
 
-					lhs.add(0, path);
-					return new RustMulitpleNameResolutionExpression(currentCfg, locationOf(ctx, filePath),
-							lhs.toArray(new Expression[0]));
+					RustEnumType enumType = RustEnumType.get(typeName);
+
+					if (RustEnumType.has(typeName))
+						return new RustEnumTupleLiteral(
+								currentCfg,
+								locationOf(ctx, filePath),
+								new RustMulitpleNameResolutionExpression(
+										currentCfg,
+										locationOf(ctx, filePath),
+										lhs.toArray(new Expression[0])),
+								variantName,
+								enumType);
+				}
+			}
+
+			if (ctx.children.get(1).getText().equals("{")) {
+				if (ctx.pat_fields() != null) {
+					List<Expression> lhs = visitPat_fields(ctx.pat_fields());
+
+					RustEnumType enumType = RustEnumType.get(typeName);
+
+					if (RustEnumType.has(typeName))
+						return new RustEnumTupleLiteral(
+								currentCfg,
+								locationOf(ctx, filePath),
+								new RustMulitpleNameResolutionExpression(
+										currentCfg,
+										locationOf(ctx, filePath),
+										lhs.toArray(new Expression[0])),
+								variantName,
+								enumType);
 				}
 			}
 
@@ -1131,8 +1164,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			// pat_no_mut
 			// : pat_range_end '...' pat_range_end
 			// | pat_range_end '..' pat_range_end
-			// | path '(' pat_list_with_dots? ')'
-			// | path '{' pat_fields? '}'
 			return null;
 		}
 	}
@@ -1277,10 +1308,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Statement lastStmt = null;
 
 		for (StmtContext stmt : ctx.stmt()) {
-			// Note: since we are not sure what to return from visitStmt, we
-			// are sure that this function returns a pair of Statement
-			@SuppressWarnings("unchecked")
-			Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
+			Pair<Statement, Statement> currentStmt = visitStmt(stmt);
 
 			if (lastStmt != null)
 				currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
@@ -1319,7 +1347,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Statement lastStmt = null;
 
 		for (StmtContext stmt : ctx.stmt()) {
-			Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
+			Pair<Statement, Statement> currentStmt = visitStmt(stmt);
 
 			if (lastStmt != null)
 				currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
