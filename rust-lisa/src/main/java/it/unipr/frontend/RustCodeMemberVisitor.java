@@ -9,7 +9,7 @@ import it.unipr.cfg.expression.RustCastExpression;
 import it.unipr.cfg.expression.RustDerefExpression;
 import it.unipr.cfg.expression.RustDestructuringExpression;
 import it.unipr.cfg.expression.RustDoubleRefExpression;
-import it.unipr.cfg.expression.RustMulitpleExpression;
+import it.unipr.cfg.expression.RustMultipleExpression;
 import it.unipr.cfg.expression.RustRangeExpression;
 import it.unipr.cfg.expression.RustRangeFromExpression;
 import it.unipr.cfg.expression.RustRefExpression;
@@ -1097,7 +1097,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 						return new RustEnumTupleLiteral(
 								currentCfg,
 								locationOf(ctx, filePath),
-								new RustMulitpleExpression(
+								new RustMultipleExpression(
 										currentCfg,
 										locationOf(ctx, filePath),
 										lhs.toArray(new Expression[0])),
@@ -1116,7 +1116,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 						return new RustEnumTupleLiteral(
 								currentCfg,
 								locationOf(ctx, filePath),
-								new RustMulitpleExpression(
+								new RustMultipleExpression(
 										currentCfg,
 										locationOf(ctx, filePath),
 										lhs.toArray(new Expression[0])),

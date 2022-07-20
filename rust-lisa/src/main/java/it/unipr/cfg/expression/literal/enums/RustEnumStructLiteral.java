@@ -1,6 +1,6 @@
 package it.unipr.cfg.expression.literal.enums;
 
-import it.unipr.cfg.expression.RustMulitpleExpression;
+import it.unipr.cfg.expression.RustMultipleExpression;
 import it.unipr.cfg.type.composite.enums.RustEnumType;
 import it.unive.lisa.program.cfg.CFG;
 import it.unive.lisa.program.cfg.CodeLocation;
@@ -11,7 +11,7 @@ import it.unive.lisa.program.cfg.CodeLocation;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustEnumStructLiteral extends RustEnumLiteral<RustMulitpleExpression> {
+public class RustEnumStructLiteral extends RustEnumLiteral<RustMultipleExpression> {
 
 	private String variantName;
 
@@ -26,7 +26,7 @@ public class RustEnumStructLiteral extends RustEnumLiteral<RustMulitpleExpressio
 	 * @param variantName the name of this variant
 	 * @param enumType    the enum type of this literal
 	 */
-	public RustEnumStructLiteral(CFG cfg, CodeLocation location, RustMulitpleExpression expressions, String variantName,
+	public RustEnumStructLiteral(CFG cfg, CodeLocation location, RustMultipleExpression expressions, String variantName,
 			RustEnumType enumType) {
 		super(cfg, location, expressions, enumType);
 		this.variantName = variantName;

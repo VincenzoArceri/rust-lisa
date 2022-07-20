@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustMulitpleExpression extends NaryExpression {
+public class RustMultipleExpression extends NaryExpression {
 
 	/**
 	 * Build the multiple name resolution.
@@ -33,7 +33,7 @@ public class RustMulitpleExpression extends NaryExpression {
 	 * @param values   the values inside the literal with the first element the
 	 *                     path resolution
 	 */
-	public RustMulitpleExpression(CFG cfg, CodeLocation location, Expression[] values) {
+	public RustMultipleExpression(CFG cfg, CodeLocation location, Expression[] values) {
 		super(cfg, location, ",", values);
 	}
 
