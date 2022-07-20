@@ -5,7 +5,10 @@ enum Message {
 }
 
 fn main() {
-
+    let m0 = Message::Quit;
+    if let Message::Quit = m0 {
+        println!("Quit message");
+    }
     
     let m1 = Message::ChangeColor(0, 0, 0);
     if let Message::ChangeColor(a, b, c) = m1 {

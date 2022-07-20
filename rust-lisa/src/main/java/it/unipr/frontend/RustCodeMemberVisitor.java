@@ -1087,7 +1087,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			String typeName = accessedPath.getContainer().getName();
 			String variantName = accessedPath.getTarget().getName();
 
-			if (ctx.children.get(1).getText().equals("(")) {
+			if (ctx.children.size() > 1 && ctx.children.get(1).getText().equals("(")) {
 				if (ctx.pat_list_with_dots() != null) {
 					List<Expression> lhs = visitPat_list_with_dots(ctx.pat_list_with_dots());
 
@@ -1106,7 +1106,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				}
 			}
 
-			if (ctx.children.get(1).getText().equals("{")) {
+			if (ctx.children.size() > 1 && ctx.children.get(1).getText().equals("{")) {
 				if (ctx.pat_fields() != null) {
 					List<Expression> lhs = visitPat_fields(ctx.pat_fields());
 
