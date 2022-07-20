@@ -5,9 +5,10 @@ import it.unive.lisa.type.Type;
 import it.unive.lisa.type.UnitType;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * Instance of the Rust enum type.
@@ -20,21 +21,19 @@ public class RustEnumType implements RustType, UnitType {
 	/**
 	 * Collection of all enums.
 	 */
-	private static final Set<RustEnumType> INSTANCES = new HashSet<>();
+	private static final Map<String, RustEnumType> INSTANCES = new HashMap<>();
 
 	/**
 	 * Yields the first instance that matches enum type requested or adds it if
 	 * not present.
 	 * 
-	 * @param type the {@link RustEnumType} to look for
+	 * @param name the name of the {@link RustEnumType} to look for
+	 * @param unit the unit underlying this type
 	 * 
 	 * @return the first {@link RustEnumType} inserted of the same kind
 	 */
-	public static RustEnumType lookup(RustEnumType type) {
-		if (!INSTANCES.contains(type))
-			INSTANCES.add(type);
-
-		return INSTANCES.stream().filter(x -> x.equals(type)).findFirst().get();
+	public static RustEnumType lookup(String name, EnumCompilationUnit unit) {
+		return INSTANCES.computeIfAbsent(name, x -> new RustEnumType(name, unit));
 	}
 
 	/**
@@ -51,7 +50,7 @@ public class RustEnumType implements RustType, UnitType {
 	 */
 	public static Collection<Type> all() {
 		Collection<Type> result = new HashSet<>();
-		for (Type t : INSTANCES.toArray(new RustEnumType[0])) {
+		for (Type t : INSTANCES.values()) {
 			result.add(t);
 		}
 		return result;
@@ -101,8 +100,8 @@ public class RustEnumType implements RustType, UnitType {
 	@Override
 	public Collection<Type> allInstances() {
 		Collection<Type> instances = new HashSet<>();
-		for (RustEnumType array : INSTANCES)
-			instances.add(array);
+		for (RustEnumType enumType : INSTANCES.values())
+			instances.add(enumType);
 
 		return instances;
 	}

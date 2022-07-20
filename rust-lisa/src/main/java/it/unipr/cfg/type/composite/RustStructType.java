@@ -43,9 +43,13 @@ public class RustStructType implements UnitType, RustType, RustEnumVariant {
 	 * 
 	 * @param name the name of the struct
 	 * 
-	 * @return all instances of a Rust struct types, null otherwise
+	 * @return all instances of a Rust struct types
+	 * 
+	 * @throws IllegalArgumentException if there is no struct with such name
 	 */
 	public static RustStructType get(String name) {
+		if (INSTANCES.get(name) == null)
+			throw new IllegalArgumentException("There is no struct with name " + name);
 		return INSTANCES.get(name);
 	}
 

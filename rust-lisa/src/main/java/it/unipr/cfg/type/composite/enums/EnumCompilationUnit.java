@@ -13,7 +13,7 @@ import java.util.HashSet;
  */
 public class EnumCompilationUnit extends CompilationUnit {
 
-	private Collection<RustEnumVariant> variants;
+	private final Collection<RustEnumVariant> variants;
 
 	/**
 	 * Construct the {@link EnumCompilationUnit} object.

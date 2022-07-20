@@ -277,7 +277,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 			enumUnit.addVariant(variant);
 
 		RustEnumType enumType = new RustEnumType(name, enumUnit);
-		RustEnumType.lookup(enumType);
+		RustEnumType.lookup(name, enumUnit);
 
 		return null;
 	}
