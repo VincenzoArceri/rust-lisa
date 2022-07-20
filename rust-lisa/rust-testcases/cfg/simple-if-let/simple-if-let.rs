@@ -18,7 +18,7 @@ fn main() {
     }
     
     let m2 = Message::Move {x : 1, y : 2};
-    if let Message::Move{ x: a, y: b} = m2 {
+    if let Message::Move{x: a, y: b} = m2 {
         println!("{}", a);
         println!("{}", b);
     }

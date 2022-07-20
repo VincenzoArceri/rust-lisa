@@ -18,12 +18,12 @@ import java.util.Arrays;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Rust multiple name resolution for destructuring (e.g., A::B(a, b, c).
+ * Rust multiple expression separated by a comma (e.g.: a, b, c ).
  * 
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustMulitpleNameResolutionExpression extends NaryExpression {
+public class RustMulitpleExpression extends NaryExpression {
 
 	/**
 	 * Build the multiple name resolution.
@@ -33,8 +33,8 @@ public class RustMulitpleNameResolutionExpression extends NaryExpression {
 	 * @param values   the values inside the literal with the first element the
 	 *                     path resolution
 	 */
-	public RustMulitpleNameResolutionExpression(CFG cfg, CodeLocation location, Expression[] values) {
-		super(cfg, location, "::", values);
+	public RustMulitpleExpression(CFG cfg, CodeLocation location, Expression[] values) {
+		super(cfg, location, ",", values);
 	}
 
 	@Override
