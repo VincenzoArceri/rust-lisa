@@ -7,7 +7,9 @@ import it.unipr.cfg.expression.RustArrayAccess;
 import it.unipr.cfg.expression.RustBoxExpression;
 import it.unipr.cfg.expression.RustCastExpression;
 import it.unipr.cfg.expression.RustDerefExpression;
+import it.unipr.cfg.expression.RustDestructuringExpression;
 import it.unipr.cfg.expression.RustDoubleRefExpression;
+import it.unipr.cfg.expression.RustMultipleExpression;
 import it.unipr.cfg.expression.RustRangeExpression;
 import it.unipr.cfg.expression.RustRangeFromExpression;
 import it.unipr.cfg.expression.RustRefExpression;
@@ -37,6 +39,7 @@ import it.unipr.cfg.expression.literal.RustString;
 import it.unipr.cfg.expression.literal.RustStructLiteral;
 import it.unipr.cfg.expression.literal.RustTupleLiteral;
 import it.unipr.cfg.expression.literal.RustUnitLiteral;
+import it.unipr.cfg.expression.literal.enums.RustEnumTupleLiteral;
 import it.unipr.cfg.expression.numeric.RustAddExpression;
 import it.unipr.cfg.expression.numeric.RustDivExpression;
 import it.unipr.cfg.expression.numeric.RustMinusExpression;
@@ -48,6 +51,7 @@ import it.unipr.cfg.statement.RustLetAssignment;
 import it.unipr.cfg.type.RustType;
 import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustStructType;
+import it.unipr.cfg.type.composite.enums.RustEnumType;
 import it.unipr.cfg.utils.RustAccessResolver;
 import it.unipr.cfg.utils.RustArrayAccessKeeper;
 import it.unipr.cfg.utils.RustAttributeAccessKeeper;
@@ -629,54 +633,6 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitEnum_decl(Enum_declContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_variant(Enum_variantContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_variant_list(Enum_variant_listContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_variant_main(Enum_variant_mainContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_tuple_field(Enum_tuple_fieldContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_tuple_field_list(Enum_tuple_field_listContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_field_decl(Enum_field_declContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Object visitEnum_field_decl_list(Enum_field_decl_listContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public Object visitUnion_decl(Union_declContext ctx) {
 		// TODO Auto-generated method stub
 		return null;
@@ -1063,19 +1019,17 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		String name = ctx.ident().getText();
 
-		if (ctx.pat() != null) {
+		if (ctx.pat() != null)
 			// TODO Ignoring the meaning of ('@' pat)? part for now
 			return visitPat(ctx.pat());
-		}
 
 		return new RustVariableRef(currentCfg, locationOf(ctx, filePath), name, true);
 	}
 
 	@Override
 	public Expression visitPat_no_mut(Pat_no_mutContext ctx) {
-		if (ctx.pat_lit() != null) {
+		if (ctx.pat_lit() != null)
 			return visitPat_lit(ctx.pat_lit());
-		}
 
 		if (ctx.ident() != null) {
 			String name = ctx.ident().getText();
@@ -1129,19 +1083,66 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 		if (ctx.path() != null) {
 			Expression path = visitPath(ctx.path());
-			List<Expression> macroTail = visitMacro_tail(ctx.macro_tail());
+			AccessGlobal accessedPath = (AccessGlobal) path;
+			String typeName = accessedPath.getContainer().getName();
+			String variantName = accessedPath.getTarget().getName();
 
-			return new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
-					RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
-					RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.STATIC, "", path.toString() + "!",
-					RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, macroTail.toArray(new Expression[0]));
+			if (ctx.children.size() > 1 && ctx.children.get(1).getText().equals("(")) {
+				if (ctx.pat_list_with_dots() != null) {
+					List<Expression> lhs = visitPat_list_with_dots(ctx.pat_list_with_dots());
+
+					RustEnumType enumType = RustEnumType.get(typeName);
+
+					if (RustEnumType.has(typeName))
+						return new RustEnumTupleLiteral(
+								currentCfg,
+								locationOf(ctx, filePath),
+								new RustMultipleExpression(
+										currentCfg,
+										locationOf(ctx, filePath),
+										lhs.toArray(new Expression[0])),
+								variantName,
+								enumType);
+				}
+			}
+
+			if (ctx.children.size() > 1 && ctx.children.get(1).getText().equals("{")) {
+				if (ctx.pat_fields() != null) {
+					List<Expression> lhs = visitPat_fields(ctx.pat_fields());
+
+					RustEnumType enumType = RustEnumType.get(typeName);
+
+					if (RustEnumType.has(typeName))
+						return new RustEnumTupleLiteral(
+								currentCfg,
+								locationOf(ctx, filePath),
+								new RustMultipleExpression(
+										currentCfg,
+										locationOf(ctx, filePath),
+										lhs.toArray(new Expression[0])),
+								variantName,
+								enumType);
+				}
+			}
+
+			if (ctx.macro_tail() != null) {
+				List<Expression> macroTail = visitMacro_tail(ctx.macro_tail());
+
+				return new UnresolvedCall(currentCfg, locationOf(ctx, filePath),
+						RustFrontend.PARAMETER_ASSIGN_STRATEGY, RustFrontend.METHOD_MATCHING_STRATEGY,
+						RustFrontend.HIERARCY_TRAVERSAL_STRATEGY, CallType.STATIC, "", path.toString() + "!",
+						RustFrontend.EVALUATION_ORDER, Untyped.INSTANCE, macroTail.toArray(new Expression[0]));
+
+			}
+
+			return path;
 		}
 
 		switch (ctx.getChild(0).getText()) {
 		case "_":
 			return new VariableRef(currentCfg, locationOf(ctx, filePath), "_");
 		case "(":
-			return visitPat_list_with_dots(ctx.pat_list_with_dots());
+			return visitPat_list_with_dots(ctx.pat_list_with_dots()).get(0);
 		case "[":
 			return visitPat_elt_list(ctx.pat_elt_list());
 		case "&":
@@ -1192,29 +1193,38 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitPat_list_with_dots(Pat_list_with_dotsContext ctx) {
-		if (ctx.pat_list_dots_tail() != null) {
+	public List<Expression> visitPat_list_with_dots(Pat_list_with_dotsContext ctx) {
+		if (ctx.pat() != null && ctx.pat().size() > 0) {
+
+			List<Expression> exprs = new ArrayList<>();
+			for (PatContext patContext : ctx.pat()) {
+				Expression path = visitPat(patContext);
+				exprs.add(path);
+			}
+			if (ctx.pat_list_dots_tail() != null) {
+				exprs.addAll(visitPat_list_dots_tail(ctx.pat_list_dots_tail()));
+			}
+
+			return exprs;
+		}
+
+		if (ctx.pat_list_dots_tail() != null)
 			return visitPat_list_dots_tail(ctx.pat_list_dots_tail());
-		}
 
-		// TODO figure out what to do in the other cases
-		for (PatContext patContext : ctx.pat()) {
-
-		}
-		// TODO figure out what to do in the other cases
-		if (ctx.pat_list_dots_tail() != null) {
-			visitPat_list_dots_tail(ctx.pat_list_dots_tail());
-		}
-
+		// Unreachable
 		return null;
 	}
 
 	@Override
-	public Expression visitPat_list_dots_tail(Pat_list_dots_tailContext ctx) {
-		// TODO figure out what to do here
+	public List<Expression> visitPat_list_dots_tail(Pat_list_dots_tailContext ctx) {
+		List<Expression> result = new ArrayList<>();
+
+		// TODO Missing Range Operator insertion here
+
 		if (ctx.pat_list() != null)
-			return visitPat_list(ctx.pat_list());
-		return null;
+			result.add(visitPat_list(ctx.pat_list()));
+
+		return result;
 	}
 
 	@Override
@@ -1298,10 +1308,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Statement lastStmt = null;
 
 		for (StmtContext stmt : ctx.stmt()) {
-			// Note: since we are not sure what to return from visitStmt, we
-			// are sure that this function returns a pair of Statement
-			@SuppressWarnings("unchecked")
-			Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
+			Pair<Statement, Statement> currentStmt = visitStmt(stmt);
 
 			if (lastStmt != null)
 				currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
@@ -1340,7 +1347,7 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 		Statement lastStmt = null;
 
 		for (StmtContext stmt : ctx.stmt()) {
-			Pair<Statement, Statement> currentStmt = (Pair<Statement, Statement>) visitStmt(stmt);
+			Pair<Statement, Statement> currentStmt = visitStmt(stmt);
 
 			if (lastStmt != null)
 				currentCfg.addEdge(new SequentialEdge(lastStmt, currentStmt.getLeft()));
@@ -1611,10 +1618,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	@Override
 	public Expression visitCond_or_pat(Cond_or_patContext ctx) {
 		if (ctx.getChild(0).getText().equals("let")) {
-			// TODO ignoring this if branch for now
-			Object o = visitPat(ctx.pat());
-			Statement pair = visitExpr(ctx.expr());
-			return null;
+			Expression pat = visitPat(ctx.pat());
+			Expression expr = visitExpr(ctx.expr());
+
+			return new RustDestructuringExpression(currentCfg, locationOf(ctx, filePath), pat, expr);
 		}
 
 		return visitExpr_no_struct(ctx.expr_no_struct());

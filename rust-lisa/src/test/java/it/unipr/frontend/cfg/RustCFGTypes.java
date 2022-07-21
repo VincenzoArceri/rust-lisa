@@ -19,4 +19,10 @@ public class RustCFGTypes extends RustLiSATestExecutor {
 		perform("cfg/struct-parsing", "struct-parsing.rs", conf);
 	}
 
+	@Test
+	public void testEnumParsing() throws AnalysisSetupException {
+		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
+		perform("cfg/enum", "enum.rs", conf);
+	}
+
 }

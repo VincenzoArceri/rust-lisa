@@ -38,16 +38,16 @@ public class RustArrayType implements ArrayType, RustType {
 	}
 
 	/**
-	 * Remove all instances of Rust tuple types.
+	 * Remove all instances of Rust array types.
 	 */
 	public static void clearAll() {
 		INSTANCES.clear();
 	}
 
 	/**
-	 * Yields all instances of Rust tuple types.
+	 * Yields all instances of Rust array types.
 	 * 
-	 * @return all instances of a Rust tuple types
+	 * @return all instances of a Rust array types
 	 */
 	public static Collection<Type> all() {
 		Collection<Type> result = new HashSet<>();

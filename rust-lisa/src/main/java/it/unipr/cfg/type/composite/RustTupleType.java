@@ -1,6 +1,9 @@
 package it.unipr.cfg.type.composite;
 
 import it.unipr.cfg.type.RustType;
+import it.unipr.cfg.type.composite.enums.RustEnumVariant;
+import it.unive.lisa.program.cfg.statement.Expression;
+import it.unive.lisa.program.cfg.statement.Statement;
 import it.unive.lisa.type.Type;
 import it.unive.lisa.type.Untyped;
 import java.util.Collection;
@@ -16,7 +19,7 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:vincenzo.arceri@unipr.it">Vincenzo Arceri</a>
  * @author <a href="mailto:simone.gazza@studenti.unipr.it">Simone Gazza</a>
  */
-public class RustTupleType implements RustType {
+public class RustTupleType implements RustType, RustEnumVariant {
 
 	/**
 	 * Collection of all parse tuples.
@@ -131,6 +134,12 @@ public class RustTupleType implements RustType {
 	@Override
 	public String toString() {
 		return "(" + types.stream().map(t -> t.toString()).collect(Collectors.joining(", ")) + ")";
+	}
+
+	@Override
+	public Statement match(Expression toMatch) {
+		// TODO too coarse
+		return null;
 	}
 
 }

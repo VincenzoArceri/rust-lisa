@@ -10,6 +10,9 @@ import it.unipr.cfg.type.RustUnitType;
 import it.unipr.cfg.type.composite.RustArrayType;
 import it.unipr.cfg.type.composite.RustStructType;
 import it.unipr.cfg.type.composite.RustTupleType;
+import it.unipr.cfg.type.composite.enums.EnumCompilationUnit;
+import it.unipr.cfg.type.composite.enums.RustEnumType;
+import it.unipr.cfg.type.composite.enums.RustEnumVariant;
 import it.unipr.cfg.type.numeric.floating.RustF32Type;
 import it.unipr.cfg.type.numeric.floating.RustF64Type;
 import it.unipr.cfg.type.numeric.signed.RustI128Type;
@@ -28,6 +31,7 @@ import it.unipr.rust.antlr.RustBaseVisitor;
 import it.unipr.rust.antlr.RustLexer;
 import it.unipr.rust.antlr.RustParser;
 import it.unipr.rust.antlr.RustParser.CrateContext;
+import it.unipr.rust.antlr.RustParser.Enum_declContext;
 import it.unipr.rust.antlr.RustParser.ItemContext;
 import it.unipr.rust.antlr.RustParser.Mod_bodyContext;
 import it.unipr.rust.antlr.RustParser.Pub_itemContext;
@@ -131,6 +135,7 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 		program.registerType(RustUnitType.getInstance());
 		RustPointerType.all().forEach(program::registerType);
 		RustStructType.all().forEach(program::registerType);
+		RustEnumType.all().forEach(program::registerType);
 		RustArrayType.all().forEach(program::registerType);
 		RustTupleType.all().forEach(program::registerType);
 	}
@@ -200,11 +205,15 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 
 	@Override
 	public Void visitItem(ItemContext ctx) {
-		if (ctx.pub_item() != null && ctx.pub_item().struct_decl() != null)
+		if (ctx.pub_item() != null && (ctx.pub_item().struct_decl() != null ||
+				ctx.pub_item().enum_decl() != null))
 			visitPub_item(ctx.pub_item());
 
 		for (Type t : RustStructType.all())
 			program.addCompilationUnit(((RustStructType) t).getUnit());
+
+		for (Type t : RustEnumType.all())
+			program.addCompilationUnit(((RustEnumType) t).getUnit());
 
 		if (ctx.impl_block() != null) {
 			RustStructType struct = RustStructType.get(ctx.impl_block().impl_what().getText());
@@ -230,24 +239,46 @@ public class RustFrontend extends RustBaseVisitor<Object> {
 
 	@Override
 	public Void visitPub_item(Pub_itemContext ctx) {
-		if (ctx.struct_decl() != null) {
-			String name = ctx.struct_decl().ident().getText();
-			CompilationUnit structUnit = new CompilationUnit(locationOf(ctx, filePath), name, true);
+		if (ctx.struct_decl() != null)
+			visitStruct_decl(ctx.struct_decl());
 
-			RustStructType.lookup(name, structUnit);
+		if (ctx.enum_decl() != null)
+			visitEnum_decl(ctx.enum_decl());
 
-			List<Global> fields = visitStruct_decl(ctx.struct_decl());
-
-			for (Global f : fields)
-				structUnit.addInstanceGlobal(f);
-		}
 		return null;
 	}
 
 	@Override
-	public List<Global> visitStruct_decl(Struct_declContext ctx) {
+	public Void visitStruct_decl(Struct_declContext ctx) {
 		// TODO skipping ty_params? production
-		return new RustTypeVisitor(filePath, currentUnit).visitStruct_tail(ctx.struct_tail());
+		String name = ctx.ident().getText();
+		CompilationUnit structUnit = new CompilationUnit(locationOf(ctx, filePath), name, true);
+
+		RustStructType.lookup(name, structUnit);
+
+		List<Global> fields = new RustTypeVisitor(filePath, currentUnit).visitStruct_tail(ctx.struct_tail());
+
+		for (Global f : fields)
+			structUnit.addInstanceGlobal(f);
+
+		return null;
+	}
+
+	@Override
+	public Void visitEnum_decl(Enum_declContext ctx) {
+		// TODO skipping ty_params? and where_clause?
+		String name = ctx.ident().getText();
+		EnumCompilationUnit enumUnit = new EnumCompilationUnit(locationOf(ctx, filePath), name, true);
+
+		List<RustEnumVariant> enumVariants = new RustTypeVisitor(filePath, currentUnit)
+				.visitEnum_variant_list(ctx.enum_variant_list());
+
+		for (RustEnumVariant variant : enumVariants)
+			enumUnit.addVariant(variant);
+
+		RustEnumType.lookup(name, enumUnit);
+
+		return null;
 	}
 
 }
