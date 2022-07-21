@@ -1697,8 +1697,12 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public Expression visitMatch_arm_intro(Match_arm_introContext ctx) {
-		// TODO skipping match_if_clause?
-		return visitMatch_pat(ctx.match_pat());
+		Expression expr = visitMatch_pat(ctx.match_pat());
+		
+		if (ctx.match_if_clause() != null)
+			return new RustAndExpression(currentCfg, locationOf(ctx, filePath), expr, visitMatch_if_clause(ctx.match_if_clause()));
+		
+		return expr;
 	}
 
 	@Override
@@ -1712,9 +1716,8 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitMatch_if_clause(Match_if_clauseContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitMatch_if_clause(Match_if_clauseContext ctx) {
+		return visitExpr(ctx.expr());
 	}
 
 	@Override
