@@ -1516,27 +1516,28 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			lastStmt = noOp;
 		} else if (ctx.children.get(0).getText().equals("match")) {
 			Expression expression = visitExpr_no_struct(ctx.expr_no_struct());
-			
+
 			NoOp ending = new NoOp(currentCfg, locationOf(ctx, filePath));
 			currentCfg.addNode(ending);
-			
+
 			// TODO skipping expr_inner_attrs?
-			if (ctx.match_arms() != null) {				
+			if (ctx.match_arms() != null) {
 				List<Pair<Expression, Pair<Statement, Statement>>> matchArms = visitMatch_arms(ctx.match_arms());
-				
+
 				List<Expression> equalities = new ArrayList<>();
 				for (Pair<Expression, Pair<Statement, Statement>> guard : matchArms) {
-					Expression equality = new RustEqualExpression(currentCfg, locationOf(ctx, filePath), expression, guard.getLeft());
+					Expression equality = new RustEqualExpression(currentCfg, locationOf(ctx, filePath), expression,
+							guard.getLeft());
 					currentCfg.addNode(equality);
 					equalities.add(equality);
 				}
-				
-				for (int i = 0 ; i < matchArms.size() - 1; ++i) {
+
+				for (int i = 0; i < matchArms.size() - 1; ++i) {
 					Pair<Expression, Pair<Statement, Statement>> currentArm = matchArms.get(i);
 					currentCfg.addEdge(new TrueEdge(equalities.get(i), currentArm.getRight().getLeft()));
 					currentCfg.addEdge(new FalseEdge(equalities.get(i), equalities.get(i + 1)));
 				}
-				
+
 				// Connect last node
 				Expression lastGuard = equalities.get(equalities.size() - 1);
 				currentCfg.addEdge(new TrueEdge(lastGuard, matchArms.get(matchArms.size() - 1).getRight().getLeft()));
@@ -1545,10 +1546,10 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 				// Connect all the end of the block to the noOp
 				for (Pair<Expression, Pair<Statement, Statement>> arm : matchArms)
 					currentCfg.addEdge(new SequentialEdge(arm.getRight().getRight(), ending));
-				
+
 				firstStmt = equalities.get(0);
 				lastStmt = ending;
-				
+
 			} else {
 				currentCfg.addNode(expression);
 				firstStmt = expression;
@@ -1674,11 +1675,11 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 	@Override
 	public List<Pair<Expression, Pair<Statement, Statement>>> visitMatch_arms(Match_armsContext ctx) {
-		// A list of: guard    body.getLeft   body.getRight
+		// A list of: guard body.getLeft body.getRight
 		List<Pair<Expression, Pair<Statement, Statement>>> match = new ArrayList<>();
-		
+
 		Expression left = visitMatch_arm_intro(ctx.match_arm_intro());
-		
+
 		if (ctx.blocky_expr() != null) {
 			Pair<Statement, Statement> body = visitBlocky_expr(ctx.blocky_expr());
 			match.add(Pair.of(left, body));
@@ -1688,30 +1689,31 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 			Pair<Expression, Pair<Statement, Statement>> exprPair = Pair.of(left, Pair.of(expr, expr));
 			match.add(exprPair);
 		}
-		
+
 		if (ctx.match_arms() != null)
 			match.addAll(visitMatch_arms(ctx.match_arms()));
-		
+
 		return match;
 	}
 
 	@Override
 	public Expression visitMatch_arm_intro(Match_arm_introContext ctx) {
 		Expression expr = visitMatch_pat(ctx.match_pat());
-		
+
 		if (ctx.match_if_clause() != null)
-			return new RustAndExpression(currentCfg, locationOf(ctx, filePath), expr, visitMatch_if_clause(ctx.match_if_clause()));
-		
+			return new RustAndExpression(currentCfg, locationOf(ctx, filePath), expr,
+					visitMatch_if_clause(ctx.match_if_clause()));
+
 		return expr;
 	}
 
 	@Override
 	public Expression visitMatch_pat(Match_patContext ctx) {
 		Expression pat = visitPat(ctx.pat());
-		
+
 		if (ctx.match_pat() != null)
 			return new RustOrExpression(currentCfg, locationOf(ctx, filePath), visitMatch_pat(ctx.match_pat()), pat);
-		
+
 		return pat;
 	}
 
