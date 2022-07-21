@@ -56,6 +56,9 @@ import it.unipr.cfg.utils.RustAccessResolver;
 import it.unipr.cfg.utils.RustArrayAccessKeeper;
 import it.unipr.cfg.utils.RustAttributeAccessKeeper;
 import it.unipr.cfg.utils.RustFunctionCallKeeper;
+import it.unipr.cfg.utils.RustMatchAndKeeper;
+import it.unipr.cfg.utils.RustMatchKeeper;
+import it.unipr.cfg.utils.RustMatchOrKeeper;
 import it.unipr.cfg.utils.RustMethodKeeper;
 import it.unipr.cfg.utils.RustTupleAccessKeeper;
 import it.unipr.rust.antlr.RustBaseVisitor;
@@ -98,6 +101,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 /**
  * Code member visitor for Rust.
@@ -1522,32 +1526,48 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 			// TODO skipping expr_inner_attrs?
 			if (ctx.match_arms() != null) {
-				List<Pair<Expression, Pair<Statement, Statement>>> matchArms = visitMatch_arms(ctx.match_arms());
+				List<Triple<List<RustMatchKeeper>, Statement, Statement>> matchArms = visitMatch_arms(ctx.match_arms());
 
-				List<Expression> equalities = new ArrayList<>();
-				for (Pair<Expression, Pair<Statement, Statement>> guard : matchArms) {
-					Expression equality = new RustEqualExpression(currentCfg, locationOf(ctx, filePath), expression,
-							guard.getLeft());
-					currentCfg.addNode(equality);
-					equalities.add(equality);
+				List<Expression> resolvedConditions = new ArrayList<>();
+				for (Triple<List<RustMatchKeeper>, Statement, Statement> arm : matchArms) {
+
+					// Resolve RustMatchKeeper
+					List<RustMatchKeeper> guards = arm.getLeft().subList(1, arm.getLeft().size());
+					Expression expressionAccumulator = new RustEqualExpression(currentCfg, locationOf(ctx, filePath),
+							expression, arm.getLeft().get(0).get());
+					for (RustMatchKeeper guard : guards) {
+						if (guard instanceof RustMatchOrKeeper) {
+							Expression equality = new RustEqualExpression(currentCfg, locationOf(ctx, filePath),
+									expression, guard.get());
+							expressionAccumulator = new RustOrExpression(currentCfg, locationOf(ctx, filePath),
+									expressionAccumulator, equality);
+						} else { // RustMatchAndKeeper
+							expressionAccumulator = new RustAndExpression(currentCfg, locationOf(ctx, filePath),
+									expressionAccumulator, guard.get());
+						}
+					}
+
+					currentCfg.addNode(expressionAccumulator);
+					resolvedConditions.add(expressionAccumulator);
 				}
 
+				// Connect all the nodes
 				for (int i = 0; i < matchArms.size() - 1; ++i) {
-					Pair<Expression, Pair<Statement, Statement>> currentArm = matchArms.get(i);
-					currentCfg.addEdge(new TrueEdge(equalities.get(i), currentArm.getRight().getLeft()));
-					currentCfg.addEdge(new FalseEdge(equalities.get(i), equalities.get(i + 1)));
+					Triple<List<RustMatchKeeper>, Statement, Statement> currentArm = matchArms.get(i);
+					currentCfg.addEdge(new TrueEdge(resolvedConditions.get(i), currentArm.getMiddle()));
+					currentCfg.addEdge(new FalseEdge(resolvedConditions.get(i), resolvedConditions.get(i + 1)));
 				}
 
 				// Connect last node
-				Expression lastGuard = equalities.get(equalities.size() - 1);
-				currentCfg.addEdge(new TrueEdge(lastGuard, matchArms.get(matchArms.size() - 1).getRight().getLeft()));
+				Expression lastGuard = resolvedConditions.get(resolvedConditions.size() - 1);
+				currentCfg.addEdge(new TrueEdge(lastGuard, matchArms.get(matchArms.size() - 1).getMiddle()));
 				currentCfg.addEdge(new FalseEdge(lastGuard, ending));
 
 				// Connect all the end of the block to the noOp
-				for (Pair<Expression, Pair<Statement, Statement>> arm : matchArms)
-					currentCfg.addEdge(new SequentialEdge(arm.getRight().getRight(), ending));
+				for (Triple<List<RustMatchKeeper>, Statement, Statement> arm : matchArms)
+					currentCfg.addEdge(new SequentialEdge(arm.getRight(), ending));
 
-				firstStmt = equalities.get(0);
+				firstStmt = resolvedConditions.get(0);
 				lastStmt = ending;
 
 			} else {
@@ -1674,20 +1694,21 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public List<Pair<Expression, Pair<Statement, Statement>>> visitMatch_arms(Match_armsContext ctx) {
-		// A list of: guard body.getLeft body.getRight
-		List<Pair<Expression, Pair<Statement, Statement>>> match = new ArrayList<>();
+	public List<Triple<List<RustMatchKeeper>, Statement, Statement>> visitMatch_arms(Match_armsContext ctx) {
 
-		Expression left = visitMatch_arm_intro(ctx.match_arm_intro());
+		// A list of: a list of guards, body.getLeft and body.getRight
+		List<Triple<List<RustMatchKeeper>, Statement, Statement>> match = new ArrayList<>();
+
+		List<RustMatchKeeper> guards = visitMatch_arm_intro(ctx.match_arm_intro());
 
 		if (ctx.blocky_expr() != null) {
 			Pair<Statement, Statement> body = visitBlocky_expr(ctx.blocky_expr());
-			match.add(Pair.of(left, body));
+			match.add(Triple.of(guards, body.getLeft(), body.getRight()));
 		} else {
 			Expression expr = visitExpr(ctx.expr());
 			currentCfg.addNode(expr);
-			Pair<Expression, Pair<Statement, Statement>> exprPair = Pair.of(left, Pair.of(expr, expr));
-			match.add(exprPair);
+			Triple<List<RustMatchKeeper>, Statement, Statement> exprTriple = Triple.of(guards, expr, expr);
+			match.add(exprTriple);
 		}
 
 		if (ctx.match_arms() != null)
@@ -1697,29 +1718,30 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Expression visitMatch_arm_intro(Match_arm_introContext ctx) {
-		Expression expr = visitMatch_pat(ctx.match_pat());
+	public List<RustMatchKeeper> visitMatch_arm_intro(Match_arm_introContext ctx) {
+		List<RustMatchKeeper> guards = visitMatch_pat(ctx.match_pat());
 
 		if (ctx.match_if_clause() != null)
-			return new RustAndExpression(currentCfg, locationOf(ctx, filePath), expr,
-					visitMatch_if_clause(ctx.match_if_clause()));
+			guards.add(visitMatch_if_clause(ctx.match_if_clause()));
 
-		return expr;
+		return guards;
 	}
 
 	@Override
-	public Expression visitMatch_pat(Match_patContext ctx) {
-		Expression pat = visitPat(ctx.pat());
+	public List<RustMatchKeeper> visitMatch_pat(Match_patContext ctx) {
+		List<RustMatchKeeper> result = new ArrayList<>();
 
 		if (ctx.match_pat() != null)
-			return new RustOrExpression(currentCfg, locationOf(ctx, filePath), visitMatch_pat(ctx.match_pat()), pat);
+			result.addAll(visitMatch_pat(ctx.match_pat()));
 
-		return pat;
+		Expression pat = visitPat(ctx.pat());
+		result.add(new RustMatchOrKeeper(pat));
+		return result;
 	}
 
 	@Override
-	public Expression visitMatch_if_clause(Match_if_clauseContext ctx) {
-		return visitExpr(ctx.expr());
+	public RustMatchKeeper visitMatch_if_clause(Match_if_clauseContext ctx) {
+		return new RustMatchAndKeeper(visitExpr(ctx.expr()));
 	}
 
 	@Override

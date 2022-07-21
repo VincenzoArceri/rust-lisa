@@ -1,16 +1,16 @@
 digraph {
 	"node0" [shape="rect",color="black",label=<let x : untyped = 2>];
 	"node1" [shape="rect",color="gray",label=<==(x, _)>];
-	"node2" [shape="rect",color="gray",label=<==(x, ||(||(2, 3), 4))>];
-	"node3" [shape="rect",color="gray",label=<println!(&quot;x is not 2 nor 3 nor 4!&quot;)>];
-	"node4" [shape="rect",color="gray",label=<println!(&quot;x is 2 or 3 or 4&quot;)>];
+	"node2" [shape="rect",color="gray",label=<println!(&quot;x is 2 or 3 or 4&quot;)>];
+	"node3" [shape="rect",color="gray",label=<&amp;&amp;(||(||(==(x, 2), ==(x, 3)), ==(x, 4)), &lt;(y, 5))>];
+	"node4" [shape="rect",color="gray",label=<println!(&quot;x is not 2 nor 3 nor 4!&quot;)>];
 	"node5" [shape="rect",color="black",peripheries="2",label=<ret>];
-	"node1" -> "node3" [color="blue",style="dashed"];
+	"node1" -> "node4" [color="blue",style="dashed"];
 	"node1" -> "node5" [color="red",style="dashed"];
-	"node0" -> "node2" [color="black"];
-	"node2" -> "node1" [color="red",style="dashed"];
-	"node2" -> "node4" [color="blue",style="dashed"];
-	"node3" -> "node5" [color="black"];
+	"node0" -> "node3" [color="black"];
+	"node2" -> "node5" [color="black"];
+	"node3" -> "node1" [color="red",style="dashed"];
+	"node3" -> "node2" [color="blue",style="dashed"];
 	"node4" -> "node5" [color="black"];
 subgraph cluster_legend {
 	label="Legend";

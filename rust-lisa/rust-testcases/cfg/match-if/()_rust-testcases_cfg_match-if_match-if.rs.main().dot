@@ -2,16 +2,16 @@ digraph {
 	"node0" [shape="rect",color="black",label=<let color : untyped = Color::RGB(122, 17, 40)>];
 	"node1" [shape="rect",color="gray",label=<println!(&quot;Red greater than 122!&quot;)>];
 	"node2" [shape="rect",color="gray",label=<println!(&quot;No constraint on red!&quot;)>];
-	"node3" [shape="rect",color="gray",label=<==(color, Color::RGB(r,g,b))>];
-	"node4" [shape="rect",color="gray",label=<==(color, &amp;&amp;(Color::RGB(r,g,b), &lt;(r, 122)))>];
+	"node3" [shape="rect",color="gray",label=<&amp;&amp;(==(color, Color::RGB(r,g,b)), &lt;(r, 122))>];
+	"node4" [shape="rect",color="gray",label=<==(color, Color::RGB(r,g,b))>];
 	"node5" [shape="rect",color="black",peripheries="2",label=<ret>];
 	"node1" -> "node5" [color="black"];
 	"node2" -> "node5" [color="black"];
-	"node3" -> "node2" [color="blue",style="dashed"];
-	"node3" -> "node5" [color="red",style="dashed"];
-	"node4" -> "node1" [color="blue",style="dashed"];
-	"node4" -> "node3" [color="red",style="dashed"];
-	"node0" -> "node4" [color="black"];
+	"node3" -> "node1" [color="blue",style="dashed"];
+	"node3" -> "node4" [color="red",style="dashed"];
+	"node4" -> "node2" [color="blue",style="dashed"];
+	"node4" -> "node5" [color="red",style="dashed"];
+	"node0" -> "node3" [color="black"];
 subgraph cluster_legend {
 	label="Legend";
 	style=dotted;
