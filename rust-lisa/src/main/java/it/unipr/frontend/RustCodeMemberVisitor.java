@@ -1514,7 +1514,46 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 
 			firstStmt = elseIfGuardList.get(0);
 			lastStmt = noOp;
+		} else if (ctx.children.get(0).getText().equals("match")) {
+			Expression expression = visitExpr_no_struct(ctx.expr_no_struct());
+			
+			NoOp ending = new NoOp(currentCfg, locationOf(ctx, filePath));
+			currentCfg.addNode(ending);
+			
+			// TODO skipping expr_inner_attrs?
+			if (ctx.match_arms() != null) {				
+				List<Pair<Expression, Pair<Statement, Statement>>> matchArms = visitMatch_arms(ctx.match_arms());
+				
+				List<Expression> equalities = new ArrayList<>();
+				for (Pair<Expression, Pair<Statement, Statement>> guard : matchArms) {
+					Expression equality = new RustEqualExpression(currentCfg, locationOf(ctx, filePath), expression, guard.getLeft());
+					currentCfg.addNode(equality);
+					equalities.add(equality);
+				}
+				
+				for (int i = 0 ; i < matchArms.size() - 1; ++i) {
+					Pair<Expression, Pair<Statement, Statement>> currentArm = matchArms.get(i);
+					currentCfg.addEdge(new TrueEdge(equalities.get(i), currentArm.getRight().getLeft()));
+					currentCfg.addEdge(new FalseEdge(equalities.get(i), equalities.get(i + 1)));
+				}
+				
+				// Connect last node
+				Expression lastGuard = equalities.get(equalities.size() - 1);
+				currentCfg.addEdge(new TrueEdge(lastGuard, matchArms.get(matchArms.size() - 1).getRight().getLeft()));
+				currentCfg.addEdge(new FalseEdge(lastGuard, ending));
 
+				// Connect all the end of the block to the noOp
+				for (Pair<Expression, Pair<Statement, Statement>> arm : matchArms)
+					currentCfg.addEdge(new SequentialEdge(arm.getRight().getRight(), ending));
+				
+				firstStmt = equalities.get(0);
+				lastStmt = ending;
+				
+			} else {
+				currentCfg.addNode(expression);
+				firstStmt = expression;
+				lastStmt = expression;
+			}
 		} else if ((loop_label == null && ctx.children.get(0).getText().equals("loop"))
 				|| ctx.children.get(1).getText().equals("loop")) {
 			Pair<Statement, Statement> stmt = visitBlock_with_inner_attrs(ctx.block_with_inner_attrs());
@@ -1634,21 +1673,42 @@ public class RustCodeMemberVisitor extends RustBaseVisitor<Object> {
 	}
 
 	@Override
-	public Object visitMatch_arms(Match_armsContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Pair<Expression, Pair<Statement, Statement>>> visitMatch_arms(Match_armsContext ctx) {
+		// A list of: guard    body.getLeft   body.getRight
+		List<Pair<Expression, Pair<Statement, Statement>>> match = new ArrayList<>();
+		
+		Expression left = visitMatch_arm_intro(ctx.match_arm_intro());
+		
+		if (ctx.blocky_expr() != null) {
+			Pair<Statement, Statement> body = visitBlocky_expr(ctx.blocky_expr());
+			match.add(Pair.of(left, body));
+		} else {
+			Expression expr = visitExpr(ctx.expr());
+			currentCfg.addNode(expr);
+			Pair<Expression, Pair<Statement, Statement>> exprPair = Pair.of(left, Pair.of(expr, expr));
+			match.add(exprPair);
+		}
+		
+		if (ctx.match_arms() != null)
+			match.addAll(visitMatch_arms(ctx.match_arms()));
+		
+		return match;
 	}
 
 	@Override
-	public Object visitMatch_arm_intro(Match_arm_introContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitMatch_arm_intro(Match_arm_introContext ctx) {
+		// TODO skipping match_if_clause?
+		return visitMatch_pat(ctx.match_pat());
 	}
 
 	@Override
-	public Object visitMatch_pat(Match_patContext ctx) {
-		// TODO Auto-generated method stub
-		return null;
+	public Expression visitMatch_pat(Match_patContext ctx) {
+		Expression pat = visitPat(ctx.pat());
+		
+		if (ctx.match_pat() != null)
+			return new RustOrExpression(currentCfg, locationOf(ctx, filePath), visitMatch_pat(ctx.match_pat()), pat);
+		
+		return pat;
 	}
 
 	@Override
