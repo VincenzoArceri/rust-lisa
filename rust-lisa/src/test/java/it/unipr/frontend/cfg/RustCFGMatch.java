@@ -31,4 +31,10 @@ public class RustCFGMatch extends RustLiSATestExecutor {
 		perform("cfg/match-if", "match-if.rs", conf);
 	}
 
+	@Test
+	public void testMatchOr() throws AnalysisSetupException {
+		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
+		perform("cfg/match-or", "match-or.rs", conf);
+	}
+
 }
