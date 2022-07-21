@@ -18,5 +18,11 @@ public class RustCFGMatch extends RustLiSATestExecutor {
 		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
 		perform("cfg/blocky-match", "blocky-match.rs", conf);
 	}
+	
+	@Test
+	public void testMixAndMatch() throws AnalysisSetupException {
+		LiSAConfiguration conf = new LiSAConfiguration().setDumpCFGs(true).setJsonOutput(true);
+		perform("cfg/mix-and-match", "mix-and-match.rs", conf);
+	}
 
 }
