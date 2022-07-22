@@ -46,3 +46,9 @@ Once you have finished, you first need to run
 and commit every change made to the files.
 
 After that, you can open a Pull Request, marking the reviewers and adding tags about the PR, also with a short description.
+
+# :rocket: Next steps
+ - complete compilation from Rust constructs to LiSA control-flow graph nodes
+ - complete `semantics` methods of Rust control-flow graph nodes
+ - integrate [APRON](https://github.com/antoinemine/apron) for numerical analyses
+
