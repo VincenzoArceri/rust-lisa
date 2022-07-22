@@ -5,7 +5,7 @@
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=style-flat&logo=java&logoColor=white)
 ![Gradle](https://img.shields.io/badge/Gradle-02303A.svg?style=style-flat&logo=Gradle&logoColor=white)
 # RustLiSA
-A Static Analyzer for both [Rust](https://www.rust-lang.org/) and [Unsafe](https://doc.rust-lang.org/book/ch19-01-unsafe-rust.html) Rust built using [LiSA](https://unive-ssv.github.io/lisa/)
+An abstract interpretation-based static analyzer for [Rust](https://www.rust-lang.org/) built upon [LiSA](https://unive-ssv.github.io/lisa/) (Library for Static Analysis)
 
 # 🛠 Build
 RustLiSA comes as a [Gradle 6.6](https://gradle.org/releases/) project.
