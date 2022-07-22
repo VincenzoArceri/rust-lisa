@@ -1,7 +1,7 @@
 ![Rust](https://img.shields.io/badge/rust-%23000000.svg?style=style-flat-black&logo=rust&logoColor=white)
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=style-flat&logo=java&logoColor=white)
 ![Gradle](https://img.shields.io/badge/Gradle-02303A.svg?style=style-flat&logo=Gradle&logoColor=white)
-![GitHub](https://img.shields.io/github/license/VincenzoArceri/rust-lisa)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/VincenzoArceri/rust-lisa/Gradle%20Build%20(master)/master)
 ![GitHub last commit](https://img.shields.io/github/last-commit/VincenzoArceri/rust-lisa)
 
 # RustLiSA
